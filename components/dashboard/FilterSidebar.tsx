@@ -174,6 +174,8 @@ export default function FilterSidebar({
   
   const [acreageMode, setAcreageMode] = useState<'preset' | 'custom'>('preset');
   const [localParcelId, setLocalParcelId] = useState(filters.parcelId || '');
+  const [countySearch, setCountySearch] = useState('');
+  const [landUseSearch, setLandUseSearch] = useState('');
 
   // KEY FIX: Sync with parent AND auto-apply when spatial shape changes
   useEffect(() => {
@@ -313,7 +315,7 @@ export default function FilterSidebar({
   return (
     <div className="w-80 flex-shrink-0 bg-theme-sidebar border-r border-theme h-full overflow-y-auto p-4 flex flex-col gap-6 font-medium">
       <div>
-        <h2 className="text-lg font-bold text-theme-primary mb-4">Filters</h2>
+        <h2 className="text-xl font-extrabold text-white mb-4 tracking-tight">FILTERS</h2>
 
         {/* SPATIAL FILTER INDICATOR */}
         {hasSpatialFilter && (
@@ -330,7 +332,7 @@ export default function FilterSidebar({
 
         {/* Parcel ID Search */}
         <div className="mb-6 p-3 bg-theme-input rounded border border-theme">
-          <label className="block text-sm font-bold text-theme-primary mb-2">
+          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">
             Find by Parcel ID
           </label>
           <div className="flex flex-col gap-2">
@@ -354,18 +356,32 @@ export default function FilterSidebar({
         {/* Counties */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-semibold text-theme-secondary">
-              Counties <span className="text-xs font-normal ml-1">({(filters.counties || []).length} selected)</span>
+            <label className="block text-base font-bold text-white uppercase tracking-wide">
+              Counties <span className="text-xs font-normal text-slate-300 ml-1">({(filters.counties || []).length})</span>
             </label>
             <button
-              onClick={() => handleChange('counties', [])}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              onClick={() => { handleChange('counties', []); setCountySearch(''); }}
+              className="text-xs text-blue-400 hover:text-blue-300 font-medium"
             >
               Reset
             </button>
           </div>
+          
+          {/* County Search */}
+          <div className="mb-2">
+             <input 
+                type="text"
+                placeholder="Type to filter..."
+                value={countySearch}
+                onChange={(e) => setCountySearch(e.target.value)}
+                className="w-full px-2 py-1 text-xs bg-slate-800 border border-slate-700 rounded text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+             />
+          </div>
+
           <div className="h-40 overflow-y-auto border border-theme rounded p-2 bg-theme-input shadow-sm">
-            {FLORIDA_COUNTIES.map(county => {
+            {FLORIDA_COUNTIES
+              .filter(c => c.toLowerCase().includes(countySearch.toLowerCase()))
+              .map(county => {
               const isLocked = county !== 'Baker' && !unlockedCounties.includes(county);
               const isChecked = (filters.counties || []).includes(county);
 
@@ -410,30 +426,52 @@ export default function FilterSidebar({
         {/* Land Use */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-semibold text-theme-secondary">
-              Land Use <span className="text-xs font-normal ml-1">({(filters.landUse || []).length} selected)</span>
+            <label className="block text-base font-bold text-white uppercase tracking-wide">
+              Land Use <span className="text-xs font-normal text-slate-300 ml-1">({(filters.landUse || []).length})</span>
             </label>
             <button 
-              onClick={() => handleChange('landUse', [])}
-              className="text-xs text-red-500 hover:text-red-700 font-medium"
+              onClick={() => { handleChange('landUse', []); setLandUseSearch(''); }}
+              className="text-xs text-red-400 hover:text-red-300 font-medium"
             >
               Reset
             </button>
           </div>
+
+           {/* Land Use Search */}
+           <div className="mb-2">
+             <input 
+                type="text"
+                placeholder="Search codes..."
+                value={landUseSearch}
+                onChange={(e) => setLandUseSearch(e.target.value)}
+                className="w-full px-2 py-1 text-xs bg-slate-800 border border-slate-700 rounded text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+             />
+          </div>
+
           <div className="h-64 overflow-y-auto border border-theme rounded p-2 bg-theme-input">
-            {LAND_USE_DATA.map((group) => (
-              <div key={group.label} className="mb-3">
-                <div className="flex items-center justify-between sticky top-0 bg-theme-input z-10 py-1 border-b border-theme/50 mb-1">
-                  <span className="text-xs font-bold text-theme-secondary uppercase tracking-wide">{group.label}</span>
-                  <button 
-                    onClick={() => toggleGroup(group.options)}
-                    className="text-[10px] text-blue-600 hover:underline px-2"
-                  >
-                    {isGroupSelected(group.options) ? 'None' : 'All'}
-                  </button>
-                </div>
-                <div className="pl-1 space-y-0.5">
-                  {group.options.map(lu => (
+            {LAND_USE_DATA.map((group) => {
+               // Filter options in this group
+               const filteredOptions = group.options.filter(opt => 
+                  opt.label.toLowerCase().includes(landUseSearch.toLowerCase()) || 
+                  opt.code.includes(landUseSearch)
+               );
+               
+               // If no options match and search is active, hide group
+               if (filteredOptions.length === 0 && landUseSearch) return null;
+
+               return (
+                <div key={group.label} className="mb-3">
+                  <div className="flex items-center justify-between sticky top-0 bg-theme-input z-10 py-1 border-b border-theme/50 mb-1">
+                    <span className="text-xs font-bold text-theme-secondary uppercase tracking-wide">{group.label}</span>
+                    <button 
+                      onClick={() => toggleGroup(group.options)} // Toggle original group options? Or only filtered? Let's toggle original for consistency or filtered? Original is safer logic.
+                      className="text-[10px] text-blue-400 hover:underline px-2"
+                    >
+                      {isGroupSelected(group.options) ? 'None' : 'All'}
+                    </button>
+                  </div>
+                  <div className="pl-1 space-y-0.5">
+                    {filteredOptions.map(lu => (
                     <label key={lu.code} className="flex items-center space-x-2 p-1 hover:bg-theme-sidebar rounded cursor-pointer">
                       <input
                         type="checkbox"
@@ -447,15 +485,16 @@ export default function FilterSidebar({
                     </label>
                   ))}
                 </div>
-              </div>
-            ))}
+                  </div>
+               );
+            })}
           </div>
         </div>
 
         {/* Acreage */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-theme-secondary">Acreage</label>
+            <label className="block text-base font-bold text-white uppercase tracking-wide">Acreage</label>
             <div className="flex text-xs border border-theme rounded overflow-hidden">
               <button 
                 className={`px-2 py-0.5 ${acreageMode === 'preset' ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-theme-input text-theme-secondary'}`}
@@ -516,7 +555,7 @@ export default function FilterSidebar({
 
         {/* Market Value */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-theme-secondary mb-2">Market Value ($)</label>
+          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Market Value ($)</label>
           <div className="flex items-center space-x-2">
             <input
               type="number"
@@ -538,7 +577,7 @@ export default function FilterSidebar({
 
         {/* Owner Type */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-theme-secondary mb-2">Owner Type</label>
+          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Owner Type</label>
           <div className="flex border border-theme rounded-md overflow-hidden">
             {[
               { id: 'all', label: 'All' },
@@ -569,7 +608,7 @@ export default function FilterSidebar({
               onChange={(e) => handleChange('maxDistance', e.target.checked ? 5 : 0)}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-semibold text-theme-secondary">Limit Distance to Highway</span>
+            <span className="text-base font-bold text-white uppercase tracking-wide">Limit Distance to Highway</span>
           </label>
           
           {filters.maxDistance > 0 && (
@@ -594,7 +633,7 @@ export default function FilterSidebar({
 
         {/* View Limit */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-theme-secondary mb-2">Map View Limit</label>
+          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Map View Limit</label>
           <select 
             value={filters.limit}
             onChange={(e) => handleChange('limit', parseInt(e.target.value))}
