@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 
-export async function GET(req: Request, { params }: { params: { parcelId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ parcelId: string }> }) {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 

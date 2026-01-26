@@ -87,3 +87,5 @@ FDOT_data/
 !components/
 !lib/
 !public/
+
+.vercel
