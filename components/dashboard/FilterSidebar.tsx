@@ -172,7 +172,6 @@ export default function FilterSidebar({
     landUse: initialFilters.landUse?.length > 0 ? initialFilters.landUse : defaultAgCodes
   }));
   
-  const [acreageMode, setAcreageMode] = useState<'preset' | 'custom'>('preset');
   const [localParcelId, setLocalParcelId] = useState(filters.parcelId || '');
   const [countySearch, setCountySearch] = useState('');
   const [landUseSearch, setLandUseSearch] = useState('');
@@ -280,7 +279,6 @@ export default function FilterSidebar({
     };
     setFilters(reset);
     onFilterChange(reset);
-    setAcreageMode('preset');
     previousSpatialShapeRef.current = null;
   };
 
@@ -361,7 +359,7 @@ export default function FilterSidebar({
             </label>
             <button
               onClick={() => { handleChange('counties', []); setCountySearch(''); }}
-              className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+              className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
             >
               Reset
             </button>
@@ -429,12 +427,26 @@ export default function FilterSidebar({
             <label className="block text-base font-bold text-white uppercase tracking-wide">
               Land Use <span className="text-xs font-normal text-slate-300 ml-1">({(filters.landUse || []).length})</span>
             </label>
-            <button 
-              onClick={() => { handleChange('landUse', []); setLandUseSearch(''); }}
-              className="text-xs text-red-400 hover:text-red-300 font-medium"
-            >
-              Reset
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => {
+                  // Codes for Vacant Land (Residential, Commercial, Industrial, Ag, Institutional, Gov, Leasehold)
+                  // Plus 001 (Single Family) as requested by user
+                  const vacantCodes = ['000', '001', '010', '040', '068', '070', '080', '090'];
+                  handleChange('landUse', vacantCodes);
+                }}
+                className="px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
+                title="Select all Vacant Land types (Res, Comm, Ind, Ag)"
+              >
+                Vacant Land
+              </button>
+              <button 
+                onClick={() => { handleChange('landUse', []); setLandUseSearch(''); }}
+                className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
+              >
+                Reset
+              </button>
+            </div>
           </div>
 
            {/* Land Use Search */}
@@ -493,26 +505,10 @@ export default function FilterSidebar({
 
         {/* Acreage */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-base font-bold text-white uppercase tracking-wide">Acreage</label>
-            <div className="flex text-xs border border-theme rounded overflow-hidden">
-              <button 
-                className={`px-2 py-0.5 ${acreageMode === 'preset' ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-theme-input text-theme-secondary'}`}
-                onClick={() => setAcreageMode('preset')}
-              >
-                Preset
-              </button>
-              <button 
-                className={`px-2 py-0.5 ${acreageMode === 'custom' ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-theme-input text-theme-secondary'}`}
-                onClick={() => setAcreageMode('custom')}
-              >
-                Custom
-              </button>
-            </div>
-          </div>
+          <label className="block text-base font-bold text-white uppercase tracking-wide mb-2">Acreage</label>
           
-          {acreageMode === 'preset' ? (
-            <div className="grid grid-cols-2 gap-2">
+          {/* Presets */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
               {[
                 { label: 'Small (3-9)', min: 3, max: 9 },
                 { label: 'Med (10-20)', min: 10, max: 20 },
@@ -531,26 +527,27 @@ export default function FilterSidebar({
                   {preset.label}
                 </button>
               ))}
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                value={filters.acreageMin || ''}
-                onChange={(e) => handleChange('acreageMin', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm"
-                placeholder="Min"
-              />
-              <span className="text-gray-400">-</span>
-              <input
-                type="number"
-                value={filters.acreageMax || ''}
-                onChange={(e) => handleChange('acreageMax', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm"
-                placeholder="Max"
-              />
-            </div>
-          )}
+          </div>
+
+          {/* Custom Input */}
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-medium text-slate-400 w-12">Custom:</span>
+            <input
+              type="number"
+              value={filters.acreageMin || ''}
+              onChange={(e) => handleChange('acreageMin', parseFloat(e.target.value))}
+              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm focus:border-blue-500 outline-none"
+              placeholder="Min"
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="number"
+              value={filters.acreageMax || ''}
+              onChange={(e) => handleChange('acreageMax', parseFloat(e.target.value))}
+              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm focus:border-blue-500 outline-none"
+              placeholder="Max"
+            />
+          </div>
         </div>
 
         {/* Market Value */}

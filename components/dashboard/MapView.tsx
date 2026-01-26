@@ -72,7 +72,7 @@ const unclusteredPointLayer: any = {
         'case',
         ['boolean', ['get', 'out_of_state'], false],
         '#ef4444', // Red 
-        '#3b82f6'  // Blue
+        '#f97316'  // Orange (was Blue)
     ],
     'circle-radius': [
         'case',
@@ -93,7 +93,7 @@ const parcelFillLayer: any = {
         'case',
         ['boolean', ['get', 'out_of_state'], false],
         '#ef4444', 
-        '#3b82f6' 
+        '#f97316' 
     ],
     'fill-opacity': 0.4
   }
@@ -107,7 +107,7 @@ const parcelLineLayer: any = {
         'case',
         ['boolean', ['get', 'out_of_state'], false],
         '#b91c1c', 
-        '#1d4ed8' 
+        '#c2410c' // Darker Orange 
     ],
     'line-width': 1
   }
