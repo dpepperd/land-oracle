@@ -71,6 +71,22 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
     }
   };
 
+  // Fetch Counts
+  const [parcelCounts, setParcelCounts] = useState<Record<string, number>>({});
+  
+  useEffect(() => {
+    fetch('/api/parcels/stats')
+      .then(res => res.json())
+      .then(data => setParcelCounts(data))
+      .catch(err => console.error("Failed to load stats", err));
+  }, []);
+
+  const formatCount = (num: number) => {
+    if (!num) return '';
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toString();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-12">
@@ -152,10 +168,8 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
           const isSelected = stagedCounties.includes(county);
           const isLive = LIVE_COUNTIES.includes(county);
           const isProcessing = processing === county; 
+          const count = parcelCounts[county];
 
-          // Logic: Anyone can toggle any county to add/remove from "Staged" list
-          // We no longer block based on quota, we just prompt to checkout if over.
-          
           return (
             <button
               key={county}
@@ -173,12 +187,19 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
                 <span className={`font-semibold text-sm ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-foreground'}`}>
                   {county}
                 </span>
-                 <div className="text-[10px]">
+                 <div className="text-[10px] mt-0.5">
                 {isLive ? (
-                   <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                     Live
-                   </span>
+                   <div className="flex flex-col">
+                     <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium whitespace-nowrap">
+                       <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                       Live
+                     </span>
+                     {count && (
+                        <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[9px]">
+                            {formatCount(count)}
+                        </span>
+                     )}
+                   </div>
                 ) : (
                   <span className="text-[var(--text-secondary)] italic">
                      {isSignedIn ? "Soon" : "Check"}

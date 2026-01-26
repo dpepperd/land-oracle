@@ -71,14 +71,14 @@ const unclusteredPointLayer: any = {
     'circle-color': [
         'case',
         ['boolean', ['get', 'out_of_state'], false],
-        '#ef4444', // Red 
-        '#f97316'  // Orange (was Blue)
+        '#ef4444', 
+        '#d8b4fe'  // Light Purple (was Orange)
     ],
     'circle-radius': [
         'case',
         ['==', ['geometry-type'], 'Point'],
-        6, // Show point if it is a Point geometry
-        0  // Hide if it is a Polygon (prevent double render)
+        6, 
+        0  
     ],
     'circle-stroke-width': 1,
     'circle-stroke-color': '#ffffff'
@@ -93,7 +93,7 @@ const parcelFillLayer: any = {
         'case',
         ['boolean', ['get', 'out_of_state'], false],
         '#ef4444', 
-        '#f97316' 
+        '#d8b4fe' // Light Purple
     ],
     'fill-opacity': 0.4
   }
@@ -107,7 +107,7 @@ const parcelLineLayer: any = {
         'case',
         ['boolean', ['get', 'out_of_state'], false],
         '#b91c1c', 
-        '#c2410c' // Darker Orange 
+        '#a855f7' // Darker Purple Border
     ],
     'line-width': 1
   }
@@ -500,10 +500,10 @@ export default function MapView({
                         'symbol-placement': 'point'
                     }}
                     paint={{
-                        'text-color': '#000000',
-                        'text-halo-color': '#ffffff',
-                        'text-halo-width': 2,
-                        'text-opacity': 0.7
+                        'text-color': '#ffffff', // White Text
+                        'text-halo-color': '#000000', // Black Halo
+                        'text-halo-width': 1.25, // Thin, crisp shadow
+                        'text-opacity': 0.95
                     }}
                 />
                  {/* Only labels at higher zooms? Or keep simple for now */}

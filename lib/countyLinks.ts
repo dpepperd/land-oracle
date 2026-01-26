@@ -72,6 +72,18 @@ const COUNTY_CONFIGS: Record<string, CountyConfig> = {
     layerId: '9801', 
     pageId: '4330'
   },
+  'volusia': {
+    type: 'custom',
+    urlBuilder: (id) => `https://vcpa.vcgov.org/parcel/summary/?altkey=${id}`
+  },
+  'marion': {
+    type: 'custom',
+    urlBuilder: (id) => `https://www.pa.marion.fl.us/PropertySearch.aspx?SearchBy=ParcelR&Parms=${id}`
+  },
+  'seminole': {
+    type: 'custom',
+    urlBuilder: (id) => 'https://www.scpafl.org/search/parcels' // Manual Search - Clipboard Copy triggers on frontend
+  },
   'putnam': {
     type: 'custom',
     urlBuilder: (id) => 'https://pamap.putnam-fl.gov/PropertyAppraiserPublicMap/' // Manual Search Required
