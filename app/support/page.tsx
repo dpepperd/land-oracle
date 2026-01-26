@@ -289,6 +289,48 @@ export default function SupportPage() {
                          <li><strong>Land Use:</strong> Filter for "Residential" vs "Commercial" using the codes.</li>
                          <li><strong>Environmental:</strong> Exclude wetlands if your use case requires dry land.</li>
                      </ul>
+
+                     <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <div className="flex gap-2 items-center mb-2">
+                             <h4 className="font-bold text-blue-900 dark:text-blue-100">Limit Distance from Highway</h4>
+                        </div>
+                        <p className="text-sm text-blue-800 dark:text-blue-200 mb-3 italic">
+                            "Not all land is equally accessible, even when it appears close on a map."
+                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                            The Limit Distance from Highway filter allows you to restrict results to parcels within a defined distance of major roadways. This is particularly useful when:
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
+                            <li>Access matters for development, logistics, or construction</li>
+                            <li>Parcels without nearby highway access would be impractical</li>
+                            <li>You want to eliminate land that looks viable but is effectively <em>hooked off from infrastructure</em></li>
+                        </ul>
+
+                         <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <strong className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">What This Filter Does</strong>
+                                <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                                    <li>• Measures distance to nearest qualifying highway</li>
+                                    <li>• Removes parcels exceeding threshold</li>
+                                    <li>• Surfaces realistically reachable land</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">When to Use</strong>
+                                <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                                    <li>• Developers evaluating build feasibility</li>
+                                    <li>• Solar/Energy teams assessing access</li>
+                                    <li>• Agricultural buyers needing equipment access</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                         <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
+                             <p className="text-xs text-blue-800 dark:text-blue-300">
+                                 <strong>Note:</strong> This filter evaluates proximity, not road quality. A passed parcel may still require easements or improvements. Use to eliminate obvious challenges, not to replace site investigation.
+                             </p>
+                         </div>
+                     </div>
                 </div>
 
                  <div>
