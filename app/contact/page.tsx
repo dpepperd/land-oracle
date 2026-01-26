@@ -39,7 +39,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-theme-primary">Email</h3>
-                    <p className="text-sm text-theme-secondary">support@landoracle.com</p>
+                    <p className="text-sm text-theme-secondary">support@landoracle.ai</p>
                   </div>
                 </div>
               </div>
