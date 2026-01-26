@@ -190,7 +190,19 @@ export default function SupportPage() {
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">The Filter Panel</h3>
-                        <p className="text-slate-600 dark:text-slate-400">Located on the left. Filters remove parcels from view to reduce noise before analysis begins.</p>
+                        <p className="text-slate-600 dark:text-slate-400">Located on the left. The Filters Panel removes parcels from view before evaluation, allowing you to focus only on land that fits your criteria.</p>
+
+                        <div 
+                            className="mt-6 rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 group relative cursor-zoom-in max-w-sm"
+                            onClick={() => setActiveImage("/screenshots/Left sidebard filters.png")}
+                        >
+                            <img src="/screenshots/Left sidebard filters.png" alt="Filters Panel" className="w-full h-auto" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <div className="bg-white/90 dark:bg-black/80 text-gray-900 dark:text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-medium text-sm backdrop-blur-sm">
+                                    <ZoomIn size={16} /> Click to Expand
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
