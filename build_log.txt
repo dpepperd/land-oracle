@@ -1,0 +1,56 @@
+
+> land-oracle@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.4 (Turbopack)
+- Environments: .env.local
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 6.7s
+  Running TypeScript ...
+  Collecting page data using 23 workers ...
+ΓÜá Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 23 workers (0/25) ...
+  Generating static pages using 23 workers (6/25) 
+  Generating static pages using 23 workers (12/25) 
+  Generating static pages using 23 workers (18/25) 
+Γ£ô Generating static pages using 23 workers (25/25) in 573.8ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /about
+Γö£ Γùï /acceptable-use
+Γö£ Γùï /access-denied
+Γö£ ╞Æ /admin
+Γö£ ╞Æ /api/analytics/demo
+Γö£ ╞Æ /api/chat
+Γö£ ╞Æ /api/highways
+Γö£ ╞Æ /api/leads/create
+Γö£ ╞Æ /api/notes/[parcelId]
+Γö£ ╞Æ /api/notes/save
+Γö£ ╞Æ /api/parcels/[id]
+Γö£ ╞Æ /api/parcels/export
+Γö£ ╞Æ /api/parcels/search
+Γö£ ╞Æ /api/user/counties
+Γö£ ╞Æ /api/user/trial/start
+Γö£ ╞Æ /api/webhooks/clerk
+Γö£ Γùï /contact
+Γö£ ╞Æ /dashboard
+Γö£ ╞Æ /dashboard/settings
+Γö£ Γùï /pricing
+Γö£ Γùï /privacy
+Γö£ ╞Æ /sign-in/[[...sign-in]]
+Γö£ ╞Æ /sign-up/[[...sign-up]]
+Γö£ Γùï /support
+Γö£ Γùï /terms
+Γöö Γùï /territories
+
+
+╞Æ Proxy (Middleware)
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

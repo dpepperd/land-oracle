@@ -18,7 +18,9 @@ const EXPORT_LIMITS = {
   free: 100,      // Lifetime (Trial)
   scout: 1000,    // Monthly
   local: 100000,  // "Unlimited" (Fair Use)
-  regional: 100000
+  regional: 100000,
+  statewide: 100000,
+  enterprise: 100000
 };
 
 /**

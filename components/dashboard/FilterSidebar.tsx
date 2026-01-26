@@ -207,7 +207,7 @@ export default function FilterSidebar({
       onFilterChange(mergedFilters);
     } else {
       // Normal sync without auto-apply
-      setFilters(prev => ({
+      setFilters((prev: any) => ({
         ...prev,
         ...initialFilters
       }));

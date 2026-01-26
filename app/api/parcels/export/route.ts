@@ -166,7 +166,7 @@ export async function POST(request: Request) {
     }
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: 'Invalid Input', details: error.errors }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid Input', details: error.issues }, { status: 400 });
     }
     console.error('Export API Error:', error);
     return NextResponse.json(

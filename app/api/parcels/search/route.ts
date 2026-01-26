@@ -378,7 +378,7 @@ export async function POST(request: Request) {
     console.error('[SPATIAL] Stack:', error.stack);
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid Input', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid Input', details: error.issues }, { status: 400 });
     }
     
     return NextResponse.json({ 

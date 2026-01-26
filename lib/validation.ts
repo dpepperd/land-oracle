@@ -19,7 +19,7 @@ const geometrySchema = z.union([pointGeometrySchema, polygonGeometrySchema]);
 // FIX: Proper GeoJSON Feature schema for spatialShape
 const geoJsonFeatureSchema = z.object({
   type: z.literal('Feature').optional(),
-  properties: z.record(z.any()).optional(),
+  properties: z.record(z.string(), z.any()).optional(),
   geometry: geometrySchema.optional(),
 }).passthrough(); // Allow additional properties like 'coordinates' at top level
 

@@ -2,15 +2,28 @@
 
 import { useChat } from '@ai-sdk/react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function ChatWindow({ isOpen }: { isOpen: boolean }) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, append, isLoading } = useChat({
     api: '/api/chat', // We'll mock this endpoint
     initialMessages: [
          { id: 'welcome', role: 'assistant', content: "Hello! I'm the Land Oracle AI. How can I assist with your property research today?" }
     ]
-  });
+  } as any) as any;
+
+  const [input, setInput] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    await append({ role: 'user', content: input });
+    setInput('');
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +53,7 @@ export default function ChatWindow({ isOpen }: { isOpen: boolean }) {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-        {messages.map(m => (
+        {messages.map((m: any) => (
             <div
                 key={m.id}
                 className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
