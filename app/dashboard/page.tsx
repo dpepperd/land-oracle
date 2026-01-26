@@ -36,6 +36,10 @@ export default function Dashboard() {
   
   // Track leads being saved
   const [markingIds, setMarkingIds] = useState<string[]>([]);
+  
+  // Mobile UI State
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isMobileResultsOpen, setIsMobileResultsOpen] = useState(false);
 
   useEffect(() => {
     // Fetch user tier info
@@ -96,6 +100,12 @@ export default function Dashboard() {
       setParcels(data.list || []);
       setGeojson(data.geojson || { type: 'FeatureCollection', features: [] });
       setTotalCount(data.count || 0);
+
+      // Mobile: If specific filters applied, maybe auto-close filters? 
+      // User preference: let's keep it manual for now or auto-close on "Apply".
+      if (window.innerWidth < 768) {
+         setIsMobileFiltersOpen(false); // Auto-close drawer on search
+      }
 
       // Analytics: Track Search
       import('@/lib/analytics').then(({ trackPropertySearch }) => {
@@ -209,8 +219,17 @@ export default function Dashboard() {
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Header />
       
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sidebar - Mobile Drawer & Desktop Static */}
+        <div className={`
+            fixed inset-0 z-50 bg-black/50 transition-opacity md:hidden
+            ${isMobileFiltersOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `} onClick={() => setIsMobileFiltersOpen(false)} />
+        
+        <div className={`
+            fixed inset-y-0 left-0 z-50 w-80 bg-theme-sidebar shadow-2xl transform transition-transform duration-300 ease-in-out md:relative md:transform-none md:shadow-none md:flex
+            ${isMobileFiltersOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
           <FilterSidebar 
             initialFilters={filters}
             onFilterChange={setFilters} 
@@ -220,6 +239,14 @@ export default function Dashboard() {
                 setShowUpsell(true);
             }}
           />
+          {/* Mobile Close Button */}
+          <button 
+             onClick={() => setIsMobileFiltersOpen(false)}
+             className="absolute top-4 right-4 p-2 bg-white/10 text-white rounded-full md:hidden"
+          >
+             ✕
+          </button>
+        </div>
         
         {/* Main Content */}
         <main className="flex-1 flex relative">
@@ -244,10 +271,45 @@ export default function Dashboard() {
                   }));
               }}
             />
+            {/* Mobile Floating Controls */}
+            <div className="absolute bottom-6 left-4 right-4 flex gap-3 z-10 md:hidden pointer-events-none">
+                <button 
+                  onClick={() => setIsMobileFiltersOpen(true)}
+                  className="flex-1 py-3 bg-slate-900 text-white font-bold rounded-lg shadow-lg pointer-events-auto flex items-center justify-center gap-2"
+                >
+                   <span>Filters</span>
+                   {/* Count active filters approx */}
+                   <span className="bg-blue-600 text-[10px] px-1.5 py-0.5 rounded-full">
+                     {(filters.counties?.length || 0) + (filters.landUse?.length || 0)}
+                   </span>
+                </button>
+                <button 
+                  onClick={() => setIsMobileResultsOpen(true)}
+                  className="flex-1 py-3 bg-white text-slate-900 font-bold rounded-lg shadow-lg pointer-events-auto border border-gray-200"
+                >
+                   Results ({totalCount})
+                </button>
+            </div>
           </div>
+
           
           {/* Results List or CRM Panel (Right Panel) */}
-          <div className="w-96 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 shadow-lg shrink-0 hidden lg:block transition-all">
+          {/* Results List or CRM Panel (Right Panel) - Mobile Drawer & Desktop Static */}
+          <div className={`
+              fixed inset-0 z-50 bg-black/50 transition-opacity lg:hidden
+              ${isMobileResultsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          `} onClick={() => setIsMobileResultsOpen(false)} />
+
+          <div className={`
+             fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:transform-none lg:shadow-none lg:block lg:border-l lg:border-gray-200 dark:lg:border-gray-700
+             ${isMobileResultsOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          `}>
+             {/* Mobile Header for Results */}
+             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 lg:hidden">
+                <h3 className="font-bold text-lg dark:text-white">Results ({totalCount})</h3>
+                <button onClick={() => setIsMobileResultsOpen(false)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full">✕</button>
+             </div>
+
             {popupInfo && popupInfo.properties ? (
                 <CRMPanel 
                     parcel={popupInfo.properties} 

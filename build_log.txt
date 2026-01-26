@@ -7,7 +7,7 @@
 
 ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-Γ£ô Compiled successfully in 6.0s
+Γ£ô Compiled successfully in 6.3s
   Running TypeScript ...
   Collecting page data using 23 workers ...
 ΓÜá Using edge runtime on a page currently disables static generation for that page
@@ -15,7 +15,7 @@
   Generating static pages using 23 workers (6/25) 
   Generating static pages using 23 workers (12/25) 
   Generating static pages using 23 workers (18/25) 
-Γ£ô Generating static pages using 23 workers (25/25) in 606.5ms
+Γ£ô Generating static pages using 23 workers (25/25) in 804.7ms
   Finalizing page optimization ...
 
 Route (app)

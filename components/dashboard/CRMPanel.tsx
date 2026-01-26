@@ -119,23 +119,23 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
 
         {/* Property Info */}
         <div>
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <MapPin size={12} /> Property Location
+            <h3 className="text-sm font-extrabold text-blue-900 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <MapPin size={14} /> Property Location
             </h3>
-            <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700">
-                <div className="font-medium">{parcel.property_address || 'No Site Address'}</div>
-                <div className="text-xs text-gray-500 mt-1">{parcel.land_use}</div>
+            <div className="bg-white dark:bg-gray-700/50 rounded-lg p-3 text-base text-black dark:text-white border border-gray-200 dark:border-gray-600 shadow-sm">
+                <div className="font-bold text-lg">{parcel.property_address || 'No Site Address'}</div>
+                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">{parcel.land_use}</div>
             </div>
         </div>
 
         {/* Ownership */}
         <div>
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <User size={12} /> Owner Information
+            <h3 className="text-sm font-extrabold text-blue-900 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <User size={14} /> Owner Information
             </h3>
-            <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3 text-sm border border-gray-100 dark:border-gray-700 space-y-2">
-                <div className="font-bold text-gray-900 dark:text-white">{parcel.owner_name}</div>
-                <div className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
+            <div className="bg-white dark:bg-gray-700/50 rounded-lg p-3 text-sm border border-gray-200 dark:border-gray-600 shadow-sm space-y-2">
+                <div className="font-bold text-lg text-black dark:text-white">{parcel.owner_name}</div>
+                <div className="text-base font-medium text-gray-800 dark:text-gray-200 whitespace-pre-line">
                     {parcel.owner_address}<br/>
                     {parcel.owner_city}, {parcel.owner_state} {parcel.owner_zip}
                 </div>
@@ -164,15 +164,15 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
 
         {/* CRM Notes */}
         <div className="pt-2">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Clock size={12} /> Notes History
+            <h3 className="text-sm font-extrabold text-blue-900 dark:text-gray-100 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Clock size={14} /> Notes History
             </h3>
             
             <div className="max-h-[300px] overflow-y-auto mb-3 space-y-3 pr-1">
                 {notes.length === 0 && !isNoteLoading && (
-                    <div className="text-center py-6 text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
-                        <p className="text-xs">No notes yet.</p>
-                        <p className="text-[10px]">Start tracking this lead below.</p>
+                    <div className="text-center py-6 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                        <p className="text-sm font-bold text-gray-700 dark:text-gray-300">No notes yet.</p>
+                        <p className="text-xs font-medium mt-1">Start tracking this lead below.</p>
                     </div>
                 )}
                 
@@ -200,7 +200,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add a new note..."
-                    className="w-full text-sm p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px] resize-none dark:bg-gray-700 dark:text-white shadow-sm"
+                    className="w-full text-sm font-medium p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px] resize-none bg-white text-black dark:bg-gray-700 dark:text-white shadow-sm placeholder:text-gray-500"
                     disabled={isNoteSaving}
                 />
                 <div className="absolute bottom-2 right-2">

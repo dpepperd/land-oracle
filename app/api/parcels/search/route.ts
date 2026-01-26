@@ -282,7 +282,7 @@ export async function POST(request: Request) {
         END as out_of_state,
         ST_Y(ST_Centroid(p.geom)) as latitude,
         ST_X(ST_Centroid(p.geom)) as longitude,
-        ST_AsGeoJSON(ST_Simplify(p.geom, 0.0001)) as geojson,
+        ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
         CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_lead,
         EXISTS (
           SELECT 1 FROM user_parcel_notes n 
@@ -292,7 +292,18 @@ export async function POST(request: Request) {
             n.user_id = u.id
             OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))
           )
-        ) as has_note
+        ) as has_note,
+        (
+          SELECT content FROM user_parcel_notes n 
+          JOIN user_context u ON 1=1
+          WHERE n.parcel_id = p.parcelno 
+          AND (
+            n.user_id = u.id
+            OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))
+          )
+          ORDER BY n.created_at DESC
+          LIMIT 1
+        ) as note_content
       FROM parcels p
       LEFT JOIN leads l ON p.parcelno = l.parcel_id
       WHERE ${conditions.join(' AND ')}
@@ -356,6 +367,7 @@ export async function POST(request: Request) {
               out_of_state: row.out_of_state,
               is_lead: row.is_lead,
               has_note: row.has_note,
+              notes: row.note_content, // Inject note for Edit Modal
               latitude: row.latitude,
               longitude: row.longitude
             }

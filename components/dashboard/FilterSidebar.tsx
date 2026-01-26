@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Lock, MapPin } from 'lucide-react';
+import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Lock, MapPin } from 'lucide-react';
 
 /**
  * FIXED FilterSidebar
@@ -55,7 +55,8 @@ const LAND_USE_DATA = [
     { code: '021', label: '21 - Food/Drug Stores' },
     { code: '022', label: '22 - Restaurants/Cafeterias' },
     { code: '023', label: '23 - Drive-In Restaurants' },
-    { code: '024', label: '24 - Banks/Savings & Loans' },
+
+    // { code: '024', label: '24 - Banks/Savings & Loans' }, // Removed per user request
     { code: '025', label: '25 - Office Buildings One Story' },
     { code: '026', label: '26 - Office Buildings Multi-Story' },
     { code: '027', label: '27 - Professional Service Buildings' },
@@ -282,6 +283,12 @@ export default function FilterSidebar({
     previousSpatialShapeRef.current = null;
   };
 
+  // Helper to remove specific item from list
+  const removeItem = (key: string, value: string) => {
+    const list = filters[key] || [];
+    handleChange(key, list.filter((i: string) => i !== value));
+  };
+
   const isGroupSelected = (options: { code: string }[]) => {
     return options.every(opt => (filters.landUse || []).includes(opt.code));
   };
@@ -313,7 +320,7 @@ export default function FilterSidebar({
   return (
     <div className="w-80 flex-shrink-0 bg-theme-sidebar border-r border-theme h-full overflow-y-auto p-4 flex flex-col gap-6 font-medium">
       <div>
-        <h2 className="text-xl font-extrabold text-white mb-4 tracking-tight">FILTERS</h2>
+        <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">FILTERS</h2>
 
         {/* SPATIAL FILTER INDICATOR */}
         {hasSpatialFilter && (
@@ -328,16 +335,69 @@ export default function FilterSidebar({
           </div>
         )}
 
+        {/* Active Filters Summary */}
+        {(filters.counties?.length > 0 || filters.landUse?.length > 0 || filters.maxDistance !== undefined) && (
+          <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-lg">
+             <div className="flex justify-between items-center mb-2">
+               <span className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase tracking-tighter">Active Filters</span>
+               <button onClick={handleReset} className="text-[10px] text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-white underline">Clear All</button>
+             </div>
+             
+             {/* Counties */}
+             {filters.counties?.length > 0 && (
+               <div className="mb-2">
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Counties ({filters.counties.length})</span>
+                 <div className="flex flex-wrap gap-1">
+                   {filters.counties.map((c: string) => (
+                     <span key={c} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-blue-600 text-white">
+                       {c}
+                       <button onClick={() => removeItem('counties', c)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {/* Land Use */}
+             {filters.landUse?.length > 0 && (
+               <div>
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Land Use ({filters.landUse.length})</span>
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto custom-scrollbar">
+                   {filters.landUse.map((code: string) => (
+                     <span key={code} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-700 text-white">
+                       {code}
+                       <button onClick={() => removeItem('landUse', code)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {/* Distance to Highway */}
+             {filters.maxDistance !== undefined && filters.maxDistance > 0 && (
+               <div className="mt-2">
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Distance to Highway</span>
+                 <div className="flex flex-wrap gap-1">
+                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-600 text-white">
+                     &lt; {filters.maxDistance} Miles
+                     <button onClick={() => handleChange('maxDistance', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                   </span>
+                 </div>
+               </div>
+             )}
+          </div>
+        )}
+
         {/* Parcel ID Search */}
         <div className="mb-6 p-3 bg-theme-input rounded border border-theme">
-          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
             Find by Parcel ID
           </label>
           <div className="flex flex-col gap-2">
             <input 
               type="text"
               placeholder="Enter ID (e.g. 011N...)"
-              className="w-full p-2 text-sm border border-theme rounded bg-white dark:bg-slate-800 text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={localParcelId}
               onChange={(e) => setLocalParcelId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleParcelSearch()}
@@ -354,8 +414,8 @@ export default function FilterSidebar({
         {/* Counties */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-base font-bold text-white uppercase tracking-wide">
-              Counties <span className="text-xs font-normal text-slate-300 ml-1">({(filters.counties || []).length})</span>
+            <label className="block text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+              Counties <span className="text-xs font-normal text-slate-500 dark:text-slate-300 ml-1">({(filters.counties || []).length})</span>
             </label>
             <button
               onClick={() => { handleChange('counties', []); setCountySearch(''); }}
@@ -372,7 +432,7 @@ export default function FilterSidebar({
                 placeholder="Type to filter..."
                 value={countySearch}
                 onChange={(e) => setCountySearch(e.target.value)}
-                className="w-full px-2 py-1 text-xs bg-slate-800 border border-slate-700 rounded text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-2 py-1 text-xs bg-white border border-gray-300 rounded text-black font-bold placeholder:text-gray-500 focus:border-blue-500 focus:outline-none"
              />
           </div>
 
@@ -413,7 +473,7 @@ export default function FilterSidebar({
                       onChange={() => handleCountyToggle(county)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-theme-primary">{county}</span>
+                    <span className="text-sm text-slate-800 dark:text-gray-100 font-medium">{county}</span>
                   </div>
                 </label>
               );
@@ -424,8 +484,8 @@ export default function FilterSidebar({
         {/* Land Use */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-base font-bold text-white uppercase tracking-wide">
-              Land Use <span className="text-xs font-normal text-slate-300 ml-1">({(filters.landUse || []).length})</span>
+            <label className="block text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+              Land Use <span className="text-xs font-normal text-slate-500 dark:text-slate-300 ml-1">({(filters.landUse || []).length})</span>
             </label>
             <div className="flex space-x-2">
               <button 
@@ -456,7 +516,7 @@ export default function FilterSidebar({
                 placeholder="Search codes..."
                 value={landUseSearch}
                 onChange={(e) => setLandUseSearch(e.target.value)}
-                className="w-full px-2 py-1 text-xs bg-slate-800 border border-slate-700 rounded text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-2 py-1 text-xs bg-white border border-gray-300 rounded text-black font-bold placeholder:text-gray-500 focus:border-blue-500 focus:outline-none"
              />
           </div>
 
@@ -474,7 +534,7 @@ export default function FilterSidebar({
                return (
                 <div key={group.label} className="mb-3">
                   <div className="flex items-center justify-between sticky top-0 bg-theme-input z-10 py-1 border-b border-theme/50 mb-1">
-                    <span className="text-xs font-bold text-theme-secondary uppercase tracking-wide">{group.label}</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">{group.label}</span>
                     <button 
                       onClick={() => toggleGroup(group.options)} // Toggle original group options? Or only filtered? Let's toggle original for consistency or filtered? Original is safer logic.
                       className="text-[10px] text-blue-400 hover:underline px-2"
@@ -491,7 +551,7 @@ export default function FilterSidebar({
                         onChange={() => handleLandUseToggle(lu.code)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-xs text-theme-primary truncate" title={lu.label}>
+                      <span className="text-xs text-slate-800 dark:text-gray-100 font-medium truncate" title={lu.label}>
                         {lu.label}
                       </span>
                     </label>
@@ -505,7 +565,7 @@ export default function FilterSidebar({
 
         {/* Acreage */}
         <div className="mb-6">
-          <label className="block text-base font-bold text-white uppercase tracking-wide mb-2">Acreage</label>
+          <label className="block text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide mb-2">Acreage</label>
           
           {/* Presets */}
           <div className="grid grid-cols-2 gap-2 mb-3">
@@ -536,15 +596,15 @@ export default function FilterSidebar({
               type="number"
               value={filters.acreageMin || ''}
               onChange={(e) => handleChange('acreageMin', parseFloat(e.target.value))}
-              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm focus:border-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Min"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-slate-900 dark:text-white font-bold">-</span>
             <input
               type="number"
               value={filters.acreageMax || ''}
               onChange={(e) => handleChange('acreageMax', parseFloat(e.target.value))}
-              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm focus:border-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Max"
             />
           </div>
@@ -552,21 +612,21 @@ export default function FilterSidebar({
 
         {/* Market Value */}
         <div className="mb-6">
-          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Market Value ($)</label>
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Market Value ($)</label>
           <div className="flex items-center space-x-2">
             <input
               type="number"
               value={filters.marketValueMin || ''}
               onChange={(e) => handleChange('marketValueMin', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm"
+              className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Min $"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-slate-900 dark:text-white font-bold">-</span>
             <input
               type="number"
               value={filters.marketValueMax || ''}
               onChange={(e) => handleChange('marketValueMax', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-theme rounded-md bg-theme-input text-theme-primary text-sm"
+              className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Max $"
             />
           </div>
@@ -574,7 +634,7 @@ export default function FilterSidebar({
 
         {/* Owner Type */}
         <div className="mb-6">
-          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Owner Type</label>
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Owner Type</label>
           <div className="flex border border-theme rounded-md overflow-hidden">
             {[
               { id: 'all', label: 'All' },
@@ -598,39 +658,28 @@ export default function FilterSidebar({
 
         {/* Distance from Highway */}
         <div className="mb-6">
-          <label className="flex items-center space-x-2 cursor-pointer mb-2">
-            <input 
-              type="checkbox"
-              checked={filters.maxDistance > 0}
-              onChange={(e) => handleChange('maxDistance', e.target.checked ? 5 : 0)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-base font-bold text-white uppercase tracking-wide">Limit Distance to Highway</span>
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
+             Distance to Highway
           </label>
-          
-          {filters.maxDistance > 0 && (
-            <div className="pl-1">
-              <div className="flex justify-between text-xs text-theme-secondary mb-1">
-                <span>1 mile</span>
-                <span className="font-semibold text-blue-600">{filters.maxDistance} miles</span>
-                <span>50 miles</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                step="1"
-                value={filters.maxDistance}
-                onChange={(e) => handleChange('maxDistance', parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+             <input
+               type="number"
+               min="0"
+               step="0.1"
+               value={filters.maxDistance || ''}
+               onChange={(e) => handleChange('maxDistance', e.target.value ? parseFloat(e.target.value) : undefined)}
+               placeholder="Miles (e.g. 5)"
+               className="flex-1 px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+             />
+             <span className="text-sm font-bold text-slate-900 dark:text-white">Miles</span>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1">Leave empty for no limit.</p>
         </div>
+
 
         {/* View Limit */}
         <div className="mb-6">
-          <label className="block text-base font-bold text-white mb-2 uppercase tracking-wide">Map View Limit</label>
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Map View Limit</label>
           <select 
             value={filters.limit}
             onChange={(e) => handleChange('limit', parseInt(e.target.value))}

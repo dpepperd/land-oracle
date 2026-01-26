@@ -144,6 +144,8 @@ const measurePointLayer: any = {
     }
 };
 
+const FL_GEOJSON = "https://raw.githubusercontent.com/danielcs88/fl_geo_json/master/geojson-fl-counties-fips.json";
+
 export default function MapView({ 
   geojson, 
   popupInfo, 
@@ -160,6 +162,7 @@ export default function MapView({
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
   const [highways, setHighways] = useState<any>(null);
   const [showHighways, setShowHighways] = useState(true);
+  const [showBoundaries, setShowBoundaries] = useState(true); // Default ON
   const [scaleUnit, setScaleUnit] = useState<'imperial' | 'metric'>('imperial'); // Default to MILES
   
   // Measure Tool State
@@ -469,6 +472,43 @@ export default function MapView({
           <Layer {...clusterCountLayer} />
           <Layer {...unclusteredPointLayer} />
         </Source>
+
+        {showBoundaries && (
+            <Source
+                id="fl-counties"
+                type="geojson"
+                data={FL_GEOJSON}
+            >
+                <Layer 
+                    id="county-boundary-line"
+                    type="line"
+                    paint={{
+                        'line-color': '#000000', // Black
+                        'line-width': 1,
+                        'line-opacity': 0.8,
+                    }}
+                />
+                <Layer
+                    id="county-boundary-label"
+                    type="symbol"
+                    minzoom={6.5}
+                    layout={{
+                        'text-field': ['get', 'NAME'],
+                        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                        'text-size': 12,
+                        'text-transform': 'uppercase',
+                        'symbol-placement': 'point'
+                    }}
+                    paint={{
+                        'text-color': '#000000',
+                        'text-halo-color': '#ffffff',
+                        'text-halo-width': 2,
+                        'text-opacity': 0.7
+                    }}
+                />
+                 {/* Only labels at higher zooms? Or keep simple for now */}
+            </Source>
+        )}
         
         {popupInfo && (popupInfo.properties?.geojson || popupInfo.start_lat) && (
             <Source
@@ -526,11 +566,15 @@ export default function MapView({
                      onClick={(e) => {
                          e.preventDefault();
                          e.stopPropagation();
+                         // Auto-copy ID
+                         if (popupInfo.properties.parcel_id) {
+                            navigator.clipboard.writeText(popupInfo.properties.parcel_id).catch(() => {});
+                         }
                          const url = getPropertyAppraiserUrl(popupInfo.properties.county, popupInfo.properties.parcel_id);
                          if (url) setExternalLink({ url, county: popupInfo.properties.county });
                      }}
                      className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 focus:outline-none"
-                     title="View on County Appraiser Site"
+                     title="ID Copied! View on County Appraiser Site"
                    >
                      {popupInfo.properties.parcel_id}
                      <span className="text-[10px] text-gray-500 font-normal no-underline">↗</span>
@@ -665,6 +709,15 @@ export default function MapView({
                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                    />
                    <span className="text-sm text-gray-700 dark:text-gray-300">Show Highways</span>
+                </label>
+                <label className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">
+                   <input 
+                     type="checkbox"
+                     checked={showBoundaries}
+                     onChange={(e) => setShowBoundaries(e.target.checked)}
+                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                   />
+                   <span className="text-sm text-gray-700 dark:text-gray-300">County Boundaries</span>
                 </label>
               </div>
 
@@ -821,7 +874,7 @@ export default function MapView({
        </div>
 
       {/* Measure Tool Control - Keep separate */}
-      <div className="absolute top-20 right-3 z-10 flex flex-col gap-2">
+      <div className="absolute top-26 right-3 z-10 flex flex-col gap-2">
          <button
             onClick={() => {
                 setIsMeasureMode(!isMeasureMode);
@@ -886,10 +939,15 @@ export default function MapView({
             if (externalLink) window.open(externalLink.url, '_blank');
         }}
         title="Leaving Land Oracle"
-        message={`You are about to visit the ${externalLink?.county || 'County'} Property Appraiser's official website. This acts as a third-party source.`}
+        message={
+            (externalLink?.county?.toLowerCase() === 'union' || externalLink?.county?.toLowerCase() === 'bradford' || externalLink?.county?.toLowerCase() === 'putnam') 
+            ? `You are visiting the ${externalLink?.county} GIS. Direct linking is restricted, so we have copied the Parcel ID to your clipboard. Please PASTE it into the search bar.`
+            : `You are about to visit the ${externalLink?.county || 'County'} Property Appraiser's official website.`
+        }
         confirmLabel="Continue to Site"
         isExternal={true}
       />
     </div>
   );
 }
+

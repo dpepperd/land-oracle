@@ -5,9 +5,30 @@ import { TIER_QUOTAS } from '@/lib/counties';
 
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
+  // Allow Public Access for "Live Map" checking
   const client = await pool.connect();
+  
+  if (!userId) {
+     try {
+        const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
+        const liveCounties = liveRes.rows.map(r => r.county);
+        return NextResponse.json({
+            tier: 'guest',
+            role: 'guest',
+            quota: 0,
+            used: 0,
+            selected: [],
+            liveCounties
+        });
+     } catch(e) {
+        return new NextResponse("Error fetching live counties", { status: 500 });
+     } finally {
+        client.release();
+     }
+  }
+
+  // .. continued logic for authed users
   try {
     // Check user tier
     // Schema: id, clerk_id, subscription_tier
@@ -57,12 +78,19 @@ export async function GET() {
     
     const quota = TIER_QUOTAS[tier as keyof typeof TIER_QUOTAS] || 0;
 
+    // ---------------------------------------------------------
+    // AUTOMATION: Fetch "Live" counties from DB
+    // ---------------------------------------------------------
+    const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
+    const liveCounties = liveRes.rows.map(r => r.county);
+
     return NextResponse.json({
       tier,
       role: user?.role || 'user',
       quota,
       used: selectedCounties.length, // Can be > quota if admin
-      selected: selectedCounties
+      selected: selectedCounties,
+      liveCounties // New Field
     });
   } catch (error) {
     console.error('Error fetching user counties:', error);

@@ -10,14 +10,15 @@ export default function PricingPage() {
   const tiers = [
     {
       name: "Scout",
-      monthlyPrice: "$149",
-      annualPrice: "$1,390",
+      monthlyPrice: "$199",
+      annualPrice: "$1,910",
       description: "For new investors testing the waters.",
       features: [
         "1 County of your choice",
         "1,000 Parcel Views / Month",
         "Basic Support",
-        "Standard Filtering"
+        "Standard Filtering",
+        "Additional Counties: $47/mo"
       ],
       cta: "Start Scouting",
       popular: false,
@@ -25,14 +26,15 @@ export default function PricingPage() {
     },
     {
       name: "Local",
-      monthlyPrice: "$249",
-      annualPrice: "$2,390",
+      monthlyPrice: "$349",
+      annualPrice: "$3,350",
       description: "Perfect for focused local operations.",
       features: [
         "3 Counties of your choice",
         "5,000 Parcel Views / Month",
         "Unlimited Exports",
-        "Standard Filtering"
+        "Standard Filtering",
+        "Additional Counties: $47/mo"
       ],
       cta: "Go Local",
       popular: false,
@@ -40,11 +42,11 @@ export default function PricingPage() {
     },
     {
       name: "Regional",
-      monthlyPrice: "$499",
-      annualPrice: "$4,790",
-      description: "For serious developers covering multiple markets.",
+      monthlyPrice: "$699",
+      annualPrice: "$6,710",
+      description: "For serious developers covering preset regions.",
       features: [
-        "15 Counties of your choice",
+        "Preset Region Access",
         "Unlimited Parcel Views",
         "Priority Support",
         "Highway Proximity Analysis",
@@ -53,38 +55,6 @@ export default function PricingPage() {
       cta: "Go Regional",
       popular: true,
       color: "amber"
-    },
-    {
-      name: "Statewide",
-      monthlyPrice: "$799",
-      annualPrice: "$7,670",
-      description: "Complete access to the entire Florida market.",
-      features: [
-        "All 67 Florida Counties",
-        "Unlimited Access",
-        "Priority Phone Support",
-        "Custom Reports",
-        "Highway Proximity Analysis"
-      ],
-      cta: "Get Statewide",
-      popular: false,
-      color: "purple"
-    },
-    {
-      name: "Enterprise",
-      monthlyPrice: "$1,499",
-      annualPrice: "$14,390",
-      description: "Solution for large firms and API needs.",
-      features: [
-        "Multi-State Access + API",
-        "Dedicated Account Manager",
-        "White-label Reports",
-        "Early Access Features",
-        "Custom Integrations"
-      ],
-      cta: "Contact Sales",
-      popular: false,
-      color: "slate"
     }
   ];
 

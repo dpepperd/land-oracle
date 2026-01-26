@@ -39,7 +39,7 @@ export default function Header() {
           <Link href="/pricing" className="text-sm font-medium text-slate-300 hover:text-white hover:underline decoration-blue-500 underline-offset-4 transition-colors">
             Pricing
           </Link>
-          <Link href="/dashboard/settings" className="text-sm font-medium text-slate-300 hover:text-white hover:underline decoration-blue-500 underline-offset-4 transition-colors">
+          <Link href="/territories" className="text-sm font-medium text-slate-300 hover:text-white hover:underline decoration-blue-500 underline-offset-4 transition-colors">
             Territories
           </Link>
           <Link href="/about" className="text-sm font-medium text-slate-300 hover:text-white hover:underline decoration-blue-500 underline-offset-4 transition-colors">
