@@ -14,7 +14,7 @@ export default function Footer() {
               LandOracle.ai
             </h3>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Advanced land parcel analysis and spatial intelligence for modern real estate professionals.
+              Land intelligence that helps you understand parcels faster and avoid costly surprises.
             </p>
             <div className="flex space-x-4 pt-2">
               <Link href="#" className="text-zinc-500 hover:text-blue-600 transition-colors">
