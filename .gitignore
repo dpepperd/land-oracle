@@ -1,14 +1,35 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring# System & Logs
+*.log
+*.zip
+.DS_Store
+node_modules/
+.next/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
+# Environment
+.env
+.env.local
+
+# Scripts & dumps
+*.csv
+*.sql
+scripts/
+!scripts/migrate-user-usage.js
+!scripts/init-pricing-db.js
+!scripts/db-schema.sql
+
+# Temp
+land-oracle-patches/
+land-oracle-fixed/
+rn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# dependencies
+/.pnp
+.pnp.*
+.yarn/*
 
 # testing
 /coverage
@@ -38,4 +59,31 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+route_*.ts
 next-env.d.ts
+
+# Temporary Scripts & Logs
+check_*.js
+debug_*.js
+debug_*.ts
+test_*.js
+fix_*.js
+inspect_*.js
+add_*_column.js
+setup_*.js
+calc_*.js
+optimize_*.js
+run_*.js
+backfill_*.js
+browser_test.js
+verify_*.txt
+verify_*.js
+FDOT_data/
+*.md
+!README.md
+!DEPLOYMENT.md
+!.agent/
+!app/
+!components/
+!lib/
+!public/

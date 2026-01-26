@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -12,15 +13,55 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Semantic Theme Variables */
+:root {
+  /* LIGHT MODE: Professional Blue Tint (Darker) */
+  --background: #dbeafe; /* Blue-100 (More visible blue) */
+  --foreground: #1e3a8a; /* Deep Blue Text (Blue-900) */
+  
+  --bg-sidebar: #ffffff;  /* Pure White for contrast */
+  --bg-card: #ffffff;     /* Pure White cards */
+  --bg-input: #ffffff;    
+  
+  --text-primary: #172554; /* Blue-950 */
+  --text-secondary: #475569; /* Slate-600 */
+  
+  --border-color: #bfdbfe; /* Blue-200 */
+  
+  --map-bg: #e2e8f0; 
+}
+
+.dark {
+  /* DARK MODE: Deep Navy/Auth */
+  --background: #020617; /* Slate-950 */
+  --foreground: #f8fafc; /* Slate-50 */
+  
+  --bg-sidebar: #0f172a; /* Slate-900 */
+  --bg-card: #1e293b;    /* Slate-800 */
+  --bg-input: #1e293b;   
+  
+  --text-primary: #f8fafc; 
+  --text-secondary: #94a3b8; 
+  
+  --border-color: #1e293b; 
+  
+  --map-bg: #020617; 
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Utility Classes for Components */
+.bg-theme-sidebar { background-color: var(--bg-sidebar); }
+.bg-theme-card { background-color: var(--bg-card); }
+.bg-theme-input { background-color: var(--bg-input); }
+
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+
+.border-theme { border-color: var(--border-color); }
+
+.map-container { background-color: var(--map-bg); }
