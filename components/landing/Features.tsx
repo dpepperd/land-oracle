@@ -54,8 +54,8 @@ export default function Features() {
               key={index}
               className="group relative overflow-hidden p-8 bg-white dark:bg-slate-800 rounded-2xl border border-zinc-200 dark:border-slate-700 shadow-sm hover:shadow-2xl hover:border-blue-500/50 transition-all duration-300"
             >
-              {/* Shimmer Overlay */}
-              <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-blue-500/10 dark:via-blue-400/10 to-transparent z-20 pointer-events-none" />
+              {/* Shimmer Overlay - Boosted for Visibility */}
+              <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer bg-gradient-to-r from-transparent via-white/20 dark:via-blue-400/30 to-transparent z-20 pointer-events-none" />
 
               <div className="relative z-10">
                 <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
