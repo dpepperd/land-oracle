@@ -3,16 +3,23 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { TIER_QUOTAS } from '@/lib/counties';
 
-export async function GET() {
+export async function GET(request: Request) {
   const { userId } = await auth();
+  const { searchParams } = new URL(request.url);
+  const simulate = searchParams.get('simulate');
 
   // Allow Public Access for "Live Map" checking
   const client = await pool.connect();
   
   if (!userId) {
      try {
-        const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
-        const liveCounties = liveRes.rows.map(r => r.county);
+        // OPTIMIZATION: Use predefined list for guests to avoid heavy scan
+        // const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
+        // const liveCounties = liveRes.rows.map(r => r.county);
+        
+        const { LIVE_COUNTIES } = await import('@/lib/counties');
+        const liveCounties = LIVE_COUNTIES; 
+
         return NextResponse.json({
             tier: 'guest',
             role: 'guest',
@@ -28,7 +35,6 @@ export async function GET() {
      }
   }
 
-  // .. continued logic for authed users
   try {
     // Check user tier
     // Schema: id, clerk_id, subscription_tier
@@ -78,11 +84,26 @@ export async function GET() {
     
     const quota = TIER_QUOTAS[tier as keyof typeof TIER_QUOTAS] || 0;
 
-    // ---------------------------------------------------------
-    // AUTOMATION: Fetch "Live" counties from DB
-    // ---------------------------------------------------------
-    const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
-    const liveCounties = liveRes.rows.map(r => r.county);
+    // AUTOMATION: Use static list to prevent timeout on large datasets
+    // const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
+    // const liveCounties = liveRes.rows.map(r => r.county);
+    const { LIVE_COUNTIES } = await import('@/lib/counties');
+    const liveCounties = LIVE_COUNTIES;
+
+    // --- SIMULATION MODE ---
+    if (user?.role === 'admin' && simulate) {
+        const simTier = simulate as keyof typeof TIER_QUOTAS;
+        const simQuota = TIER_QUOTAS[simTier] || 1;
+        return NextResponse.json({
+            tier: simulate,
+            role: 'admin', // Keep role but simulate tier
+            quota: simQuota,
+            used: 0,
+            selected: [], // Empty selection for testing
+            liveCounties,
+            isSimulation: true
+        });
+    }
 
     return NextResponse.json({
       tier,
@@ -90,7 +111,7 @@ export async function GET() {
       quota,
       used: selectedCounties.length, // Can be > quota if admin
       selected: selectedCounties,
-      liveCounties // New Field
+      liveCounties 
     });
   } catch (error) {
     console.error('Error fetching user counties:', error);

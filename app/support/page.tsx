@@ -2,8 +2,44 @@
 
 import Header from "@/components/dashboard/Header";
 import Footer from "@/components/Footer";
-import { BookOpen, AlertTriangle, Lightbulb, MousePointer, Filter, Layers, FileText, HelpCircle, Eye, EyeOff, Trash2, ZoomIn, ZoomOut, X } from "lucide-react";
+import { BookOpen, AlertTriangle, Lightbulb, MousePointer, Filter, Layers, FileText, HelpCircle, Eye, EyeOff, Trash2, ZoomIn, ZoomOut, X, CreditCard, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
+
+function ManageSubscriptionButton() {
+    const [loading, setLoading] = useState(false);
+    const { isSignedIn } = useUser();
+
+    if (!isSignedIn) return null;
+
+    const handleManage = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/billing/portal', { method: 'POST' });
+            if (res.ok) {
+                const { url } = await res.json();
+                window.location.href = url;
+            } else {
+                alert("Could not access billing portal. Do you have an active subscription?");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error accessing portal.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <button 
+            onClick={handleManage}
+            disabled={loading}
+            className="whitespace-nowrap px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+        >
+            {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Manage Subscription'}
+        </button>
+    );
+}
 
 export default function SupportPage() {
   const [activeImage, setActiveImage] = useState<string | null>(null);
@@ -39,9 +75,22 @@ export default function SupportPage() {
                 <BookOpen size={14} /> Documentation v1.1
              </span>
              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">Land Oracle AI User Guide</h1>
-             <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+             <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
                Understand land faster, with less friction and fewer blind spots.
              </p>
+
+              {/* Account Management CTA */}
+              <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+                  <div>
+                      <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
+                          <CreditCard size={20} className="text-blue-400" /> Subscription & Billing
+                      </h3>
+                      <p className="text-slate-300 text-sm">
+                          Use the secure portal to update payment methods, download invoices, or cancel your subscription.
+                      </p>
+                  </div>
+                  <ManageSubscriptionButton />
+              </div>
            </div>
 
            {/* 1. What Land Oracle AI Is */}

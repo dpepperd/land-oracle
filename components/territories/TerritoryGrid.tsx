@@ -1,6 +1,6 @@
 "use client";
 
-import { FLORIDA_COUNTIES } from "@/lib/counties";
+import { FLORIDA_COUNTIES, FLORIDA_REGIONS } from "@/lib/counties";
 import { Check, Lock, Loader2, AlertCircle, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -8,12 +8,21 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import CheckoutModal from "@/components/paywall/CheckoutModal"; // Import Modal
 
-export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boolean }) {
+export default function TerritoryGrid({ 
+    isSidebar = false,
+    externalSelected,
+    onSelectionChange
+}: { 
+    isSidebar?: boolean;
+    externalSelected?: string[];
+    onSelectionChange?: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   
   const [userData, setUserData] = useState<{
     tier: string;
+    role?: string;
     quota: number;
     used: number;
     selected: string[];
@@ -25,7 +34,13 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
   
   // Checkout State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [stagedCounties, setStagedCounties] = useState<string[]>([]);
+  
+  // Internal fallback state (uncontrolled mode)
+  const [internalSelected, setInternalSelected] = useState<string[]>([]);
+  
+  // Resolve controlled vs uncontrolled
+  const stagedCounties = externalSelected !== undefined ? externalSelected : internalSelected;
+  const setStagedCounties = onSelectionChange || setInternalSelected;
 
   useEffect(() => {
     if (isLoaded) {
@@ -41,9 +56,11 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
     }
   }, [userData]);
 
-  const fetchCounties = async () => {
+
+  const fetchCounties = async (simTier?: string) => {
     try {
-      const res = await fetch('/api/user/counties');
+      const url = simTier ? `/api/user/counties?simulate=${simTier}` : '/api/user/counties';
+      const res = await fetch(url);
       if (res.ok) {
         setUserData(await res.json());
       }
@@ -142,6 +159,26 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
                 </Link>
               </>
             )}
+
+            {/* ADMIN CONTROLS */}
+            {userData?.role === 'admin' && (
+                <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-slate-700">
+                    <label className="block text-xs font-semibold text-zinc-500 mb-1">ADMIN VIEW AS:</label>
+                    <select 
+                        className="w-full text-xs p-1.5 rounded border border-zinc-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-foreground"
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setLoading(true);
+                            fetchCounties(val || undefined);
+                        }}
+                    >
+                        <option value="" className="text-black dark:text-white">My View (Enterprise)</option>
+                        <option value="scout" className="text-black dark:text-white">Scout (Free/1)</option>
+                        <option value="local" className="text-black dark:text-white">Local (3)</option>
+                        <option value="regional" className="text-black dark:text-white">Regional (15)</option>
+                    </select>
+                </div>
+            )}
           </div>
           
         {/* Checkout Button (Sticky Bottom or Inline) */}
@@ -152,67 +189,103 @@ export default function TerritoryGrid({ isSidebar = false }: { isSidebar?: boole
                     className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-600/20 font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
                 >
                     <ShoppingCart className="w-5 h-5" />
-                    Review & Checkout ({stagedCounties.length} Selected)
+                    Review Selection ({stagedCounties.length} Total)
                 </button>
                 <div className="text-center mt-2 text-xs text-slate-500">
-                    Includes access to {stagedCounties.length} counties
+                    Modifying your territory coverage
                 </div>
             </div>
         )}
 
       </div>
 
-      {/* The Grid: 2 columns if sidebar, else responsive 6 */}
-      <div className={`grid gap-2 mb-20 ${isSidebar ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}`}>
-        {FLORIDA_COUNTIES.map(county => {
-          const isSelected = stagedCounties.includes(county);
-          const isLive = LIVE_COUNTIES.includes(county);
-          const isProcessing = processing === county; 
-          const count = parcelCounts[county];
+      {/* Grouped Grid */}
+      <div className="space-y-8 mb-20">
+        {Object.entries(FLORIDA_REGIONS).map(([region, counties]) => (
+            <div key={region}>
+                <div className="flex items-center justify-between mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                        {region}
+                    </h3>
+                    <button
+                        onClick={() => {
+                            const allSelected = counties.every(c => stagedCounties.includes(c));
+                            if (allSelected) {
+                                // Deselect All
+                                setStagedCounties(prev => prev.filter(c => !counties.includes(c)));
+                            } else {
+                                // Select All (Union)
+                                setStagedCounties(prev => [...new Set([...prev, ...counties])]);
+                            }
+                        }}
+                        className={`
+                            px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105
+                            ${counties.every(c => stagedCounties.includes(c)) 
+                                ? 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-slate-700 dark:text-slate-200' 
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20'
+                            }
+                        `}
+                    >
+                        {counties.every(c => stagedCounties.includes(c)) ? "Deselect Region" : "Select Region"}
+                    </button>
+                </div>
+                <div className={`grid gap-2 ${isSidebar ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}`}>
+                    {counties.map(county => {
+                    const isSelected = stagedCounties.includes(county);
+                    const isLive = LIVE_COUNTIES.includes(county);
+                    const isProcessing = processing === county; 
+                    const count = parcelCounts[county];
 
-          return (
-            <button
-              key={county}
-              onClick={() => toggleCounty(county)}
-              className={`
-                relative p-3 rounded-lg text-left transition-all duration-200 border flex items-center justify-between group
-                ${isSelected 
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                  : 'bg-white dark:bg-slate-800 border-zinc-200 dark:border-slate-700 hover:border-blue-400'
-                }
-                cursor-pointer hover:shadow-sm
-              `}
-            >
-              <div className="flex flex-col">
-                <span className={`font-semibold text-sm ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-foreground'}`}>
-                  {county}
-                </span>
-                 <div className="text-[10px] mt-0.5">
-                {isLive ? (
-                   <div className="flex flex-col">
-                     <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium whitespace-nowrap">
-                       <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                       Live
-                     </span>
-                     {count && (
-                        <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[9px]">
-                            {formatCount(count)}
-                        </span>
-                     )}
-                   </div>
-                ) : (
-                  <span className="text-[var(--text-secondary)] italic">
-                     {isSignedIn ? "Soon" : "Check"}
-                  </span>
-                )}
-              </div>
-              </div>
-             
-              {isSelected && <Check className="w-4 h-4 text-blue-600" />}
-              {isProcessing && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
-            </button>
-          );
-        })}
+
+                    const isOwned = userData?.selected.includes(county) || false;
+
+                    return (
+                        <button
+                        key={county}
+                        onClick={() => toggleCounty(county)}
+                        className={`
+                            relative p-5 rounded-xl text-left transition-all duration-200 border flex items-center justify-between group
+                            ${isSelected 
+                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 ring-1 ring-blue-500/20' 
+                            : 'bg-white dark:bg-slate-800 border-zinc-200 dark:border-slate-700 hover:border-blue-400'
+                            }
+                            cursor-pointer hover:shadow-md h-full
+                        `}
+                        >
+                        <div className="flex flex-col gap-1">
+                            <span className={`text-lg font-bold ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-foreground'}`}>
+                            {county}
+                            </span>
+                            <div className="flex flex-col gap-0.5 mt-1">
+                            {isLive ? (
+                                <>
+                                <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium whitespace-nowrap text-xs">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                    LIVE
+                                </span>
+                                {count && (
+                                    <span className="text-zinc-500 dark:text-zinc-400 font-mono text-xs font-semibold">
+                                        {formatCount(count)} Properties
+                                    </span>
+                                )}
+                                </>
+                            ) : (
+                                <span className="text-zinc-400 dark:text-zinc-500 italic text-xs">
+                                    {isSignedIn ? "Coming Soon" : "Check Availability"}
+                                </span>
+                            )}
+                        </div>
+                        </div>
+                        
+                        {isSelected && <Check className="w-6 h-6 text-blue-600" strokeWidth={3} />}
+                        {isProcessing && <Loader2 className="w-6 h-6 animate-spin text-blue-600" />}
+                        </button>
+                    );
+                    })}
+
+                </div>
+            </div>
+        ))}
       </div>
 
       {/* Checkout Modal */}

@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { Loader2, ShieldCheck, X } from "lucide-react";
+import { FLORIDA_REGIONS } from "@/lib/counties";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -16,27 +17,59 @@ export default function CheckoutModal({ isOpen, onClose, selectedCounties }: Che
 
   // Calculate Plan & Add-ons
   const plan = useMemo(() => {
+    let remaining = [...selectedCounties];
+    let regionsFound: string[] = [];
+
+    // 1. Detect Full Regions
+    Object.entries(FLORIDA_REGIONS).forEach(([regionName, regionCounties]: [string, any]) => {
+        const hasAll = regionCounties.every((rc: string) => remaining.includes(rc));
+        if (hasAll) {
+            regionsFound.push(regionName);
+            // Remove these from remaining to avoid double counting
+            remaining = remaining.filter(c => !regionCounties.includes(c));
+        }
+    });
+
+    const extraCount = remaining.length;
+
+    // SCENARIO A: Regional Plan(s) Active
+    if (regionsFound.length > 0) {
+        const basePrice = 699 * regionsFound.length;
+        const extraPrice = extraCount * 97;
+        
+        let name = `${regionsFound.join(' & ')} Region${regionsFound.length > 1 ? 's' : ''}`;
+        if (extraCount > 0) name += ` + ${extraCount} Extra`;
+
+        return {
+            name,
+            basePrice,
+            addons: extraCount,
+            total: basePrice + extraPrice,
+            type: 'regional', // We might need a flexible stripe ID or meta
+            limit: 100 // High limit
+        };
+    }
+
+    // SCENARIO B: Standard Counting (No Full Regions)
     const count = selectedCounties.length;
     
     // Scout (1 County)
     if (count === 1) return { name: 'Scout Plan', basePrice: 199, addons: 0, total: 199, type: 'scout', limit: 1 };
     
-    // Scout + 1 Addon (2 Counties)
+    // Scout + 1 Addon (2 Counties) -> $199 + $97 = $296
     if (count === 2) return { name: 'Scout Plan + 1 Add-on', basePrice: 199, addons: 1, total: 296, type: 'scout_plus', limit: 2 };
     
     // Local (3 Counties)
     if (count === 3) return { name: 'Local Plan', basePrice: 349, addons: 0, total: 349, type: 'local', limit: 3 };
 
     // Local + Addons (>3 Counties)
-    // Assuming Regional logic is explicit selection (15+ or via Region toggle), 
-    // but for simple county picking, we scale Local.
     if (count > 3) {
         const extra = count - 3;
         const total = 349 + (extra * 97);
         return { name: `Local Plan + ${extra} Add-on${extra > 1 ? 's' : ''}`, basePrice: 349, addons: extra, total: total, type: 'local_plus', limit: count };
     }
 
-    return { name: 'Local Plan', basePrice: 349, addons: 0, total: 349, type: 'local', limit: 3 };
+    return { name: 'Select a Territory', basePrice: 0, addons: 0, total: 0, type: 'none', limit: 0 };
   }, [selectedCounties]);
 
   const handleCheckout = async () => {

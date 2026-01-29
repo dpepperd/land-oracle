@@ -11,7 +11,7 @@ import Map, {
   GeolocateControl,
   MapRef
 } from 'react-map-gl/mapbox';
-import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff } from 'lucide-react';
+import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Database } from 'lucide-react';
 
 
 import EditParcelModal from './EditParcelModal';
@@ -20,6 +20,27 @@ import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
 import { useTheme } from 'next-themes';
 import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Traffic Styles
+const trafficLayer: any = {
+  id: 'traffic-lines',
+  type: 'line',
+  paint: {
+    'line-width': 3,
+    'line-color': ['get', 'color'],
+    'line-opacity': 0.8
+  }
+};
+
+const truckLayer: any = {
+  id: 'truck-lines',
+  type: 'line',
+  paint: {
+    'line-width': 3,
+    'line-color': ['get', 'truck_color'],
+    'line-opacity': 0.8
+  }
+};
 
 // Map Styles
 const MAP_STYLES = {
@@ -160,6 +181,47 @@ export default function MapView({
   const { theme } = useTheme();
   const [activeStyle, setActiveStyle] = useState<string>('outdoors');
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
+  
+  // Traffic State (New)
+  const [showTraffic, setShowTraffic] = useState(false);
+  const [showTrucks, setShowTrucks] = useState(false); // New
+  const [trafficData, setTrafficData] = useState<any>({ type: 'FeatureCollection', features: [] });
+  const [dataLayersOpen, setDataLayersOpen] = useState(false);
+
+  const fetchTraffic = async (bounds: number[]) => {
+      if (!showTraffic && !showTrucks) return;
+      try {
+          const [minLng, minLat, maxLng, maxLat] = bounds;
+          const query = new URLSearchParams({
+              minLat: minLat.toString(),
+              maxLat: maxLat.toString(),
+              minLon: minLng.toString(),
+              maxLon: maxLng.toString()
+          });
+          const res = await fetch(`/api/layers/traffic?${query}`);
+          const data = await res.json();
+          setTrafficData(data);
+      } catch (e) {
+          console.error("Traffic fetch failed", e);
+      }
+  };
+
+  useEffect(() => {
+    if ((showTraffic || showTrucks) && mapRef.current) {
+         const bounds = mapRef.current.getBounds();
+         if (bounds) {
+             fetchTraffic(bounds.toArray().flat());
+         }
+    }
+  }, [showTraffic, showTrucks]);
+  
+  // Debounce traffic fetch on move
+  const onMoveEnd = (e: any) => {
+      if (showTraffic || showTrucks) {
+          const bounds = e.target.getBounds().toArray().flat();
+          fetchTraffic(bounds);
+      }
+  };
   const [highways, setHighways] = useState<any>(null);
   const [showHighways, setShowHighways] = useState(true);
   const [showBoundaries, setShowBoundaries] = useState(true); // Default ON
@@ -668,22 +730,34 @@ export default function MapView({
            </div>
          </Popup>
         )}
+        {/* Traffic Source */}
+        {showTraffic && (
+            <Source id="traffic-source" type="geojson" data={trafficData}>
+                <Layer {...trafficLayer} />
+            </Source>
+        )}
+        {showTrucks && (
+            <Source id="truck-source" type="geojson" data={trafficData}>
+                <Layer {...truckLayer} />
+            </Source>
+        )}
       </Map>
 
-      {/* Style Switcher */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Style Switcher & Layers */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        {/* Base Map Style */}
         <div className="relative">
           <button
             onClick={() => setStyleMenuOpen(!styleMenuOpen)}
             className="bg-white dark:bg-slate-800 p-2 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 transition-colors flex items-center gap-2"
           >
             <Layers className="w-5 h-5" />
-            <span className="text-sm font-medium hidden sm:inline">Map Layers</span>
+            <span className="text-sm font-medium hidden sm:inline">Map Style</span>
           </button>
           
           {styleMenuOpen && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden py-1">
-              {Object.entries(MAP_STYLES).map(([key, style]) => (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden py-1 z-20">
+               {Object.entries(MAP_STYLES).map(([key, style]) => (
                 <button
                   key={key}
                   onClick={() => {
@@ -699,57 +773,82 @@ export default function MapView({
                   {style.label}
                 </button>
               ))}
-
-              <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
-                <label className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">
-                   <input 
-                     type="checkbox"
-                     checked={showHighways}
-                     onChange={(e) => setShowHighways(e.target.checked)}
-                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                   />
-                   <span className="text-sm text-gray-700 dark:text-gray-300">Show Highways</span>
-                </label>
-                <label className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">
-                   <input 
-                     type="checkbox"
-                     checked={showBoundaries}
-                     onChange={(e) => setShowBoundaries(e.target.checked)}
-                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                   />
-                   <span className="text-sm text-gray-700 dark:text-gray-300">County Boundaries</span>
-                </label>
-              </div>
-
-              <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
-                 <div className="px-4 py-2">
-                    <span className="block text-xs font-semibold text-gray-500 mb-1">Scale Units</span>
-                    <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-1">
-                        <button
-                          onClick={() => setScaleUnit('imperial')}
-                          className={`flex-1 text-xs py-1 rounded transition-colors ${
-                              scaleUnit === 'imperial' 
-                              ? 'bg-white dark:bg-slate-600 shadow text-blue-600 dark:text-blue-400 font-medium' 
-                              : 'text-gray-500 hover:text-gray-700'
-                          }`}
-                        >
-                            Miles
-                        </button>
-                        <button
-                          onClick={() => setScaleUnit('metric')}
-                          className={`flex-1 text-xs py-1 rounded transition-colors ${
-                              scaleUnit === 'metric' 
-                              ? 'bg-white dark:bg-slate-600 shadow text-blue-600 dark:text-blue-400 font-medium' 
-                              : 'text-gray-500 hover:text-gray-700'
-                          }`}
-                        >
-                            Metric
-                        </button>
-                    </div>
-                 </div>
-              </div>
             </div>
           )}
+        </div>
+
+        {/* Data Layers (Second Dropdown) */}
+        <div className="relative">
+            <button
+                onClick={() => setDataLayersOpen(!dataLayersOpen)}
+                className="bg-white dark:bg-slate-800 p-2 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 transition-colors flex items-center gap-2"
+            >
+                <Database className="w-5 h-5" />
+                <span className="text-sm font-medium hidden sm:inline">Data Layers</span>
+            </button>
+
+            {dataLayersOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-md shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden py-1 z-20">
+                     <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-slate-700/50 border-b border-gray-100 dark:border-gray-700">
+                        Map Overlays
+                     </div>
+                     
+                     <label className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                        <div className="relative flex items-center">
+                            <input 
+                                type="checkbox"
+                                checked={showBoundaries}
+                                onChange={(e) => setShowBoundaries(e.target.checked)}
+                                className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-200">County Boundaries</span>
+                     </label>
+
+                     <label className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                        <div className="relative flex items-center">
+                             <input 
+                                type="checkbox"
+                                checked={showHighways}
+                                onChange={(e) => setShowHighways(e.target.checked)}
+                                className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                             />
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-200">Major Highways</span>
+                     </label>
+
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                      <label className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                        <div className="relative flex items-center">
+                             <input 
+                                type="checkbox"
+                                checked={showTraffic}
+                                onChange={(e) => setShowTraffic(e.target.checked)}
+                                className="peer h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                             />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm text-gray-700 dark:text-gray-200">Traffic (AADT)</span>
+                            <span className="text-[10px] text-gray-400">Zoom in to view</span>
+                        </div>
+                     </label>
+
+                     <label className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                        <div className="relative flex items-center">
+                             <input 
+                                type="checkbox"
+                                checked={showTrucks}
+                                onChange={(e) => setShowTrucks(e.target.checked)}
+                                className="peer h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+                             />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm text-gray-700 dark:text-gray-200">Truck Volume</span>
+                            <span className="text-[10px] text-gray-400">Zoom in to view</span>
+                        </div>
+                     </label>
+                </div>
+            )}
         </div>
       </div>
       
@@ -874,7 +973,7 @@ export default function MapView({
        </div>
 
       {/* Measure Tool Control - Keep separate */}
-      <div className="absolute top-26 right-3 z-10 flex flex-col gap-2">
+      <div className="absolute top-48 right-3 z-10 flex flex-col gap-2">
          <button
             onClick={() => {
                 setIsMeasureMode(!isMeasureMode);

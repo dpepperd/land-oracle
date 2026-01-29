@@ -87,24 +87,24 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 max-w-[1400px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
           {tiers.map((tier) => (
             <div 
               key={tier.name}
-              className={`relative flex flex-col p-6 rounded-2xl border transition-all duration-300 ${
+              className={`relative flex flex-col p-8 rounded-3xl border transition-all duration-300 ${
                 tier.popular 
                   ? 'bg-card border-amber-400 dark:border-amber-500 shadow-2xl scale-105 z-10' 
-                  : 'bg-card border-border shadow-md hover:shadow-lg'
+                  : 'bg-card border-border shadow-lg hover:shadow-xl hover:-translate-y-1'
               }`}
             >
               {tier.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white px-3 py-0.5 rounded-full text-xs font-bold shadow-md whitespace-nowrap">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-md whitespace-nowrap">
                   MOST POPULAR
                 </div>
               )}
 
-              <div className="mb-4">
-                <h3 className={`text-lg font-bold mb-1 ${
+              <div className="mb-6">
+                <h3 className={`text-xl font-bold mb-2 ${
                     tier.color === 'blue' ? 'text-blue-600' :
                     tier.color === 'amber' ? 'text-amber-600' :
                     tier.color === 'purple' ? 'text-purple-600' : 
@@ -113,32 +113,32 @@ export default function PricingPage() {
                   {tier.name}
                 </h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-foreground">
+                  <span className="text-4xl font-extrabold text-foreground">
                     {billingCycle === 'monthly' ? tier.monthlyPrice : tier.annualPrice}
                   </span>
-                  <span className="text-muted-foreground text-sm font-medium">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                  <span className="text-muted-foreground font-medium">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground min-h-[32px]">
+                <p className="mt-3 text-sm text-muted-foreground min-h-[40px]">
                   {tier.description}
                 </p>
               </div>
 
-              <div className="flex-1 space-y-3 mb-6">
+              <div className="flex-1 space-y-4 mb-8">
                 {tier.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-2">
-                    <Check className={`w-4 h-4 shrink-0 ${
+                  <div key={feature} className="flex items-start gap-3">
+                    <Check className={`w-5 h-5 shrink-0 ${
                          tier.color === 'blue' ? 'text-blue-500' :
                          tier.color === 'amber' ? 'text-amber-500' :
                          tier.color === 'purple' ? 'text-purple-500' : 'text-gray-400'
                     }`} />
-                    <span className="text-xs text-foreground/80 leading-tight">{feature}</span>
+                    <span className="text-sm text-foreground/80 leading-snug">{feature}</span>
                   </div>
                 ))}
               </div>
 
-              <button className={`w-full py-2.5 px-3 rounded-lg font-bold text-sm transition-all cursor-pointer ${
+              <button className={`w-full py-3.5 px-4 rounded-xl font-bold text-base transition-all cursor-pointer ${
                 tier.popular
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg hover:shadow-amber-500/30'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg hover:shadow-amber-500/30 ring-4 ring-amber-500/20'
                   : 'bg-foreground text-background hover:opacity-90'
               }`}>
                 {tier.cta}

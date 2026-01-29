@@ -11,7 +11,7 @@ const FL_GEOJSON = "https://raw.githubusercontent.com/danielcs88/fl_geo_json/mas
 
 type ViewMode = 'live' | 'regions';
 
-export default function CoverageMap() {
+export default function CoverageMap({ selectedCounties = [] }: { selectedCounties?: string[] }) {
   const { theme } = useTheme();
   const [liveCounties, setLiveCounties] = useState<string[]>([]);
   const [hoverInfo, setHoverInfo] = useState<any>(null);
@@ -38,20 +38,34 @@ export default function CoverageMap() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Normalize selected counties to match GeoJSON (Saint Johns -> St. Johns)
+  const normalizedSelected = useMemo(() => {
+    return selectedCounties.map(c => {
+         if (c.toLowerCase() === 'st johns' || c.toLowerCase() === 'saint johns') return 'St. Johns';
+         if (c.toLowerCase() === 'st lucie' || c.toLowerCase() === 'saint lucie') return 'St. Lucie';
+         if (c.toLowerCase() === 'desoto') return 'DeSoto';
+         return c;
+    });
+  }, [selectedCounties]);
+
   // Compute Fill Layer paint logic
   const fillLayer: any = useMemo(() => {
     let fillColorExpression: any[];
 
+    // SELECTION OVERRIDE: If selected in UI, highlight Blue
+    const selectionCheck = ['in', ['get', 'NAME'], ['literal', normalizedSelected]];
+    const selectedColor = '#2563eb'; // Blue-600
+
     if (viewMode === 'live') {
       fillColorExpression = [
         'case',
+        selectionCheck, selectedColor, // Selected Priority
         ['in', ['get', 'NAME'], ['literal', liveCounties]],
         '#22c55e', // Green for Live
         '#94a3b8'  // Slate-400 for Offline
       ];
     } else {
       // Regions Mode
-      // Match expression: ['match', ['get', 'NAME'], 'County1', 'Color1', 'County2', 'Color2', ... 'DefaultColor']
       const matchArgs: any[] = ['match', ['get', 'NAME']];
       
       Object.entries(COUNTY_REGIONS).forEach(([county, region]) => {
@@ -62,7 +76,11 @@ export default function CoverageMap() {
       // Default fallback (Gray)
       matchArgs.push('#94a3b8');
       
-      fillColorExpression = matchArgs;
+      fillColorExpression = [
+          'case',
+          selectionCheck, selectedColor, // Selected Priority
+          matchArgs // Else use region color
+      ];
     }
 
     return {
@@ -73,13 +91,13 @@ export default function CoverageMap() {
         'fill-opacity': [
           'case',
           ['boolean', ['feature-state', 'hover'], false],
-          0.8,
-          0.5
+          0.9, // Hover opacity
+          ['case', selectionCheck, 0.9, 0.5] // Selected opacity=0.9, else 0.5
         ],
         'fill-outline-color': '#ffffff'
       }
     };
-  }, [liveCounties, viewMode]);
+  }, [liveCounties, viewMode, selectedCounties]);
 
   const onHover = (event: any) => {
     const feature = event.features && event.features[0];
