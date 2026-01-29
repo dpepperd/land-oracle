@@ -828,7 +828,7 @@ export default function MapView({
                              />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm text-gray-700 dark:text-gray-200">Traffic (AADT)</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-200">Average Daily Traffic</span>
                             <span className="text-[10px] text-gray-400">Zoom in to view</span>
                         </div>
                      </label>
