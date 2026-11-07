@@ -239,6 +239,11 @@ export default function MapView({
               maxLon: maxLng.toString()
           });
           const res = await fetch(`/api/map/flood?${query}`);
+          if (!res.ok) {
+              // Zoomed out too far (400) or server error: show nothing rather than an error body
+              setFloodData({ type: 'FeatureCollection', features: [] });
+              return;
+          }
           const data = await res.json();
           setFloodData(data);
       } catch (e) {

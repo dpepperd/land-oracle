@@ -56,6 +56,25 @@ export const LIVE_COUNTIES = [
 
 
 
+/**
+ * Canonical county key for comparisons: lowercase, trimmed, whitespace collapsed,
+ * and "St." normalised to "Saint" (the DB stores "Saint Lucie"/"Saint Johns").
+ * Use for EXACT matching of county names (entitlements, SQL filters).
+ */
+export function canonCounty(name: string): string {
+  return String(name ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^st\.?\s+/, 'saint ');
+}
+
+/** Requested counties the user is entitled to, by exact (canonical) match. */
+export function filterAllowedCounties(requested: string[], allowed: string[]): string[] {
+  const allow = new Set(allowed.map(canonCounty));
+  return requested.filter((c) => allow.has(canonCounty(c)));
+}
+
 export const FLORIDA_REGIONS = {
   "Panhandle": [
     "Escambia", "Santa Rosa", "Okaloosa", "Walton", "Holmes", "Washington", "Bay", 

@@ -2,10 +2,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import pool from '@/lib/db';
 
-const HARDCODED_ADMINS = [
-  'dpepperd@gmail.com',
-  'tatjanalovesfhrm@gmail.com'
-];
+import { isClerkAdmin } from '@/lib/admin';
 
 export async function requireBetaAccess() {
   const user = await currentUser();
@@ -16,8 +13,8 @@ export async function requireBetaAccess() {
 
   const email = user.emailAddresses[0]?.emailAddress;
   
-  // 1. Check Hardcoded List (Always allow Owners)
-  if (email && HARDCODED_ADMINS.includes(email)) {
+  // 1. Clerk publicMetadata.role / ADMIN_EMAILS (verified email) -> always allow
+  if (isClerkAdmin(user)) {
     return;
   }
 
@@ -53,9 +50,8 @@ export async function requireAdmin() {
     const user = await currentUser();
     if (!user) redirect('/sign-in');
     
-    // Check Hardcoded
-    const email = user.emailAddresses[0]?.emailAddress;
-    if (email && HARDCODED_ADMINS.includes(email)) return;
+    // Clerk publicMetadata.role / ADMIN_EMAILS (verified email)
+    if (isClerkAdmin(user)) return;
 
     // Check DB
     const client = await pool.connect();

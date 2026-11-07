@@ -4,7 +4,7 @@ import pool from '@/lib/db';
 import { searchSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { getEntitlements } from '@/lib/entitlements';
-import { LIVE_COUNTIES } from '@/lib/counties';
+import { LIVE_COUNTIES, canonCounty, filterAllowedCounties } from '@/lib/counties';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
 
     if (counties && counties.length > 0) {
         if (allowedCounties === 'all') finalCounties = counties;
-        else finalCounties = counties.filter(c => allowedCounties.some(ac => ac.includes(c) || c.includes(ac)));
+        else finalCounties = filterAllowedCounties(counties, allowedCounties);
     } else {
         if (allowedCounties === 'all') {
              // AUTO-ACCESS: Only default to ALL LIVE counties if specific filters are applied.
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
     if (finalCounties.length > 0) {
       // FIX: Case-insensitive match for County (DeSoto vs Desoto)
       conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
-      values.push(finalCounties.map(c => c.toLowerCase()));
+      values.push(finalCounties.map(canonCounty));
       valIdx++;
     } else {
        return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });

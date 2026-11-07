@@ -3,16 +3,43 @@ import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+// Cap the viewport so one request can't ask for the whole state.
+// 3 degrees (~330 km) is roughly zoom >= 9 on a wide screen.
+const MAX_SPAN_DEG = 3;
+
+type Bounds =
+  | { ok: true; minLat: number; maxLat: number; minLon: number; maxLon: number }
+  | { ok: false; error: string };
+
+function parseBounds(sp: URLSearchParams): Bounds {
+  const keys = ['minLat', 'maxLat', 'minLon', 'maxLon'] as const;
+  const v: Record<string, number> = {};
+  for (const k of keys) {
+    const raw = sp.get(k);
+    if (raw === null || raw.trim() === '') return { ok: false, error: 'Missing bounds' };
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return { ok: false, error: `Invalid ${k}` };
+    v[k] = n;
+  }
+  if (v.minLat >= v.maxLat || v.minLon >= v.maxLon) return { ok: false, error: 'Invalid bounds order' };
+  if (v.minLat < -90 || v.maxLat > 90 || v.minLon < -180 || v.maxLon > 180) {
+    return { ok: false, error: 'Bounds out of range' };
+  }
+  if (v.maxLat - v.minLat > MAX_SPAN_DEG || v.maxLon - v.minLon > MAX_SPAN_DEG) {
+    return { ok: false, error: `Bounds too large (max ${MAX_SPAN_DEG} degrees); zoom in` };
+  }
+  return { ok: true, minLat: v.minLat, maxLat: v.maxLat, minLon: v.minLon, maxLon: v.maxLon };
+}
+
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const minLat = searchParams.get('minLat');
-  const maxLat = searchParams.get('maxLat');
-  const minLon = searchParams.get('minLon');
-  const maxLon = searchParams.get('maxLon');
 
-  if (!minLat || !maxLat || !minLon || !maxLon) {
-    return NextResponse.json({ error: 'Missing bounds' }, { status: 400 });
+  const bounds = parseBounds(searchParams);
+  if (!bounds.ok) {
+    return NextResponse.json({ error: bounds.error }, { status: 400 });
   }
+  const { minLat, maxLat, minLon, maxLon } = bounds;
 
   const client = await pool.connect();
   try {
@@ -61,7 +88,7 @@ export async function GET(request: Request) {
     return NextResponse.json(geojson);
   } catch (error: any) {
     console.error('[FLOOD] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   } finally {
     client.release();
   }

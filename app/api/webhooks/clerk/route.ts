@@ -2,6 +2,7 @@ import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import pool from '@/lib/db'
+import { isAdminEmail } from '@/lib/admin'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -50,10 +51,17 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === 'user.created') {
-    const { id, email_addresses } = evt.data;
-    const email = email_addresses?.[0]?.email_address;
-    
-    const role = email === 'tatjanalovesfhrm@gmail.com' ? 'admin' : 'user';
+    const { id, email_addresses, primary_email_address_id, public_metadata } = evt.data;
+    const primary = email_addresses?.find((e) => e.id === primary_email_address_id) ?? email_addresses?.[0];
+    const email = primary?.email_address;
+    const emailVerified = primary?.verification?.status === 'verified';
+
+    // Admin = Clerk publicMetadata.role, or a VERIFIED email on ADMIN_EMAILS.
+    const role =
+      (public_metadata as Record<string, unknown> | undefined)?.role === 'admin' ||
+      (emailVerified && isAdminEmail(email))
+        ? 'admin'
+        : 'user';
     
     // Insert into DB
     const client = await pool.connect();
@@ -61,7 +69,7 @@ export async function POST(req: Request) {
         await client.query(`
             INSERT INTO users (clerk_id, email, subscription_tier, subscription_status, role)
             VALUES ($1, $2, 'demo', 'active', $3)
-            ON CONFLICT (clerk_id) DO UPDATE SET role = EXCLUDED.role WHERE users.email = 'tatjanalovesfhrm@gmail.com'
+            ON CONFLICT (clerk_id) DO UPDATE SET role = EXCLUDED.role WHERE EXCLUDED.role = 'admin'
         `, [id, email, role]);
         console.log(`User created: ${id} as ${role}`);
     } catch (e) {

@@ -2,15 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { TIER_QUOTAS } from '@/lib/counties';
+import { isClerkAdmin } from '@/lib/admin';
 
 export async function GET(request: Request) {
   const { userId } = await auth();
   const { searchParams } = new URL(request.url);
   const simulate = searchParams.get('simulate');
 
-  // Allow Public Access for "Live Map" checking
-  const client = await pool.connect();
-  
+  // Allow Public Access for "Live Map" checking (guests never touch the DB)
   if (!userId) {
      try {
         // OPTIMIZATION: Use predefined list for guests to avoid heavy scan
@@ -30,10 +29,10 @@ export async function GET(request: Request) {
         });
      } catch(e) {
         return new NextResponse("Error fetching live counties", { status: 500 });
-     } finally {
-        client.release();
      }
   }
+
+  const client = await pool.connect();
 
   try {
     // Check user tier
@@ -46,7 +45,7 @@ export async function GET(request: Request) {
         const clerkUser = await currentUser();
         const email = clerkUser?.emailAddresses[0]?.emailAddress || 'unknown@example.com';
         
-        const role = email === 'tatjanalovesfhrm@gmail.com' ? 'admin' : 'user';
+        const role = isClerkAdmin(clerkUser) ? 'admin' : 'user';
         
         await client.query(`
             INSERT INTO users (clerk_id, email, subscription_tier, role)

@@ -7,7 +7,6 @@ export async function POST(req: Request) {
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
   const { parcelId, note } = await req.json();
-  console.log(`[API] Saving note for ${parcelId} by ${userId}: "${note}"`); // DEBUG
   if (!parcelId) return new NextResponse("Parcel ID required", { status: 400 });
 
   const client = await pool.connect();

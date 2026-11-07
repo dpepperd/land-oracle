@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { exportSchema } from '@/lib/validation';
 import { z } from 'zod';
-import { LIVE_COUNTIES } from '@/lib/counties';
+import { LIVE_COUNTIES, canonCounty, filterAllowedCounties } from '@/lib/counties';
 
 // Helper to convert array of objects to CSV string
 function toCSV(data: any[]) {
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
     let finalCounties: string[] = [];
     if (counties && counties.length > 0) {
         if (allowedCounties === 'all') finalCounties = counties;
-        else finalCounties = counties.filter((c: string) => allowedCounties.some((ac: string) => ac.includes(c) || c.includes(ac)));
+        else finalCounties = filterAllowedCounties(counties, allowedCounties);
     } else {
         if (allowedCounties === 'all') {
              if (conditions.length > 1) {
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
 
     if (finalCounties.length > 0) {
       conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
-      values.push(finalCounties.map((c: string) => c.toLowerCase()));
+      values.push(finalCounties.map(canonCounty));
       valIdx++;
     } else {
         // Safe fail return empty CSV
