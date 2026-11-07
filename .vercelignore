@@ -1,0 +1,39 @@
+# Vercel Ignore
+dump.sql
+*.sql
+*.zip
+*.log
+*.txt
+*.csv
+
+# Dependencies & Build
+node_modules/
+.next/
+.vercel/
+.git/
+
+# Data & Temp
+FDOT_data/
+land-oracle*
+audit_*
+build_log.txt
+
+# Scripts
+scripts/
+check_*.js
+debug_*.js
+verify_*.js
+test_*.js
+fix_*.js
+inspect_*.js
+add_*_column.js
+setup_*.js
+calc_*.js
+optimize_*.js
+run_*.js
+backfill_*.js
+browser_test.js
+
+# Environment
+.env
+.env.local

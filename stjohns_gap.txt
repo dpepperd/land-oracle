@@ -1,0 +1,12 @@
+🧐 Analyzing Gap for St. Johns...
+📂 Source: D:\LandOracle\Florida\Saint Johns\gis\stjohns_2025par.shp
+
+📊 Analysis Results (St. Johns):
+Total Records in SHP:   210,031
+Records with ID:        152,638
+--------------------------------
+❌ Missing Parcel ID:    0 (Likely Skipped)
+   ↳ Of which are ROW/Gov: 0
+🔁 Duplicates (Merged):  57,393
+--------------------------------
+📉 Explainable Gap:      57,393

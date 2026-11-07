@@ -1,0 +1,61 @@
+Total counties with deltas: 60
+Gadsden              | Gap: 9567   | SHP: 27567   | 34.7%
+Levy                 | Gap: 14856  | SHP: 48411   | 30.7%
+Saint Johns          | Gap: 58251  | SHP: 210031  | 27.7%
+Wakulla              | Gap: 6786   | SHP: 26763   | 25.4%
+Leon                 | Gap: 24934  | SHP: 112434  | 22.2%
+Collier              | Gap: 73970  | SHP: 365547  | 20.2%
+Hamilton             | Gap: 2247   | SHP: 14451   | 15.5%
+Madison              | Gap: 1495   | SHP: 16484   | 9.1%
+Gilchrist            | Gap: 1376   | SHP: 15437   | 8.9%
+Alachua              | Gap: 9637   | SHP: 118254  | 8.1%
+Liberty              | Gap: 518    | SHP: 6402    | 8.1%
+Jackson              | Gap: 3125   | SHP: 43014   | 7.3%
+Jefferson            | Gap: 833    | SHP: 12925   | 6.4%
+Bay                  | Gap: 7685   | SHP: 132771  | 5.8%
+Walton               | Gap: 5104   | SHP: 94108   | 5.4%
+Union                | Gap: 377    | SHP: 7337    | 5.1%
+Palm Beach           | Gap: 30373  | SHP: 688403  | 4.4%
+Charlotte            | Gap: 9418   | SHP: 231832  | 4.1%
+Calhoun              | Gap: 479    | SHP: 12097   | 4.0%
+Citrus               | Gap: 5177   | SHP: 147977  | 3.5%
+Lafayette            | Gap: 249    | SHP: 7482    | 3.3%
+Franklin             | Gap: 520    | SHP: 18697   | 2.8%
+Broward              | Gap: 21854  | SHP: 786580  | 2.8%
+Holmes               | Gap: 386    | SHP: 14893   | 2.6%
+Santa Rosa           | Gap: 2559   | SHP: 112193  | 2.3%
+Baker                | Gap: 296    | SHP: 13127   | 2.3%
+Desoto               | Gap: 417    | SHP: 20545   | 2.0%
+Hillsborough         | Gap: 9455   | SHP: 537289  | 1.8%
+Nassau               | Gap: 510    | SHP: 58070   | 0.9%
+Bradford             | Gap: 127    | SHP: 15798   | 0.8%
+Okaloosa             | Gap: 740    | SHP: 112558  | 0.7%
+Suwannee             | Gap: 192    | SHP: 32098   | 0.6%
+Lake                 | Gap: 1000   | SHP: 212312  | 0.5%
+Gulf                 | Gap: 62     | SHP: 18850   | 0.3%
+Taylor               | Gap: 55     | SHP: 18853   | 0.3%
+Columbia             | Gap: 92     | SHP: 37646   | 0.2%
+Pasco                | Gap: 501    | SHP: 314926  | 0.2%
+Orange               | Gap: 759    | SHP: 491705  | 0.2%
+Glades               | Gap: 16     | SHP: 11399   | 0.1%
+Marion               | Gap: 273    | SHP: 285288  | 0.1%
+Okeechobee           | Gap: 28     | SHP: 31667   | 0.1%
+Washington           | Gap: 38     | SHP: 43806   | 0.1%
+Pinellas             | Gap: 274    | SHP: 436312  | 0.1%
+Volusia              | Gap: 193    | SHP: 311745  | 0.1%
+Hardee               | Gap: 8      | SHP: 14748   | 0.1%
+Saint Lucie          | Gap: 90     | SHP: 188766  | 0.0%
+Flagler              | Gap: 41     | SHP: 86724   | 0.0%
+Manatee              | Gap: 101    | SHP: 224619  | 0.0%
+Dixie                | Gap: 6      | SHP: 16389   | 0.0%
+Escambia             | Gap: 53     | SHP: 162744  | 0.0%
+Hendry               | Gap: 7      | SHP: 35899   | 0.0%
+Sumter               | Gap: 18     | SHP: 99424   | 0.0%
+Sarasota             | Gap: 55     | SHP: 304963  | 0.0%
+Martin               | Gap: 12     | SHP: 96886   | 0.0%
+Highlands            | Gap: 5      | SHP: 113113  | 0.0%
+Hernando             | Gap: 4      | SHP: 118528  | 0.0%
+Lee                  | Gap: 17     | SHP: 559141  | 0.0%
+Monroe               | Gap: 2      | SHP: 89046   | 0.0%
+Putnam               | Gap: 2      | SHP: 97862   | 0.0%
+Brevard              | Gap: 1      | SHP: 349743  | 0.0%

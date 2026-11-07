@@ -1,0 +1,10 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+Hamilton    : DB Count = 12857
+Madison     : DB Count = 15967
+Gilchrist   : DB Count = 14062
+Liberty     : DB Count = 5885
+Jackson     : DB Count = 39889
+Jefferson   : DB Count = 12092
+Bay         : DB Count = 128918
+Walton      : DB Count = 89004
+Union       : DB Count = 6960

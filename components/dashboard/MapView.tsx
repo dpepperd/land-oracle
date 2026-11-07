@@ -11,11 +11,12 @@ import Map, {
   GeolocateControl,
   MapRef
 } from 'react-map-gl/mapbox';
-import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Database } from 'lucide-react';
+import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Database, Droplets } from 'lucide-react';
 
 
 import EditParcelModal from './EditParcelModal';
 import ConfirmModal from './ConfirmModal';
+import GeocoderControl from './GeocoderControl';
 import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
 import { useTheme } from 'next-themes';
 import * as turf from 'turf';
@@ -39,6 +40,22 @@ const truckLayer: any = {
     'line-width': 3,
     'line-color': ['get', 'truck_color'],
     'line-opacity': 0.8
+  }
+};
+
+const floodLayer: any = {
+  id: 'flood-zones',
+  type: 'fill',
+  paint: {
+    'fill-color': [
+      'match',
+      ['get', 'fld_zone'],
+      ['X', 'x', '0.2 PCT ANNUAL CHANCE FLOOD HAZARD'], '#9ca3af',
+      ['A', 'AE', 'AH', 'AO'], '#60a5fa', // Light Blue
+      ['VE', 'V'], '#1e40af', // Dark Blue
+      '#60a5fa' // Default
+    ],
+    'fill-opacity': 0.4
   }
 };
 
@@ -186,6 +203,11 @@ export default function MapView({
   const [showTraffic, setShowTraffic] = useState(false);
   const [showTrucks, setShowTrucks] = useState(false); // New
   const [trafficData, setTrafficData] = useState<any>({ type: 'FeatureCollection', features: [] });
+  
+  // Flood Layer State
+  const [showFlood, setShowFlood] = useState(false);
+  const [floodData, setFloodData] = useState<any>({ type: 'FeatureCollection', features: [] });
+  
   const [dataLayersOpen, setDataLayersOpen] = useState(false);
 
   const fetchTraffic = async (bounds: number[]) => {
@@ -206,6 +228,24 @@ export default function MapView({
       }
   };
 
+  const fetchFlood = async (bounds: number[]) => {
+      if (!showFlood) return;
+      try {
+          const [minLng, minLat, maxLng, maxLat] = bounds;
+          const query = new URLSearchParams({
+              minLat: minLat.toString(),
+              maxLat: maxLat.toString(),
+              minLon: minLng.toString(),
+              maxLon: maxLng.toString()
+          });
+          const res = await fetch(`/api/map/flood?${query}`);
+          const data = await res.json();
+          setFloodData(data);
+      } catch (e) {
+          console.error("Flood fetch failed", e);
+      }
+  };
+
   useEffect(() => {
     if ((showTraffic || showTrucks) && mapRef.current) {
          const bounds = mapRef.current.getBounds();
@@ -214,12 +254,22 @@ export default function MapView({
          }
     }
   }, [showTraffic, showTrucks]);
+
+  useEffect(() => {
+    if (showFlood && mapRef.current) {
+         const bounds = mapRef.current.getBounds();
+         if (bounds) fetchFlood(bounds.toArray().flat());
+    }
+  }, [showFlood]);
   
-  // Debounce traffic fetch on move
+  // Debounce fetch on move
   const onMoveEnd = (e: any) => {
+      const bounds = e.target.getBounds().toArray().flat();
       if (showTraffic || showTrucks) {
-          const bounds = e.target.getBounds().toArray().flat();
           fetchTraffic(bounds);
+      }
+      if (showFlood) {
+          fetchFlood(bounds);
       }
   };
   const [highways, setHighways] = useState<any>(null);
@@ -241,7 +291,8 @@ export default function MapView({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // External Link State
-  const [externalLink, setExternalLink] = useState<{ url: string; county: string } | null>(null);
+  // External Link State
+  const [externalLink, setExternalLink] = useState<{ url: string; county: string; id?: string; landUse?: string } | null>(null);
 
   // Auto-zoom to Results
   useEffect(() => {
@@ -254,17 +305,28 @@ export default function MapView({
 
     try {
         console.log("[MapView] Calculating BBox...");
-        const bbox = turf.bbox(geojson) as [number, number, number, number];
+        
+        // FIX: Sanitize features for turf.bbox coverage (crashes on null geometry)
+        const validFeatures = geojson.features.filter((f: any) => f && f.geometry);
+        
+        if (validFeatures.length === 0) return;
+        
+        const cleanGeojson = {
+            ...geojson,
+            features: validFeatures
+        };
+
+        const bbox = turf.bbox(cleanGeojson) as [number, number, number, number];
         console.log("[MapView] BBox:", bbox);
         
-        if (bbox) {
+        if (bbox && bbox.some(c => !isNaN(c) && isFinite(c))) {
             console.log("[MapView] fitting bounds...");
             mapRef.current.fitBounds(
                 [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
                 { padding: 50, duration: 2000, maxZoom: 17 } // Smooth zoom
             );
         } else {
-             console.log("[MapView] BBox is null/undefined");
+             console.log("[MapView] BBox is invalid");
         }
     } catch (e) {
         console.error("Failed to fit bounds:", e);
@@ -360,6 +422,7 @@ export default function MapView({
         mapStyle={MAP_STYLES[activeStyle as keyof typeof MAP_STYLES].url}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         interactiveLayerIds={['clusters', 'parcel-fill', 'unclustered-point']}
+        onMoveEnd={onMoveEnd}
         onClick={(event) => {
             if (isDrawing) {
                 const newPoint = [event.lngLat.lng, event.lngLat.lat];
@@ -411,6 +474,9 @@ export default function MapView({
         <FullscreenControl position="top-right" />
         <NavigationControl position="top-right" />
         <ScaleControl unit={scaleUnit} />
+        
+        {/* MAPBOX GEOCODER COMPONENT */}
+        <GeocoderControl mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string} position="top-left" marker={false} />
 
          {activeStyle === 'usgs' && (
             <Source
@@ -628,17 +694,43 @@ export default function MapView({
                      onClick={(e) => {
                          e.preventDefault();
                          e.stopPropagation();
-                         // Auto-copy ID
-                         if (popupInfo.properties.parcel_id) {
-                            navigator.clipboard.writeText(popupInfo.properties.parcel_id).catch(() => {});
-                         }
-                         const url = getPropertyAppraiserUrl(popupInfo.properties.county, popupInfo.properties.parcel_id);
-                         if (url) setExternalLink({ url, county: popupInfo.properties.county });
+                            // Auto-copy ID
+                            // Auto-copy ID
+                            if (popupInfo.properties.parcel_id) {
+                               let val = popupInfo.properties.parcel_id;
+                               // Pinellas Search requires 01-30-14... (S-T-R) not 14-30-01... (R-T-S)
+                               if (popupInfo.properties.county === 'Pinellas') {
+                                   const p = val.trim().replace(/\s+/g, '-').split('-');
+                                   if (p.length >= 3) val = `${p[2]}-${p[1]}-${p[0]}-${p.slice(3).join('-')}`;
+                               }
+                               // Pasco Fix: Strip prefix for clean copy
+                               if (popupInfo.properties.county === 'Pasco') {
+                                   val = val.replace(/^Pasco-/i, '');
+                               }
+                               // Citrus: User prefers Parcel ID over Alt Key
+                               if (popupInfo.properties.county === 'Citrus') {
+                                   val = popupInfo.properties.parcel_id;
+                               }
+                               
+                               console.log(`[Debug] ${popupInfo.properties.county} ID:`, val);
+                               navigator.clipboard.writeText(val).catch(() => {});
+                               
+                               const url = getPropertyAppraiserUrl(popupInfo.properties.county, popupInfo.properties.parcel_id);
+                               if (url) setExternalLink({ url, county: popupInfo.properties.county, id: val, landUse: popupInfo.properties.land_use });
+                            }
                      }}
                      className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 focus:outline-none"
                      title="ID Copied! View on County Appraiser Site"
                    >
-                     {popupInfo.properties.parcel_id}
+                     {popupInfo.properties.county === 'Pinellas' 
+                        ? (() => {
+                            const p = popupInfo.properties.parcel_id.trim().replace(/\s+/g, '-').split('-');
+                            if (p.length >= 3) return `${p[2]}-${p[1]}-${p[0]}-${p.slice(3).join('-')}`;
+                            return popupInfo.properties.parcel_id.trim().replace(/\s+/g, '-');
+                        })()
+                        : popupInfo.properties.county === 'Pasco'
+                        ? popupInfo.properties.parcel_id.replace(/^Pasco-/i, '')
+                        : popupInfo.properties.parcel_id}
                      <span className="text-[10px] text-gray-500 font-normal no-underline">↗</span>
                    </button>
                  ) : (
@@ -741,10 +833,15 @@ export default function MapView({
                 <Layer {...truckLayer} />
             </Source>
         )}
+        {showFlood && (
+            <Source id="flood-source" type="geojson" data={floodData}>
+                <Layer {...floodLayer} />
+            </Source>
+        )}
       </Map>
 
       {/* Style Switcher & Layers */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+      <div className="absolute top-16 sm:top-20 left-4 z-10 flex flex-col gap-2">
         {/* Base Map Style */}
         <div className="relative">
           <button
@@ -847,13 +944,32 @@ export default function MapView({
                             <span className="text-[10px] text-gray-400">Zoom in to view</span>
                         </div>
                      </label>
+
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                      <label className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                        <div className="relative flex items-center">
+                             <input 
+                                type="checkbox"
+                                checked={showFlood}
+                                onChange={(e) => setShowFlood(e.target.checked)}
+                                className="peer h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                             />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-sm text-gray-700 dark:text-gray-200 flex items-center gap-1.5 font-medium">
+                                <Droplets size={14} className="text-blue-500"/>
+                                FEMA Flood Zones
+                            </span>
+                            <span className="text-[10px] text-gray-400">DFIRM Layer</span>
+                        </div>
+                     </label>
                 </div>
             )}
         </div>
       </div>
       
          {/* Spatial Search Controls */}
-       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 w-full justify-center pointer-events-none">
+       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex gap-2 w-full justify-center pointer-events-none">
           {/* Container needs pointer-events-auto for children */}
           
           {/* IDLE STATE */}
@@ -993,7 +1109,7 @@ export default function MapView({
 
       {/* Measure Result */}
       {measureDistance !== null && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-900 px-4 py-2 rounded-lg shadow-xl border-l-4 border-cyan-500 z-20 flex items-center gap-3">
+          <div className="absolute top-16 right-16 bg-white dark:bg-slate-900 px-4 py-2 rounded-lg shadow-xl border-l-4 border-cyan-500 z-20 flex items-center gap-3">
              <div>
                 <div className="text-xs text-gray-500 dark:text-gray-300 font-bold uppercase tracking-wider">Distance</div>
                 <div className="text-lg font-bold text-gray-900 dark:text-white">
@@ -1039,10 +1155,22 @@ export default function MapView({
         }}
         title="Leaving Land Oracle"
         message={
-            (externalLink?.county?.toLowerCase() === 'union' || externalLink?.county?.toLowerCase() === 'bradford' || externalLink?.county?.toLowerCase() === 'putnam') 
+            (externalLink?.county?.toLowerCase() === 'citrus')
+            ? (() => {
+                // Determine Search Group based on Land Use
+                let group = "Residential";
+                const use = externalLink.landUse || "000";
+                if (use.startsWith("01") || use.startsWith("02") || use.startsWith("03") || use.startsWith("04")) group = "Commercial/Industrial";
+                if (use.startsWith("05") || use.startsWith("06")) group = "Agricultural";
+                if (use.startsWith("07") || use.startsWith("08") || use.startsWith("09")) group = "Other/Govt";
+                
+                return `We have copied the Parcel ID (${externalLink?.id}).\n\n1. Go to **Parcel Search** > **Parcel ID**.\n2. Paste ID & click **Add** button.\n3. Ensure Group is **${group}**.\n4. Click Search.`;
+            })()
+            : (['union', 'bradford', 'putnam', 'desoto', 'pasco', 'hernando', 'columbia', 'lafayette', 'suwannee', 'madison', 'leon', 'franklin'].includes(externalLink?.county?.toLowerCase() || '')) 
             ? `You are visiting the ${externalLink?.county} GIS. Direct linking is restricted, so we have copied the Parcel ID to your clipboard. Please PASTE it into the search bar.`
             : `You are about to visit the ${externalLink?.county || 'County'} Property Appraiser's official website.`
         }
+
         confirmLabel="Continue to Site"
         isExternal={true}
       />

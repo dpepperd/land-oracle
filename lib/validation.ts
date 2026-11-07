@@ -39,18 +39,31 @@ export const searchSchema = z.object({
   maxLat: z.number().min(-90).max(90).optional(),
   minLon: z.number().min(-180).max(180).optional(),
   maxLon: z.number().min(-180).max(180).optional(),
+  
+  // New Address Field
+  address: z.string().optional(),
+
   // FIX: spatialShape can be a GeoJSON Feature or Geometry
   // Using z.any() but with runtime validation in route.ts
   spatialShape: z.any().optional(),
 });
 
 export const exportSchema = z.object({
-  counties: z.array(z.string()),
+  counties: z.array(z.string()).optional(),
   landUse: z.array(z.string()).optional(),
+  ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),
   acreageMin: z.number().optional(),
   acreageMax: z.number().optional(),
-  ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),
-  maxDistance: z.number().optional()
+  marketValueMin: z.number().optional(),
+  marketValueMax: z.number().optional(),
+  parcelId: z.string().optional(),
+  maxDistance: z.number().optional(),
+  minLat: z.number().min(-90).max(90).optional(),
+  maxLat: z.number().min(-90).max(90).optional(),
+  minLon: z.number().min(-180).max(180).optional(),
+  maxLon: z.number().min(-180).max(180).optional(),
+  address: z.string().optional(),
+  spatialShape: z.any().optional(),
 });
 
 export const crmSchema = z.object({

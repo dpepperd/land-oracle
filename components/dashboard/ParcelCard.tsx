@@ -1,4 +1,4 @@
-import { MapPin, StickyNote } from 'lucide-react';
+import { MapPin, StickyNote, Home } from 'lucide-react';
 
 interface Parcel {
   parcel_id: string;
@@ -9,6 +9,7 @@ interface Parcel {
   owner_city?: string;
   is_lead?: boolean;
   has_note?: boolean;
+  property_address?: string;
 }
 
 interface ParcelCardProps {
@@ -34,6 +35,12 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
             <MapPin className="w-3 h-3" />
             {parcel.county} County
           </p>
+          {parcel.property_address && (
+            <p className="text-xs text-theme-secondary flex items-center gap-1 mt-1 font-medium pb-1">
+              <Home className="w-3 h-3" />
+              {parcel.property_address}
+            </p>
+          )}
         </div>
         <div className="text-right">
           <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full font-medium">

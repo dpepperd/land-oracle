@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAdminUsers, toggleBetaAccess } from './actions';
+import { getAdminUsers, toggleBetaAccess, setUserTier, type AdminTier } from './actions';
 import { Loader2, CheckCircle, XCircle, Search, Shield, User } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -38,6 +38,15 @@ export default function AdminPage() {
         setToggling(null);
     };
 
+    const handleTierChange = async (id: number, tier: AdminTier) => {
+        setToggling(id);
+        await setUserTier(id, tier);
+        await load();
+        setToggling(null);
+    };
+
+    const TIERS: AdminTier[] = ['demo', 'scout', 'local', 'regional', 'statewide', 'enterprise'];
+
     if (loading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>;
 
     return (
@@ -66,13 +75,16 @@ export default function AdminPage() {
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${
-                                                user.subscription_tier === 'free' ? 'bg-slate-800 text-slate-400' : 
-                                                user.subscription_tier === 'scout' ? 'bg-blue-900 text-blue-300' :
-                                                'bg-purple-900 text-purple-300'
-                                            }`}>
-                                                {user.subscription_tier}
-                                            </span>
+                                            <select
+                                                value={TIERS.includes(user.subscription_tier as AdminTier) ? user.subscription_tier : 'demo'}
+                                                onChange={(e) => handleTierChange(user.id, e.target.value as AdminTier)}
+                                                disabled={toggling === user.id}
+                                                className="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold uppercase rounded px-2 py-1 focus:outline-none focus:border-blue-500"
+                                            >
+                                                {TIERS.map((t) => (
+                                                    <option key={t} value={t}>{t}</option>
+                                                ))}
+                                            </select>
                                             {user.role === 'admin' && (
                                                 <span className="flex items-center gap-1 text-xs text-yellow-500 font-bold border border-yellow-500/30 px-2 py-0.5 rounded-full bg-yellow-500/10">
                                                     <Shield className="w-3 h-3" /> Admin

@@ -1,0 +1,21 @@
+[
+  "demo_sessions",
+  "fema_bfe_cache",
+  "fema_flood_zone_cache",
+  "flood_hazard",
+  "geography_columns",
+  "geometry_columns",
+  "highways",
+  "interstates",
+  "leads",
+  "parcels",
+  "spatial_ref_sys",
+  "traffic_stats",
+  "us_roads",
+  "user_county_access",
+  "user_parcel_notes",
+  "user_usage_exports",
+  "user_usage_searches",
+  "users",
+  "v_flood_hazard_map"
+]

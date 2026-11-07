@@ -1,0 +1,75 @@
+[dotenv@17.2.3] injecting env (9) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+📊 Starting Statewide Data Audit...
+Fetching Database Counts...
+
+Found 67 County Directories.
+--------------------------------------------------------------------------------
+County              Shapefile (Est)     Database       Delta          Status
+--------------------------------------------------------------------------------
+Alachua             118,254             108,617        9,637          ⚠️ Partial Load
+Baker               13,127              12,831         296            ✅ OK
+Bay                 132,771             125,086        7,685          ⚠️ Partial Load
+Bradford            15,798              15,671         127            ✅ OK
+Brevard             349,743             349,742        1              ✅ OK
+Broward             786,580             764,726        21,854         ✅ OK
+Calhoun             12,097              11,618         479            ✅ OK
+Charlotte           231,832             222,414        9,418          ✅ OK
+Citrus              147,977             142,800        5,177          ✅ OK
+Clay                102,571             102,571        0              ✅ OK
+Collier             365,547             291,577        73,970         ⚠️ Partial Load
+Columbia            37,646              37,554         92             ✅ OK
+Desoto              20,545              20,128         417            ✅ OK
+Dixie               16,389              16,383         6              ✅ OK
+Duval               400,585             400,585        0              ✅ OK
+Escambia            162,744             162,691        53             ✅ OK
+Flagler             86,724              86,683         41             ✅ OK
+Franklin            18,697              18,177         520            ✅ OK
+Gadsden             27,567              18,000         9,567          ⚠️ Partial Load
+Gilchrist           15,437              14,061         1,376          ⚠️ Partial Load
+Glades              11,399              11,383         16             ✅ OK
+Gulf                18,850              18,788         62             ✅ OK
+Hamilton            14,451              444            14,007         ⚠️ Partial Load
+Hardee              14,748              14,740         8              ✅ OK
+Hendry              35,899              35,892         7              ✅ OK
+Hernando            118,528             118,524        4              ✅ OK
+Highlands           113,113             113,108        5              ✅ OK
+Hillsborough        537,289             527,834        9,455          ✅ OK
+Holmes              14,893              14,507         386            ✅ OK
+Indian River        94,790              94,790         0              ✅ OK
+Jackson             43,014              39,889         3,125          ⚠️ Partial Load
+Jefferson           12,925              12,092         833            ⚠️ Partial Load
+Lafayette           7,482               7,233          249            ✅ OK
+Lake                212,312             211,312        1,000          ✅ OK
+Lee                 559,141             559,124        17             ✅ OK
+Leon                112,434             87,500         24,934         ⚠️ Partial Load
+Levy                48,411              33,555         14,856         ⚠️ Partial Load
+Liberty             6,402               5,884          518            ⚠️ Partial Load
+Madison             16,484              14,989         1,495          ⚠️ Partial Load
+Manatee             224,619             224,518        101            ✅ OK
+Marion              285,288             285,015        273            ✅ OK
+Martin              96,886              96,874         12             ✅ OK
+Miami-Dade          590,928             936,467        -345,539       ❓ DB > Shp
+Monroe              89,046              89,044         2              ✅ OK
+Nassau              58,070              57,560         510            ✅ OK
+Okaloosa            112,558             111,818        740            ✅ OK
+Okeechobee          31,667              31,639         28             ✅ OK
+Orange              491,705             490,946        759            ✅ OK
+Osceola             207,733             207,733        0              ✅ OK
+Palm Beach          688,403             658,030        30,373         ✅ OK
+Pasco               314,926             314,425        501            ✅ OK
+Pinellas            436,312             436,038        274            ✅ OK
+Polk                426,311             426,311        0              ✅ OK
+Putnam              97,862              97,860         2              ✅ OK
+Saint Johns         210,031             151,780        58,251         ⚠️ Partial Load
+Saint Lucie         188,766             0              188,766        ❌ Not Loaded
+Santa Rosa          112,193             109,634        2,559          ✅ OK
+Sarasota            304,963             304,908        55             ✅ OK
+Seminole            180,662             180,662        0              ✅ OK
+Sumter              99,424              99,406         18             ✅ OK
+Suwannee            32,098              500            31,598         ⚠️ Partial Load
+Taylor              18,853              18,798         55             ✅ OK
+Union               7,337               6,960          377            ⚠️ Partial Load
+Volusia             311,745             311,552        193            ✅ OK
+Wakulla             26,763              19,977         6,786          ⚠️ Partial Load
+Walton              94,108              89,004         5,104          ⚠️ Partial Load
+Washington          43,806              43,768         38             ✅ OK

@@ -163,17 +163,14 @@ export default function FilterSidebar({
   const isInitialMount = useRef(true);
   const previousSpatialShapeRef = useRef<any>(null);
   
-  const defaultAgCodes = [
-    '050','051','052','053','054','055','056','057','058','059',
-    '068', '099'
-  ];
   
   const [filters, setFilters] = useState(() => ({
     ...initialFilters,
-    landUse: initialFilters.landUse?.length > 0 ? initialFilters.landUse : defaultAgCodes
+    landUse: initialFilters.landUse || []
   }));
   
   const [localParcelId, setLocalParcelId] = useState(filters.parcelId || '');
+  const [localAddress, setLocalAddress] = useState(filters.address || ''); // New Local State
   const [countySearch, setCountySearch] = useState('');
   const [landUseSearch, setLandUseSearch] = useState('');
 
@@ -264,8 +261,8 @@ export default function FilterSidebar({
     const reset = {
       counties: [],
       landUse: [],
-      acreageMin: 0,
-      acreageMax: 100,
+      acreageMin: undefined,
+      acreageMax: undefined,
       marketValueMin: undefined,
       marketValueMax: undefined,
       maxDistance: 0,
@@ -276,9 +273,12 @@ export default function FilterSidebar({
       minLat: undefined,
       maxLat: undefined,
       minLon: undefined,
-      maxLon: undefined
+      maxLon: undefined,
+      // Reset Address
+      address: ''
     };
     setFilters(reset);
+    setLocalAddress(''); // Reset local input
     onFilterChange(reset);
     previousSpatialShapeRef.current = null;
   };
@@ -309,7 +309,11 @@ export default function FilterSidebar({
   };
 
   const handleParcelSearch = () => {
-    onFilterChange({ ...filters, parcelId: localParcelId });
+    onFilterChange({ ...filters, parcelId: localParcelId, address: '' }); // Clear address if ID searching
+  };
+
+  const handleAddressSearch = () => {
+    onFilterChange({ ...filters, address: localAddress, parcelId: '' }); // Clear ID if address searching
   };
 
   // Check if spatial filter is active
@@ -336,7 +340,15 @@ export default function FilterSidebar({
         )}
 
         {/* Active Filters Summary */}
-        {(filters.counties?.length > 0 || filters.landUse?.length > 0 || filters.maxDistance !== undefined) && (
+        {(
+           filters.counties?.length > 0 || 
+           filters.landUse?.length > 0 || 
+           filters.maxDistance > 0 || 
+           (filters.acreageMin !== undefined && filters.acreageMin !== 0) || 
+           filters.acreageMax !== undefined ||
+           filters.marketValueMin !== undefined ||
+           filters.marketValueMax !== undefined
+        ) && (
           <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-lg">
              <div className="flex justify-between items-center mb-2">
                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase tracking-tighter">Active Filters</span>
@@ -369,6 +381,32 @@ export default function FilterSidebar({
                        <button onClick={() => removeItem('landUse', code)} className="ml-1 hover:text-red-200"><X size={10}/></button>
                      </span>
                    ))}
+                 </div>
+               </div>
+             )}
+
+             {/* Acreage */}
+             {((filters.acreageMin !== undefined && filters.acreageMin > 0) || filters.acreageMax !== undefined) && (
+               <div className="mt-2">
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Acreage</span>
+                 <div className="flex flex-wrap gap-1">
+                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-amber-600 text-white">
+                     {(filters.acreageMin || 0)} - {filters.acreageMax || 'Any'} ac
+                     <button onClick={() => setAcreageRange(0, undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                   </span>
+                 </div>
+               </div>
+             )}
+
+             {/* Market Value */}
+             {(filters.marketValueMin !== undefined || filters.marketValueMax !== undefined) && (
+               <div className="mt-2">
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Market Value</span>
+                 <div className="flex flex-wrap gap-1">
+                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-cyan-600 text-white">
+                    ${(filters.marketValueMin || 0).toLocaleString()} - {filters.marketValueMax ? `$${filters.marketValueMax.toLocaleString()}` : 'Any'}
+                     <button onClick={() => { handleChange('marketValueMin', undefined); handleChange('marketValueMax', undefined); }} className="ml-1 hover:text-red-200"><X size={10} /></button>
+                   </span>
                  </div>
                </div>
              )}
@@ -407,6 +445,29 @@ export default function FilterSidebar({
               className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded shadow-sm transition-colors"
             >
               Search Record
+            </button>
+          </div>
+        </div>
+
+        {/* Address Search */}
+        <div className="mb-6 p-3 bg-theme-input rounded border border-theme">
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
+            Find by Address
+          </label>
+          <div className="flex flex-col gap-2">
+            <input 
+              type="text"
+              placeholder="Enter Address (e.g. 123 Main)"
+              className="w-full px-3 py-2 text-sm border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={localAddress}
+              onChange={(e) => setLocalAddress(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddressSearch()}
+            />
+            <button 
+              onClick={handleAddressSearch}
+              className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded shadow-sm transition-colors"
+            >
+              Search Address
             </button>
           </div>
         </div>
@@ -490,13 +551,14 @@ export default function FilterSidebar({
             <div className="flex space-x-2">
               <button 
                 onClick={() => {
-                  // Codes for Vacant Land (Residential, Commercial, Industrial, Ag, Institutional, Gov, Leasehold)
-                  // Plus 001 (Single Family) as requested by user
-                  const vacantCodes = ['000', '001', '010', '040', '068', '070', '080', '090'];
+                  // ONLY Vacant Land codes - excludes occupied properties like 001 (Single Family)
+                  // 000=Vacant Residential, 010=Vacant Commercial, 020=Vacant Industrial (Comm)
+                  // 040=Vacant Industrial, 068=Vacant Agricultural, 070=Vacant Institutional, 080=Vacant Governmental
+                  const vacantCodes = ['000', '010', '020', '040', '068', '070', '080'];
                   handleChange('landUse', vacantCodes);
                 }}
                 className="px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors"
-                title="Select all Vacant Land types (Res, Comm, Ind, Ag)"
+                title="Select all truly Vacant Land types (no occupied properties)"
               >
                 Vacant Land
               </button>

@@ -1,0 +1,91 @@
+{
+  "missing": [],
+  "partial": [
+    {
+      "county": "Alachua",
+      "shp": 118254,
+      "live": 108617,
+      "delta": 9637
+    },
+    {
+      "county": "Bay",
+      "shp": 132771,
+      "live": 125086,
+      "delta": 7685
+    },
+    {
+      "county": "Collier",
+      "shp": 365547,
+      "live": 291577,
+      "delta": 73970
+    },
+    {
+      "county": "Gilchrist",
+      "shp": 15437,
+      "live": 14061,
+      "delta": 1376
+    },
+    {
+      "county": "Hamilton",
+      "shp": 14451,
+      "live": 12204,
+      "delta": 2247
+    },
+    {
+      "county": "Jackson",
+      "shp": 43014,
+      "live": 39889,
+      "delta": 3125
+    },
+    {
+      "county": "Jefferson",
+      "shp": 12925,
+      "live": 12092,
+      "delta": 833
+    },
+    {
+      "county": "Liberty",
+      "shp": 6402,
+      "live": 5884,
+      "delta": 518
+    },
+    {
+      "county": "Madison",
+      "shp": 16484,
+      "live": 14989,
+      "delta": 1495
+    },
+    {
+      "county": "Saint Johns",
+      "shp": 210031,
+      "live": 152638,
+      "delta": 57393
+    },
+    {
+      "county": "Union",
+      "shp": 7337,
+      "live": 6960,
+      "delta": 377
+    },
+    {
+      "county": "Wakulla",
+      "shp": 26763,
+      "live": 19977,
+      "delta": 6786
+    },
+    {
+      "county": "Walton",
+      "shp": 94108,
+      "live": 89004,
+      "delta": 5104
+    }
+  ],
+  "over": [
+    {
+      "county": "Miami-Dade",
+      "shp": 590928,
+      "live": 936467,
+      "delta": 345539
+    }
+  ]
+}

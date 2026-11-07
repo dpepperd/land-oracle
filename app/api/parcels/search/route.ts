@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { searchSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { getEntitlements } from '@/lib/entitlements';
+import { LIVE_COUNTIES } from '@/lib/counties';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       maxDistance, 
       ownerType,
       parcelId, 
+      address, // New field
       limit = 500
     } = body;
 
@@ -63,6 +65,11 @@ export async function POST(request: Request) {
     if (parcelId && parcelId.trim().length > 0) {
       conditions.push(`p.parcelno ILIKE $${valIdx}`);
       values.push(`%${parcelId.trim()}%`);
+      valIdx++;
+    } else if (address && address.trim().length > 0) {
+      // 1.5 Address Search (Specific)
+      conditions.push(`(p.phy_addr1 ILIKE $${valIdx} OR p.own_addr1 ILIKE $${valIdx})`);
+      values.push(`%${address.trim()}%`);
       valIdx++;
     } else {
       // 2. Land Use
@@ -152,21 +159,28 @@ export async function POST(request: Request) {
     const allowedCounties = entitlements.counties;
     let finalCounties: string[] = [];
 
+
     if (counties && counties.length > 0) {
         if (allowedCounties === 'all') finalCounties = counties;
         else finalCounties = counties.filter(c => allowedCounties.some(ac => ac.includes(c) || c.includes(ac)));
     } else {
         if (allowedCounties === 'all') {
-             // Returning empty if no county selected to protect performance 
-             return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });
+             // AUTO-ACCESS: Only default to ALL LIVE counties if specific filters are applied.
+             // If no filters (just '1=1'), return empty to prevent "Ghost Records" (e.g. Sarasota showing up randomly).
+             if (conditions.length > 1) {
+                 finalCounties = LIVE_COUNTIES;
+             } else {
+                 finalCounties = [];
+             }
         } else {
             finalCounties = allowedCounties;
         }
     }
 
     if (finalCounties.length > 0) {
-      conditions.push(`p.county = ANY($${valIdx})`);
-      values.push(finalCounties);
+      // FIX: Case-insensitive match for County (DeSoto vs Desoto)
+      conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
+      values.push(finalCounties.map(c => c.toLowerCase()));
       valIdx++;
     } else {
        return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });
@@ -176,8 +190,9 @@ export async function POST(request: Request) {
     const sql = `
       WITH user_context AS (SELECT id, role FROM users WHERE clerk_id = $${valIdx})
       SELECT 
-        p.gid as id, p.county, p.parcel_id, p.parcelno, p.own_name, p.own_addr1, p.own_city, p.own_state, p.own_zipcd, 
-        p.acreage, p.dor_uc as land_use, p.phy_addr1 as property_address, p.jv as market_value,
+        p.gid as id, p.county, COALESCE(p.parcel_id, p.parcelno) as parcel_id, p.parcelno, p.alt_key, 
+        p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip, 
+        p.acreage, p.dor_uc as land_use, COALESCE(p.phy_addr1, p.own_addr1) as property_address, p.jv as market_value,
         (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
         ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,

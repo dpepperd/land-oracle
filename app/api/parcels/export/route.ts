@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { exportSchema } from '@/lib/validation';
 import { z } from 'zod';
+import { LIVE_COUNTIES } from '@/lib/counties';
 
 // Helper to convert array of objects to CSV string
 function toCSV(data: any[]) {
@@ -12,7 +13,6 @@ function toCSV(data: any[]) {
   const rows = data.map(row => {
     return headers.map(header => {
       const val = row[header];
-      // Handle commas and quotes in data
       if (val === null || val === undefined) return '';
       const str = String(val);
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -34,13 +34,19 @@ export async function POST(request: Request) {
     const rawBody = await request.json();
     const body = exportSchema.parse(rawBody);
 
-     const { 
+    const { 
       counties, 
       landUse,
       acreageMin, 
-      acreageMax, 
+      acreageMax,
+      marketValueMin,
+      marketValueMax,
+      minLat, maxLat, minLon, maxLon,
+      spatialShape,
       maxDistance, 
-      ownerType
+      ownerType,
+      parcelId, 
+      address
     } = body;
 
     const values: any[] = [];
@@ -53,7 +59,6 @@ export async function POST(request: Request) {
     
     // 2. Check Export Limit
     let remaining: number | 'unlimited' = 'unlimited';
-    
     if (ent.exports.limit !== 'unlimited') {
         if (ent.exports.used >= ent.exports.limit) {
              return NextResponse.json({ error: 'Export Limit Reached', upgrade: true }, { status: 403 });
@@ -61,86 +66,149 @@ export async function POST(request: Request) {
         remaining = (ent.exports.limit as number) - ent.exports.used;
     }
 
-    // 3. Enforce County Access
-    const allowedCounties = ent.counties;
-    let finalCounties: string[] = [];
-    
-    // Filter by Counties
-    if (counties && counties.length > 0) {
-       if (allowedCounties === 'all') {
-            finalCounties = counties;
-       } else {
-            finalCounties = counties.filter(c => 
-                allowedCounties.some(ac => ac.replace(' County', '') === c.replace(' County', ''))
-            );
-       }
-    } else {
-        // Default to allowed (for exports, we usually want specific counties, but if empty we export all allowed)
-        if (allowedCounties !== 'all') {
-            finalCounties = allowedCounties;
-        }
-        // If 'all', we don't add filter (so exports entire DB? Dangerous. But limited by LIMIT 5000).
-    }
-    
-    if (finalCounties.length > 0) {
-      conditions.push(`county = ANY($${valIdx})`);
-      values.push(finalCounties);
+    // --- IDENTICAL LOGIC TO search/route.ts ---
+    // 1. Parcel ID Filter (Fastest)
+    if (parcelId && parcelId.trim().length > 0) {
+      conditions.push(`p.parcelno ILIKE $${valIdx}`);
+      values.push(`%${parcelId.trim()}%`);
       valIdx++;
-    } else if (allowedCounties !== 'all') {
-       // Requested something not allowed
-       return NextResponse.json({ error: 'County Access Denied' }, { status: 403 });
-    }
-
-    // Filter by Land Use
-    if (landUse && landUse.length > 0) {
-        conditions.push(`land_use = ANY($${valIdx})`);
+    } else if (address && address.trim().length > 0) {
+      // 1.5 Address Search (Specific)
+      conditions.push(`(p.phy_addr1 ILIKE $${valIdx} OR p.own_addr1 ILIKE $${valIdx})`);
+      values.push(`%${address.trim()}%`);
+      valIdx++;
+    } else {
+      // 2. Land Use
+      if (landUse && landUse.length > 0) {
+        conditions.push(`p.dor_uc = ANY($${valIdx})`);
         values.push(landUse);
         valIdx++;
+      }
+
+      // 3. Acreage
+      if (acreageMin !== undefined && acreageMax !== undefined) {
+        conditions.push(`p.acreage BETWEEN $${valIdx} AND $${valIdx + 1}`);
+        values.push(acreageMin, acreageMax);
+        valIdx += 2;
+      }
+
+      // 4. Market Value
+      if (marketValueMin !== undefined && marketValueMax !== undefined) {
+        conditions.push(`p.jv BETWEEN $${valIdx} AND $${valIdx + 1}`);
+        values.push(marketValueMin, marketValueMax);
+        valIdx += 2;
+      }
+
+      // 5. Spatial Filters
+      let hasSpatialFilter = false;
+      if (spatialShape && typeof spatialShape === 'object' && Object.keys(spatialShape).length > 0) {
+        const geom = spatialShape.geometry || spatialShape;
+        if (geom && geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]?.length >= 4) {
+          hasSpatialFilter = true;
+          conditions.push(`
+            ST_Within(
+              ST_PointOnSurface(p.geom),
+              ST_ForcePolygonCCW(ST_SetSRID(ST_GeomFromGeoJSON($${valIdx}), 4326))
+            )
+          `);
+          values.push(JSON.stringify(geom));
+          valIdx++;
+          
+          const coords = geom.coordinates[0];
+          const lons = coords.map((c: any) => c[0]);
+          const lats = coords.map((c: any) => c[1]);
+          conditions.push(`p.geom && ST_MakeEnvelope($${valIdx}, $${valIdx + 1}, $${valIdx + 2}, $${valIdx + 3}, 4326)`);
+          values.push(Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats));
+          valIdx += 4;
+        } else if (spatialShape.properties?.subType === 'Circle' && spatialShape.properties?.radius) {
+          hasSpatialFilter = true;
+          const center = spatialShape.geometry?.coordinates;
+          const radiusMeters = spatialShape.properties.radius * 1609.34;
+          conditions.push(`
+            ST_DWithin(
+              ST_PointOnSurface(p.geom)::geography,
+              ST_SetSRID(ST_MakePoint($${valIdx}, $${valIdx + 1}), 4326)::geography,
+              $${valIdx + 2}
+            )
+          `);
+          values.push(center[0], center[1], radiusMeters);
+          valIdx += 3;
+        }
+      }
+      
+      // BBox only
+      if (!hasSpatialFilter && minLat && maxLat && minLon && maxLon) {
+        conditions.push(`p.geom && ST_MakeEnvelope($${valIdx}, $${valIdx + 1}, $${valIdx + 2}, $${valIdx + 3}, 4326)`);
+        values.push(minLon, minLat, maxLon, maxLat);
+        valIdx += 4;
+      }
+
+      // 6. Owner Type
+      if (ownerType === 'in_state') conditions.push(`(p.own_state = 'FL' OR p.own_state IS NULL)`);
+      else if (ownerType === 'out_of_state') conditions.push(`(p.own_state != 'FL' AND p.own_state IS NOT NULL)`);
+
+      // 7. Highway Distance (Optional)
+      if (maxDistance && maxDistance > 0) {
+        conditions.push(`p.distance_to_highway <= $${valIdx}`);
+        values.push(maxDistance);
+        valIdx++;
+      }
     }
 
-    // Filter by Acreage
-    if (acreageMin !== undefined && acreageMax !== undefined) {
-      conditions.push(`acreage BETWEEN $${valIdx} AND $${valIdx + 1}`);
-      values.push(acreageMin, acreageMax);
-      valIdx += 2;
+    // 8. County Entitlements
+    const allowedCounties = ent.counties;
+    let finalCounties: string[] = [];
+    if (counties && counties.length > 0) {
+        if (allowedCounties === 'all') finalCounties = counties;
+        else finalCounties = counties.filter((c: string) => allowedCounties.some((ac: string) => ac.includes(c) || c.includes(ac)));
+    } else {
+        if (allowedCounties === 'all') {
+             if (conditions.length > 1) {
+                 finalCounties = LIVE_COUNTIES;
+             } else {
+                 finalCounties = [];
+             }
+        } else {
+            finalCounties = allowedCounties;
+        }
     }
 
-    // Filter by Owner Type
-    if (ownerType === 'in_state') {
-        conditions.push(`(owner_state = 'FL' OR owner_state IS NULL)`); 
-        conditions.push(`out_of_state = false`); 
-    } else if (ownerType === 'out_of_state') {
-        conditions.push(`out_of_state = true`);
-    }
-    
-    // Distance Filter (Requires Pre-calculated column, removed PostGIS query)
-    if (maxDistance && maxDistance > 0) {
-       conditions.push(`distance_to_highway <= $${valIdx}`);
-       values.push(maxDistance); 
-       valIdx++;
+    if (finalCounties.length > 0) {
+      conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
+      values.push(finalCounties.map((c: string) => c.toLowerCase()));
+      valIdx++;
+    } else {
+        // Safe fail return empty CSV
+        return new NextResponse("", {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="parcels_export_${Date.now()}.csv"`
+        }
+      });
     }
 
     const sql = `
       SELECT 
-        county, 
-        parcel_id, 
-        owner_name, 
-        owner_address, 
-        owner_city, 
-        owner_state, 
-        owner_zip, 
-        acreage,
-        property_address,
-        land_use,
-        assessed_value,
-        market_value
-      FROM parcels
+        p.county, 
+        COALESCE(p.parcel_id, p.parcelno) as parcel_id, 
+        p.alt_key,
+        p.own_name as owner_name, 
+        p.own_addr1 as owner_address, 
+        p.own_city as owner_city, 
+        p.own_state as owner_state, 
+        p.own_zipcd as owner_zip, 
+        p.acreage,
+        p.dor_uc as land_use,
+        COALESCE(p.phy_addr1, p.own_addr1) as property_address,
+        p.jv as market_value,
+        ST_Y(ST_Centroid(p.geom)) as latitude, 
+        ST_X(ST_Centroid(p.geom)) as longitude
+      FROM parcels p
       WHERE ${conditions.join(' AND ')}
-      LIMIT $${valIdx} -- Limit based on remaining quota
+      LIMIT $${valIdx}
     `;
 
     // Add Limit to Values
-    // If unlimited, cap at 5000 for safety. If limited, cap at remaining.
     const safeLimit = remaining === 'unlimited' ? 5000 : Math.min(remaining, 5000);
     values.push(safeLimit);
 

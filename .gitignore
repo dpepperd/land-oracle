@@ -89,3 +89,6 @@ FDOT_data/
 !public/
 
 .vercel
+
+# DB backups
+backups/

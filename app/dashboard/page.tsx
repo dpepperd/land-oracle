@@ -15,8 +15,8 @@ export default function Dashboard() {
   const [filters, setFilters] = useState({
     counties: [], // Clean slate by default
     landUse: [],
-    acreageMin: 0,
-    acreageMax: 100,
+    acreageMin: undefined,
+    acreageMax: undefined,
     maxDistance: 0,
     ownerType: 'all', // 'all', 'in_state', 'out_of_state'
     parcelId: '',
@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [popupInfo, setPopupInfo] = useState<any | null>(null);
   const [unlockedCounties, setUnlockedCounties] = useState<string[]>([]); // User's unlocked list
   const [showUpsell, setShowUpsell] = useState(false); // Shared Upsell State
+  const [searchError, setSearchError] = useState<string | null>(null); // Error message
   
   // Track leads being saved
   const [markingIds, setMarkingIds] = useState<string[]>([]);
@@ -82,6 +83,7 @@ export default function Dashboard() {
     abortControllerRef.current = controller;
     
     setIsLoading(true);
+    setSearchError(null); // Clear previous errors
     try {
       const res = await fetch('/api/parcels/search', {
         method: 'POST',
@@ -94,6 +96,10 @@ export default function Dashboard() {
       
       if (data.error) {
         console.error('Search error:', data.error);
+        setSearchError(data.error || 'Search failed. Please try again.');
+        setParcels([]);
+        setGeojson({ type: 'FeatureCollection', features: [] });
+        setTotalCount(0);
         return;
       }
       
@@ -111,8 +117,8 @@ export default function Dashboard() {
       import('@/lib/analytics').then(({ trackPropertySearch }) => {
           trackPropertySearch({
               county: filters.counties,
-              acreageMin: filters.acreageMin,
-              acreageMax: filters.acreageMax,
+              acreageMin: filters.acreageMin || 0,
+              acreageMax: filters.acreageMax || 0,
               resultsCount: data.count || 0
           });
       });
@@ -219,6 +225,19 @@ export default function Dashboard() {
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Header />
       
+      {/* Desktop Error Notification */}
+      {searchError && (
+        <div className="bg-red-600 text-white px-6 py-3 shadow-lg flex items-center justify-between">
+          <span className="font-medium">{searchError}</span>
+          <button 
+            onClick={() => setSearchError(null)}
+            className="text-red-200 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      
       <div className="flex-1 flex overflow-hidden relative">
         {/* Sidebar - Mobile Drawer & Desktop Static */}
         <div className={`
@@ -273,6 +292,18 @@ export default function Dashboard() {
             />
             {/* Mobile Floating Controls */}
             <div className="absolute bottom-6 left-4 right-4 flex gap-3 z-10 md:hidden pointer-events-none">
+                {/* Error Notification */}
+                {searchError && (
+                  <div className="absolute bottom-full left-0 mb-3 w-full bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center justify-between pointer-events-auto">
+                    <span>{searchError}</span>
+                    <button 
+                      onClick={() => setSearchError(null)}
+                      className="ml-2 text-red-200 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
                 <button 
                   onClick={() => setIsMobileFiltersOpen(true)}
                   className="flex-1 py-3 bg-slate-900 text-white font-bold rounded-lg shadow-lg pointer-events-auto flex items-center justify-center gap-2"

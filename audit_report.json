@@ -1,0 +1,471 @@
+[
+  {
+    "county": "Alachua",
+    "shpCount": 118254,
+    "dbCount": 108617,
+    "delta": 9637,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Baker",
+    "shpCount": 13127,
+    "dbCount": 12831,
+    "delta": 296,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Bay",
+    "shpCount": 132771,
+    "dbCount": 125086,
+    "delta": 7685,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Bradford",
+    "shpCount": 15798,
+    "dbCount": 15671,
+    "delta": 127,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Brevard",
+    "shpCount": 349743,
+    "dbCount": 349742,
+    "delta": 1,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Broward",
+    "shpCount": 786580,
+    "dbCount": 764726,
+    "delta": 21854,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Calhoun",
+    "shpCount": 12097,
+    "dbCount": 11618,
+    "delta": 479,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Charlotte",
+    "shpCount": 231832,
+    "dbCount": 222414,
+    "delta": 9418,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Citrus",
+    "shpCount": 147977,
+    "dbCount": 142800,
+    "delta": 5177,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Clay",
+    "shpCount": 102571,
+    "dbCount": 102571,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Collier",
+    "shpCount": 365547,
+    "dbCount": 291577,
+    "delta": 73970,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Columbia",
+    "shpCount": 37646,
+    "dbCount": 37554,
+    "delta": 92,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Desoto",
+    "shpCount": 20545,
+    "dbCount": 20128,
+    "delta": 417,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Dixie",
+    "shpCount": 16389,
+    "dbCount": 16383,
+    "delta": 6,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Duval",
+    "shpCount": 400585,
+    "dbCount": 400585,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Escambia",
+    "shpCount": 162744,
+    "dbCount": 162691,
+    "delta": 53,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Flagler",
+    "shpCount": 86724,
+    "dbCount": 86683,
+    "delta": 41,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Franklin",
+    "shpCount": 18697,
+    "dbCount": 18177,
+    "delta": 520,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Gadsden",
+    "shpCount": 27567,
+    "dbCount": 18000,
+    "delta": 9567,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Gilchrist",
+    "shpCount": 15437,
+    "dbCount": 14061,
+    "delta": 1376,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Glades",
+    "shpCount": 11399,
+    "dbCount": 11383,
+    "delta": 16,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Gulf",
+    "shpCount": 18850,
+    "dbCount": 18788,
+    "delta": 62,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Hamilton",
+    "shpCount": 14451,
+    "dbCount": 12204,
+    "delta": 2247,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Hardee",
+    "shpCount": 14748,
+    "dbCount": 14740,
+    "delta": 8,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Hendry",
+    "shpCount": 35899,
+    "dbCount": 35892,
+    "delta": 7,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Hernando",
+    "shpCount": 118528,
+    "dbCount": 118524,
+    "delta": 4,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Highlands",
+    "shpCount": 113113,
+    "dbCount": 113108,
+    "delta": 5,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Hillsborough",
+    "shpCount": 537289,
+    "dbCount": 527834,
+    "delta": 9455,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Holmes",
+    "shpCount": 14893,
+    "dbCount": 14507,
+    "delta": 386,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Indian River",
+    "shpCount": 94790,
+    "dbCount": 94790,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Jackson",
+    "shpCount": 43014,
+    "dbCount": 39889,
+    "delta": 3125,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Jefferson",
+    "shpCount": 12925,
+    "dbCount": 12092,
+    "delta": 833,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Lafayette",
+    "shpCount": 7482,
+    "dbCount": 7233,
+    "delta": 249,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Lake",
+    "shpCount": 212312,
+    "dbCount": 211312,
+    "delta": 1000,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Lee",
+    "shpCount": 559141,
+    "dbCount": 559124,
+    "delta": 17,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Leon",
+    "shpCount": 112434,
+    "dbCount": 87500,
+    "delta": 24934,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Levy",
+    "shpCount": 48411,
+    "dbCount": 33555,
+    "delta": 14856,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Liberty",
+    "shpCount": 6402,
+    "dbCount": 5884,
+    "delta": 518,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Madison",
+    "shpCount": 16484,
+    "dbCount": 14989,
+    "delta": 1495,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Manatee",
+    "shpCount": 224619,
+    "dbCount": 224518,
+    "delta": 101,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Marion",
+    "shpCount": 285288,
+    "dbCount": 285015,
+    "delta": 273,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Martin",
+    "shpCount": 96886,
+    "dbCount": 96874,
+    "delta": 12,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Miami-Dade",
+    "shpCount": 590928,
+    "dbCount": 936467,
+    "delta": -345539,
+    "status": "❓ DB > Shp"
+  },
+  {
+    "county": "Monroe",
+    "shpCount": 89046,
+    "dbCount": 89044,
+    "delta": 2,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Nassau",
+    "shpCount": 58070,
+    "dbCount": 57560,
+    "delta": 510,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Okaloosa",
+    "shpCount": 112558,
+    "dbCount": 111818,
+    "delta": 740,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Okeechobee",
+    "shpCount": 31667,
+    "dbCount": 31639,
+    "delta": 28,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Orange",
+    "shpCount": 491705,
+    "dbCount": 490946,
+    "delta": 759,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Osceola",
+    "shpCount": 207733,
+    "dbCount": 207733,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Palm Beach",
+    "shpCount": 688403,
+    "dbCount": 658030,
+    "delta": 30373,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Pasco",
+    "shpCount": 314926,
+    "dbCount": 314425,
+    "delta": 501,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Pinellas",
+    "shpCount": 436312,
+    "dbCount": 436038,
+    "delta": 274,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Polk",
+    "shpCount": 426311,
+    "dbCount": 426311,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Putnam",
+    "shpCount": 97862,
+    "dbCount": 97860,
+    "delta": 2,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Saint Johns",
+    "shpCount": 210031,
+    "dbCount": 151780,
+    "delta": 58251,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Saint Lucie",
+    "shpCount": 188766,
+    "dbCount": 188676,
+    "delta": 90,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Santa Rosa",
+    "shpCount": 112193,
+    "dbCount": 109634,
+    "delta": 2559,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Sarasota",
+    "shpCount": 304963,
+    "dbCount": 304908,
+    "delta": 55,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Seminole",
+    "shpCount": 180662,
+    "dbCount": 180662,
+    "delta": 0,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Sumter",
+    "shpCount": 99424,
+    "dbCount": 99406,
+    "delta": 18,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Suwannee",
+    "shpCount": 32098,
+    "dbCount": 31906,
+    "delta": 192,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Taylor",
+    "shpCount": 18853,
+    "dbCount": 18798,
+    "delta": 55,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Union",
+    "shpCount": 7337,
+    "dbCount": 6960,
+    "delta": 377,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Volusia",
+    "shpCount": 311745,
+    "dbCount": 311552,
+    "delta": 193,
+    "status": "✅ OK"
+  },
+  {
+    "county": "Wakulla",
+    "shpCount": 26763,
+    "dbCount": 19977,
+    "delta": 6786,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Walton",
+    "shpCount": 94108,
+    "dbCount": 89004,
+    "delta": 5104,
+    "status": "⚠️ Partial Load"
+  },
+  {
+    "county": "Washington",
+    "shpCount": 43806,
+    "dbCount": 43768,
+    "delta": 38,
+    "status": "✅ OK"
+  }
+]

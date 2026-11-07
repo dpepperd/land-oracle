@@ -1,0 +1,12 @@
+🧐 Analyzing Gap for Collier...
+📂 Source: D:\LandOracle\Florida\Collier\gis\collier_2025Ppar.shp
+
+📊 Analysis Results (Collier):
+Total Records in SHP:   365,547
+Records with ID:        291,577
+--------------------------------
+❌ Missing Parcel ID:    0 (Likely Skipped)
+   ↳ Of which are ROW/Gov: 0
+🔁 Duplicates (Merged):  73,970
+--------------------------------
+📉 Explainable Gap:      73,970
