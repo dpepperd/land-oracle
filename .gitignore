@@ -54,9 +54,6 @@ dump.sql
 *.dmp
 *.bak
 
-# --- files containing hardcoded credentials (rotate the DB password, then fix and un-ignore) ---
-scripts/convert-columns-to-numeric.js
-scripts/scriptsload-highways.js.txt
 
 # --- logs containing owner PII ---
 verify_*.txt

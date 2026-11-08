@@ -16,8 +16,8 @@ async function check() {
     const res = await client.query(`
         SELECT id, email, clerk_id, role, subscription_tier, beta_access 
         FROM users 
-        WHERE email IN ('dpepperd@gmail.com', 'tatjanalovesfhrm@gmail.com');
-    `);
+        WHERE email = ANY($1::text[]);
+    `, [(process.env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)]);
     console.table(res.rows);
   } catch (err) {
     console.error('Error:', err);

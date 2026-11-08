@@ -22,7 +22,7 @@ async function migrate() {
     `);
 
     // 2. Grant Beta Access to specific existing admins
-    const admins = ['dpepperd@gmail.com', 'tatjanalovesfhrm@gmail.com'];
+    const admins = (process.env.ADMIN_EMAILS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean); // set ADMIN_EMAILS in .env.local
     console.log(`   - Granting access to: ${admins.join(', ')}`);
     
     await client.query(`
