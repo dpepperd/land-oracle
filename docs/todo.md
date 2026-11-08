@@ -16,6 +16,8 @@
 - [ ] Route smoke prints `lead=undefined note=undefined` for the search is_lead/has_note flags; check those fields are really returned.
 - [ ] `/api/parcels/stats` took ~22 s in the smoke run; investigate (public endpoint).
 
+- [ ] `leads` and `user_parcel_notes` have FKs to `users` WITHOUT `ON DELETE CASCADE`, and `user_county_access` has no FK: the Clerk `user.deleted` webhook will 500 for a user with leads/notes and leave orphan county rows. Add cascades (in `public` and `app_prod`).
+
 ## Before merging feat/pricing-v2 to main
 - [ ] `main` (`cba7594`) is already contained in the branch (16 ahead, 0 behind): nothing to merge in.
 - [ ] Follow `docs/go-live.md`: separate production DB, Clerk production keys/webhook/Google OAuth, Stripe live, then cutover.

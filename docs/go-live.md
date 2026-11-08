@@ -16,6 +16,8 @@ deploys production.
 
 ## Phase 1: Separate the production database from preview (do before cutover)
 
+**STATUS 2026-11-08: DONE except wiring.** `scripts/launch/make-prod-schema.js` created schema `app_prod` (10 empty app tables, 5 FKs, own ID sequences) and role `landoracle_prod` (full rights on `app_prod`, SELECT-only on parcel/reference tables, no access to `public.users` etc.). Verified as that role: users empty, parcel search works, writes to parcel tables refused. The new connection URL is in a local scratchpad file (not in the repo). **Remaining:** at cutover, untick Production on the shared `DATABASE_URL`, add a Production-only `DATABASE_URL` with the new URL, then redeploy. Rotate the `landoracle_prod` and `doadmin` passwords after that.
+
 **Why.** `DATABASE_URL` is one Vercel entry shared by Development, Preview and Production. Test sign-ups, test Stripe
 customers and the simulation scripts all write to the same `users` table that production would use. A `user.deleted` event
 from the *dev* Clerk instance also cancels Stripe subscriptions looked up in that table.
