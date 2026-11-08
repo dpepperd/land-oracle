@@ -187,14 +187,14 @@ export default function Dashboard() {
       const res = await fetch('/api/leads/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ parcel_id: parcelId })
+        body: JSON.stringify({ parcel_key: parcelId })
       });
       
       if (!res.ok) throw new Error('Failed to save lead');
       
       // Update local state to reflect saved
       setParcels(prev => prev.map(p => 
-        p.parcel_id === parcelId ? { ...p, is_lead: true } : p
+        p.parcel_key === parcelId ? { ...p, is_lead: true } : p
       ));
       
       // Update map features if needed (complex re-render, maybe skip for now or update robustly)

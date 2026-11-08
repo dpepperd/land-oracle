@@ -1,0 +1,662 @@
+{
+ "source": "FL DOR 2026 User Guide Quick Reference",
+ "useCodes": {
+  "000": {
+   "label": "Vacant Residential",
+   "section": "Residential"
+  },
+  "001": {
+   "label": "Single Family",
+   "section": "Residential"
+  },
+  "002": {
+   "label": "Mobile Homes",
+   "section": "Residential"
+  },
+  "004": {
+   "label": "Condominiums",
+   "section": "Residential"
+  },
+  "005": {
+   "label": "Cooperatives",
+   "section": "Residential"
+  },
+  "006": {
+   "label": "Retirement Homes not eligible for exemption",
+   "section": "Residential"
+  },
+  "007": {
+   "label": "Miscellaneous Residential (migrant camps, boarding homes, etc.)",
+   "section": "Residential"
+  },
+  "008": {
+   "label": "Multi-family - fewer than 10 units",
+   "section": "Residential"
+  },
+  "009": {
+   "label": "Residential Common Elements/Areas",
+   "section": "Residential"
+  },
+  "003": {
+   "label": "Multi-family - 10 units or more",
+   "section": "Commercial"
+  },
+  "010": {
+   "label": "Vacant Commercial",
+   "section": "Commercial"
+  },
+  "011": {
+   "label": "Stores, one story",
+   "section": "Commercial"
+  },
+  "012": {
+   "label": "Mixed use - store and office or store and residential combination",
+   "section": "Commercial"
+  },
+  "013": {
+   "label": "Department Stores",
+   "section": "Commercial"
+  },
+  "014": {
+   "label": "Supermarkets",
+   "section": "Commercial"
+  },
+  "015": {
+   "label": "Regional Shopping Centers",
+   "section": "Commercial"
+  },
+  "016": {
+   "label": "Community Shopping Centers",
+   "section": "Commercial"
+  },
+  "017": {
+   "label": "Office buildings, non-professional service buildings, one story",
+   "section": "Commercial"
+  },
+  "018": {
+   "label": "Office buildings, non-professional service buildings, multi-story",
+   "section": "Commercial"
+  },
+  "019": {
+   "label": "Professional service buildings",
+   "section": "Commercial"
+  },
+  "020": {
+   "label": "Airports (private or commercial), bus terminals, marine terminals, piers, marinas",
+   "section": "Commercial"
+  },
+  "021": {
+   "label": "Restaurants, cafeterias",
+   "section": "Commercial"
+  },
+  "022": {
+   "label": "Drive-in Restaurants",
+   "section": "Commercial"
+  },
+  "023": {
+   "label": "Financial institutions (banks, saving and loan companies, mortgage companies, credit services)",
+   "section": "Commercial"
+  },
+  "024": {
+   "label": "Insurance company offices",
+   "section": "Commercial"
+  },
+  "025": {
+   "label": "Repair service shops (excluding automotive), radio and T.V. repair, refrigeration service, electric repair, laundries, Laundromats",
+   "section": "Commercial"
+  },
+  "026": {
+   "label": "Service stations",
+   "section": "Commercial"
+  },
+  "027": {
+   "label": "Auto sales, auto repair and storage, auto service shops, body and fender shops, commercial garages, farm and machinery sales and services, auto rental, marine equipment, trailers and related equipment, mobile home sales, motorcycles, construction vehicle sales",
+   "section": "Commercial"
+  },
+  "028": {
+   "label": "Parking lots (commercial or patron), mobile home parks",
+   "section": "Commercial"
+  },
+  "029": {
+   "label": "Wholesale outlets, produce houses, manufacturing outlets",
+   "section": "Commercial"
+  },
+  "030": {
+   "label": "Florists, greenhouses",
+   "section": "Commercial"
+  },
+  "031": {
+   "label": "Drive-in theaters, open stadiums",
+   "section": "Commercial"
+  },
+  "032": {
+   "label": "Enclosed theaters, enclosed auditoriums",
+   "section": "Commercial"
+  },
+  "033": {
+   "label": "Nightclubs, cocktail lounges, bars",
+   "section": "Commercial"
+  },
+  "034": {
+   "label": "Bowling alleys, skating rinks, pool halls, enclosed arenas",
+   "section": "Commercial"
+  },
+  "035": {
+   "label": "Tourist attractions, permanent exhibits, other entertainment facilities, fairgrounds (privately owned)",
+   "section": "Commercial"
+  },
+  "036": {
+   "label": "Camps",
+   "section": "Commercial"
+  },
+  "037": {
+   "label": "Race tracks (horse, auto, or dog)",
+   "section": "Commercial"
+  },
+  "038": {
+   "label": "Golf courses, driving ranges",
+   "section": "Commercial"
+  },
+  "039": {
+   "label": "Hotels, motels",
+   "section": "Commercial"
+  },
+  "040": {
+   "label": "Vacant Industrial",
+   "section": "Industrial"
+  },
+  "041": {
+   "label": "Light manufacturing, small equipment manufacturing plants, small machine shops, instrument manufacturing, printing plants",
+   "section": "Industrial"
+  },
+  "042": {
+   "label": "Heavy industrial, heavy equipment manufacturing, large machine shops, foundries, steel fabricating plants, auto or aircraft plants",
+   "section": "Industrial"
+  },
+  "043": {
+   "label": "Lumber yards, sawmills, planing mills",
+   "section": "Industrial"
+  },
+  "044": {
+   "label": "Packing plants, fruit and vegetable packing plants, meat packing plants",
+   "section": "Industrial"
+  },
+  "045": {
+   "label": "Canneries, fruit and vegetable, bottlers and brewers, distilleries, wineries",
+   "section": "Industrial"
+  },
+  "046": {
+   "label": "Other food processing, candy factories, bakeries, potato chip factories",
+   "section": "Industrial"
+  },
+  "047": {
+   "label": "Mineral processing, phosphate processing, cement plants, refineries, clay plants, rock and gravel plants",
+   "section": "Industrial"
+  },
+  "048": {
+   "label": "Warehousing, distribution terminals, trucking terminals, van and storage warehousing",
+   "section": "Industrial"
+  },
+  "049": {
+   "label": "Open storage, new and used building supplies, junk yards, auto wrecking, fuel storage, equipment and material storage",
+   "section": "Industrial"
+  },
+  "050": {
+   "label": "Improved agricultural",
+   "section": "Agricultural"
+  },
+  "051": {
+   "label": "Cropland soil capability Class I",
+   "section": "Agricultural"
+  },
+  "052": {
+   "label": "Cropland soil capability Class II",
+   "section": "Agricultural"
+  },
+  "053": {
+   "label": "Cropland soil capability Class III",
+   "section": "Agricultural"
+  },
+  "054": {
+   "label": "Timberland - site index 90 and above",
+   "section": "Agricultural"
+  },
+  "055": {
+   "label": "Timberland - site index 80 to 89",
+   "section": "Agricultural"
+  },
+  "056": {
+   "label": "Timberland - site index 70 to 79",
+   "section": "Agricultural"
+  },
+  "057": {
+   "label": "Timberland - site index 60 to 69",
+   "section": "Agricultural"
+  },
+  "058": {
+   "label": "Timberland - site index 50 to 59",
+   "section": "Agricultural"
+  },
+  "059": {
+   "label": "Timberland not classified by site index to Pines",
+   "section": "Agricultural"
+  },
+  "060": {
+   "label": "Grazing land soil capability Class I",
+   "section": "Agricultural"
+  },
+  "061": {
+   "label": "Grazing land soil capability Class II",
+   "section": "Agricultural"
+  },
+  "062": {
+   "label": "Grazing land soil capability Class III",
+   "section": "Agricultural"
+  },
+  "063": {
+   "label": "Grazing land soil capability Class IV",
+   "section": "Agricultural"
+  },
+  "064": {
+   "label": "Grazing land soil capability Class V",
+   "section": "Agricultural"
+  },
+  "065": {
+   "label": "Grazing land soil capability Class VI",
+   "section": "Agricultural"
+  },
+  "066": {
+   "label": "Orchard Groves, citrus, etc.",
+   "section": "Agricultural"
+  },
+  "067": {
+   "label": "Poultry, bees, tropical fish, rabbits, etc.",
+   "section": "Agricultural"
+  },
+  "068": {
+   "label": "Dairies, feed lots",
+   "section": "Agricultural"
+  },
+  "069": {
+   "label": "Ornamentals, miscellaneous agricultural",
+   "section": "Agricultural"
+  },
+  "070": {
+   "label": "Vacant Institutional, with or without extra features",
+   "section": "Institutional"
+  },
+  "071": {
+   "label": "Churches",
+   "section": "Institutional"
+  },
+  "072": {
+   "label": "Private schools and colleges",
+   "section": "Institutional"
+  },
+  "073": {
+   "label": "Privately owned hospitals",
+   "section": "Institutional"
+  },
+  "074": {
+   "label": "Homes for the aged",
+   "section": "Institutional"
+  },
+  "075": {
+   "label": "Orphanages, other non-profit or charitable services",
+   "section": "Institutional"
+  },
+  "076": {
+   "label": "Mortuaries, cemeteries, crematoriums",
+   "section": "Institutional"
+  },
+  "077": {
+   "label": "Clubs, lodges, union halls",
+   "section": "Institutional"
+  },
+  "078": {
+   "label": "Sanitariums, convalescent and rest homes",
+   "section": "Institutional"
+  },
+  "079": {
+   "label": "Cultural organizations, facilities",
+   "section": "Institutional"
+  },
+  "080": {
+   "label": "Vacant Governmental",
+   "section": "Governmental"
+  },
+  "081": {
+   "label": "Military",
+   "section": "Governmental"
+  },
+  "082": {
+   "label": "Forest, parks, recreational areas",
+   "section": "Governmental"
+  },
+  "083": {
+   "label": "Public county schools - including all property of Board of Public Instruction",
+   "section": "Governmental"
+  },
+  "084": {
+   "label": "Colleges (non-private)",
+   "section": "Governmental"
+  },
+  "085": {
+   "label": "Hospitals (non-private)",
+   "section": "Governmental"
+  },
+  "086": {
+   "label": "Counties (other than public schools, colleges, hospitals) including non-municipal government",
+   "section": "Governmental"
+  },
+  "087": {
+   "label": "State, other than military, forests, parks, recreational areas, colleges, hospitals",
+   "section": "Governmental"
+  },
+  "088": {
+   "label": "Federal, other than military, forests, parks, recreational areas, hospitals, colleges",
+   "section": "Governmental"
+  },
+  "089": {
+   "label": "Municipal, other than parks, recreational areas, colleges, hospitals",
+   "section": "Governmental"
+  },
+  "090": {
+   "label": "Leasehold interests (government-owned property leased by a non-governmental lessee)",
+   "section": "Miscellaneous"
+  },
+  "091": {
+   "label": "Utility, gas and electricity, telephone and telegraph, locally assessed railroads, water and sewer service, pipelines, canals, radio/television communication",
+   "section": "Miscellaneous"
+  },
+  "092": {
+   "label": "Mining lands, petroleum lands, or gas lands",
+   "section": "Miscellaneous"
+  },
+  "093": {
+   "label": "Subsurface rights",
+   "section": "Miscellaneous"
+  },
+  "094": {
+   "label": "Right-of-way, streets, roads, irrigation channel, ditch, etc.",
+   "section": "Miscellaneous"
+  },
+  "095": {
+   "label": "Rivers and lakes, submerged lands",
+   "section": "Miscellaneous"
+  },
+  "096": {
+   "label": "Sewage disposal, solid waste, borrow pits, drainage reservoirs, waste land, marsh, sand dunes, swamps",
+   "section": "Miscellaneous"
+  },
+  "097": {
+   "label": "Outdoor recreational or parkland, or high-water recharge subject to classified use assessment",
+   "section": "Miscellaneous"
+  },
+  "098": {
+   "label": "Centrally assessed",
+   "section": "Centrally Assessed"
+  },
+  "099": {
+   "label": "Acreage not zoned agricultural with or without extra features",
+   "section": "Non-Agricultural Acreage"
+  }
+ },
+ "exemptions": [
+  {
+   "field": "exmpt_01",
+   "label": "Value of homestead exemption.",
+   "statute": "196.031(1)(a)"
+  },
+  {
+   "field": "exmpt_02",
+   "label": "Value of additional homestead exemption up to $26,411.",
+   "statute": "196.031(1)(b)"
+  },
+  {
+   "field": "exmpt_03",
+   "label": "Value of county determined additional exemption for low-income seniors 65 and older whose household income doe",
+   "statute": "196.075*"
+  },
+  {
+   "field": "exmpt_04",
+   "label": "Value of municipality determined additional exemption for low-income seniors 65 and older.",
+   "statute": "196.075*"
+  },
+  {
+   "field": "exmpt_05",
+   "label": "Value of exemptions for certain permanently and totally disabled veterans and their surviving spouses and for ",
+   "statute": "196.081 & 196.102"
+  },
+  {
+   "field": "exmpt_06",
+   "label": "Value of exemption for disabled veterans confined to wheelchairs and surviving spouses, subject to statute",
+   "statute": "196.09100000000001"
+  },
+  {
+   "field": "exmpt_07",
+   "label": "Value of exemption for a licensed child care facility operating in an enterprise zone, subject to statute",
+   "statute": "196.095"
+  },
+  {
+   "field": "exmpt_08",
+   "label": "Value of exemption for totally and permanently disabled persons, subject to statute",
+   "statute": "196.101"
+  },
+  {
+   "field": "exmpt_09",
+   "label": "Value of constitutional charitable, religious, scientific or literary exemption.",
+   "statute": "196.196"
+  },
+  {
+   "field": "exmpt_10",
+   "label": "Value of county adopted exemption for historic property used for certain commercial or nonprofit purposes, sub",
+   "statute": "196.1961*"
+  },
+  {
+   "field": "exmpt_11",
+   "label": "Value of municipality determined exemption for historic property used for certain commercial or nonprofit purp",
+   "statute": "196.1961*"
+  },
+  {
+   "field": "exmpt_12",
+   "label": "Value of exemption for certain property used by hospitals, nursing homes, and homes for special services, subj",
+   "statute": "196.197"
+  },
+  {
+   "field": "exmpt_13",
+   "label": "Value of exemption for certain property used by nonprofit homes for the aged, subject to statute",
+   "statute": "196.19749999999999"
+  },
+  {
+   "field": "exmpt_14",
+   "label": "Value of exemption for property used by proprietary continuing care facilities, subject to statute",
+   "statute": "196.1977"
+  },
+  {
+   "field": "exmpt_15",
+   "label": "Affordable housing property exemption, subject to statute",
+   "statute": "196.1978 & 196.196"
+  },
+  {
+   "field": "exmpt_16",
+   "label": "Value of educational property exemption, subject to statute",
+   "statute": "196.19800000000001"
+  },
+  {
+   "field": "exmpt_17",
+   "label": "Value of charter school property tax exemption, subject to statute",
+   "statute": "196.19829999999999"
+  },
+  {
+   "field": "exmpt_18",
+   "label": "Value of labor organization property tax exemption, subject to statute",
+   "statute": "196.1985"
+  },
+  {
+   "field": "exmpt_19",
+   "label": "Value of community center property tax exemption, subject to statute",
+   "statute": "196.1986"
+  },
+  {
+   "field": "exmpt_20",
+   "label": "Value of government property tax exemption, subject to statute",
+   "statute": "196.19900000000001"
+  },
+  {
+   "field": "exmpt_21",
+   "label": "Value of exemption for property under certain agreements with local governments for use of public property, su",
+   "statute": "196.19929999999999"
+  },
+  {
+   "field": "exmpt_22",
+   "label": "Value of county economic development ad valorem tax exemptions, subject to statute",
+   "statute": "196.1995*"
+  },
+  {
+   "field": "exmpt_23",
+   "label": "Value of municipality economic development ad valorem tax exemptions, subject to statute",
+   "statute": "196.1995*"
+  },
+  {
+   "field": "exmpt_24",
+   "label": "Value of county ad valorem exemptions for historic property improvements, subject to statute",
+   "statute": "196.1997*"
+  },
+  {
+   "field": "exmpt_25",
+   "label": "Value of municipality ad valorem exemptions for historic property improvements, subject to statute",
+   "statute": "196.1997*"
+  },
+  {
+   "field": "exmpt_26",
+   "label": "Value of county additional ad valorem tax exemptions for historic properties open to the public, subject to st",
+   "statute": "196.1998*"
+  },
+  {
+   "field": "exmpt_27",
+   "label": "Value of municipality additional ad valorem tax exemptions for historic properties open to the public, subject",
+   "statute": "196.1998*"
+  },
+  {
+   "field": "exmpt_28",
+   "label": "No longer in use",
+   "statute": null
+  },
+  {
+   "field": "exmpt_29",
+   "label": "Value of not-for-profit sewer and water company property tax exemption, subject to statute",
+   "statute": "196.20009999999999"
+  },
+  {
+   "field": "exmpt_30",
+   "label": "Value of property tax exemption for s.",
+   "statute": "196.2002"
+  },
+  {
+   "field": "exmpt_31",
+   "label": "Value of property tax exemption for blind persons",
+   "statute": "196.202"
+  },
+  {
+   "field": "exmpt_32",
+   "label": "Value of property tax exemption for widowers",
+   "statute": "196.202"
+  },
+  {
+   "field": "exmpt_33",
+   "label": "Value of property tax exemption for widows",
+   "statute": "196.202"
+  },
+  {
+   "field": "exmpt_34",
+   "label": "Value of property tax exemption of persons totally and permanently disabled",
+   "statute": "196.202"
+  },
+  {
+   "field": "exmpt_35",
+   "label": "Value of property tax exemption for disabled ex-service member; evidence of disability",
+   "statute": "196.24"
+  },
+  {
+   "field": "exmpt_36",
+   "label": "Land dedicated in perpetuity for conservation purposes and used exclusively for those purposes",
+   "statute": "196.26(2)"
+  },
+  {
+   "field": "exmpt_37",
+   "label": "Land dedicated in perpetuity for conservation purposes but also used for commercial purposes",
+   "statute": "196.26(3)"
+  },
+  {
+   "field": "exmpt_38",
+   "label": "Value of property tax exemption for homestead property owned by persons who are deployed military personnel ou",
+   "statute": "196.173"
+  },
+  {
+   "field": "exmpt_39",
+   "label": "County adopted additional exemption for low-income seniors 65 and older who have maintained permanent residenc",
+   "statute": "196.075*"
+  },
+  {
+   "field": "exmpt_40",
+   "label": "Municipality adopted additional exemption for low-income seniors 65 and older who have maintained permanent re",
+   "statute": "196.075*"
+  },
+  {
+   "field": "exmpt_41",
+   "label": "Exemption for first responder totally and permanently disabled in the line of duty or surviving spouse; surviv",
+   "statute": "196.081(6)\r\n196.102"
+  },
+  {
+   "field": "exmpt_42",
+   "label": "Biblical History Display Property",
+   "statute": "196.1987"
+  },
+  {
+   "field": "exmpt_43",
+   "label": "FHFC – certified new multi-family Multifamily project subject to Land Use Restriction Agreement with the Flori",
+   "statute": "196.1978 (3) 196.1978 (4)"
+  },
+  {
+   "field": "exmpt_44",
+   "label": "Land Leased by a NonProfit for Affordable Housing",
+   "statute": "196.1978 (1)(b)"
+  },
+  {
+   "field": "exmpt_45",
+   "label": "County Affordable Housing Program",
+   "statute": "196.1979"
+  },
+  {
+   "field": "exmpt_46",
+   "label": "Municipal Affordable Housing Program",
+   "statute": "196.1979"
+  },
+  {
+   "field": "exmpt_47",
+   "label": "Affordable Housing Property (Owned by this state)",
+   "statute": "196.19781"
+  },
+  {
+   "field": "exmpt_48",
+   "label": "Affordable Housing Property on Governmental Property",
+   "statute": "196.19782000000001"
+  },
+  {
+   "field": "exmpt_80",
+   "label": "Disabled Veterans Homestead Discount for veterans 65 and older, subject to statute",
+   "statute": "196.08199999999999"
+  },
+  {
+   "field": "exmpt_81",
+   "label": "Reduction in assessment for living quarters of parents or grandparents",
+   "statute": "193.703"
+  },
+  {
+   "field": "exmpt_82",
+   "label": "Lands Available for Taxes",
+   "statute": "197.50200000000001"
+  }
+ ]
+}

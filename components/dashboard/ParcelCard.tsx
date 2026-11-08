@@ -2,6 +2,7 @@ import { MapPin, StickyNote, Home } from 'lucide-react';
 
 interface Parcel {
   parcel_id: string;
+  parcel_key: string;
   county: string;
   owner_name: string;
   owner_state: string;
@@ -57,7 +58,7 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onMarkLead(parcel.parcel_id);
+            onMarkLead(parcel.parcel_key);
           }}
           disabled={parcel.is_lead || isMarking}
           className={`text-xs px-3 py-1.5 rounded transition-colors ${

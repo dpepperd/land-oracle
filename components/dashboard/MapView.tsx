@@ -810,19 +810,7 @@ export default function MapView({
               {/* CRM Notes Section */}
               {/* Notes Removed - See CRMPanel */}
 
-              {/* Admin Edit Button */}
-              {userRole === 'admin' && (
-                  <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsEditModalOpen(true);
-                    }}
-                    className="mt-3 w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded-md text-xs font-medium transition-colors border border-gray-300"
-                  >
-                      <Edit2 size={14} />
-                      Edit Parcel Data
-                  </button>
-              )}
+              {/* Owner data comes from the DOR roll and is read-only. */}
 
            </div>
          </Popup>

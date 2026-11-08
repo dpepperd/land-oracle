@@ -3,7 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { exportSchema } from '@/lib/validation';
 import { z } from 'zod';
-import { LIVE_COUNTIES, canonCounty, filterAllowedCounties } from '@/lib/counties';
+import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
+import { countyCode, countyName } from '@/lib/parcels/key';
 
 // Helper to convert array of objects to CSV string
 function toCSV(data: any[]) {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     const values: any[] = [];
     const conditions: string[] = ['1=1'];
     let valIdx = 1;
+    let nalText: { kind: 'id' | 'address'; value: string } | null = null;
 
     // 1. Get Entitlements
     const { getEntitlements, trackExport } = await import('@/lib/entitlements');
@@ -69,14 +71,10 @@ export async function POST(request: Request) {
     // --- IDENTICAL LOGIC TO search/route.ts ---
     // 1. Parcel ID Filter (Fastest)
     if (parcelId && parcelId.trim().length > 0) {
-      conditions.push(`p.parcelno ILIKE $${valIdx}`);
-      values.push(`%${parcelId.trim()}%`);
-      valIdx++;
+      nalText = { kind: 'id', value: parcelId.trim() };
     } else if (address && address.trim().length > 0) {
       // 1.5 Address Search (Specific)
-      conditions.push(`(p.phy_addr1 ILIKE $${valIdx} OR p.own_addr1 ILIKE $${valIdx})`);
-      values.push(`%${address.trim()}%`);
-      valIdx++;
+      nalText = { kind: 'address', value: address.trim() };
     } else {
       // 2. Land Use
       if (landUse && landUse.length > 0) {
@@ -163,7 +161,7 @@ export async function POST(request: Request) {
         else finalCounties = filterAllowedCounties(counties, allowedCounties);
     } else {
         if (allowedCounties === 'all') {
-             if (conditions.length > 1) {
+             if (conditions.length > 1 || nalText) {
                  finalCounties = LIVE_COUNTIES;
              } else {
                  finalCounties = [];
@@ -174,9 +172,19 @@ export async function POST(request: Request) {
     }
 
     if (finalCounties.length > 0) {
-      conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
-      values.push(finalCounties.map(canonCounty));
+      // Exact DB spellings so the btree index on county is used (filterAllowedCounties already enforced entitlement).
+      const exactNames = finalCounties.map((c) => countyName(countyCode(c) ?? -1)).filter((n): n is string => !!n);
+      conditions.push(`p.county = ANY($${valIdx})`);
+      values.push(exactNames);
       valIdx++;
+      // Text searches run NAL-first (cheap scan by co_no) and then join to geometry; avoids scanning a whole county through the view.
+      if (nalText) {
+        const coNos = exactNames.map((n) => countyCode(n)).filter((n): n is number => !!n);
+        const cols = nalText.kind === 'id' ? ['n.parcel_id', 'n.alt_key'] : ['n.phy_addr1', 'n.own_addr1'];
+        conditions.push(`p.match_key = ANY(ARRAY(SELECT CASE WHEN n.co_no = 74 THEN upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) ELSE n.match_key END FROM dor.nal_2026 n WHERE n.co_no = ANY($${valIdx}) AND (${cols.map((c) => c + ' ILIKE $' + (valIdx + 1)).join(' OR ')})))`);
+        values.push(coNos, `%${nalText.value}%`);
+        valIdx += 2;
+      }
     } else {
         // Safe fail return empty CSV
         return new NextResponse("", {
@@ -190,6 +198,7 @@ export async function POST(request: Request) {
     const sql = `
       SELECT 
         p.county, 
+        p.parcel_key,
         COALESCE(p.parcel_id, p.parcelno) as parcel_id, 
         p.alt_key,
         p.own_name as owner_name, 
@@ -203,7 +212,7 @@ export async function POST(request: Request) {
         p.jv as market_value,
         ST_Y(ST_Centroid(p.geom)) as latitude, 
         ST_X(ST_Centroid(p.geom)) as longitude
-      FROM parcels p
+      FROM parcels_current_all p
       WHERE ${conditions.join(' AND ')}
       LIMIT $${valIdx}
     `;

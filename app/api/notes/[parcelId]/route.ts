@@ -8,7 +8,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ parcelId
 
   const client = await pool.connect();
   try {
-    const { parcelId } = await params;
+    const parcelId = decodeURIComponent((await params).parcelId); // parcel_key
     
     // 1. Identify User Role & ID
     const userRes = await client.query('SELECT id, role FROM users WHERE clerk_id = $1', [userId]);
@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ parcelId
             SELECT n.id, n.content, n.created_at, u.email as author 
             FROM user_parcel_notes n
             JOIN users u ON n.user_id = u.id
-            WHERE n.parcel_id = $1 AND u.role = 'admin'
+            WHERE n.parcel_key = $1 AND u.role = 'admin'
             ORDER BY n.created_at DESC
         `;
         values = [parcelId];
@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ parcelId
         query = `
             SELECT id, content, created_at 
             FROM user_parcel_notes 
-            WHERE user_id = $1 AND parcel_id = $2
+            WHERE user_id = $1 AND parcel_key = $2
             ORDER BY created_at DESC
         `;
         values = [user.id, parcelId];

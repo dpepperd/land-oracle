@@ -4,7 +4,8 @@ import pool from '@/lib/db';
 import { searchSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { getEntitlements } from '@/lib/entitlements';
-import { LIVE_COUNTIES, canonCounty, filterAllowedCounties } from '@/lib/counties';
+import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
+import { countyCode, countyName } from '@/lib/parcels/key';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -60,17 +61,14 @@ export async function POST(request: Request) {
     const values: any[] = [];
     const conditions: string[] = ['1=1'];
     let valIdx = 1;
+    let nalText: { kind: 'id' | 'address'; value: string } | null = null;
 
     // 1. Parcel ID Filter (Fastest)
     if (parcelId && parcelId.trim().length > 0) {
-      conditions.push(`p.parcelno ILIKE $${valIdx}`);
-      values.push(`%${parcelId.trim()}%`);
-      valIdx++;
+      nalText = { kind: 'id', value: parcelId.trim() };
     } else if (address && address.trim().length > 0) {
       // 1.5 Address Search (Specific)
-      conditions.push(`(p.phy_addr1 ILIKE $${valIdx} OR p.own_addr1 ILIKE $${valIdx})`);
-      values.push(`%${address.trim()}%`);
-      valIdx++;
+      nalText = { kind: 'address', value: address.trim() };
     } else {
       // 2. Land Use
       if (landUse && landUse.length > 0) {
@@ -167,7 +165,7 @@ export async function POST(request: Request) {
         if (allowedCounties === 'all') {
              // AUTO-ACCESS: Only default to ALL LIVE counties if specific filters are applied.
              // If no filters (just '1=1'), return empty to prevent "Ghost Records" (e.g. Sarasota showing up randomly).
-             if (conditions.length > 1) {
+             if (conditions.length > 1 || nalText) {
                  finalCounties = LIVE_COUNTIES;
              } else {
                  finalCounties = [];
@@ -179,9 +177,19 @@ export async function POST(request: Request) {
 
     if (finalCounties.length > 0) {
       // FIX: Case-insensitive match for County (DeSoto vs Desoto)
-      conditions.push(`LOWER(p.county) = ANY($${valIdx})`);
-      values.push(finalCounties.map(canonCounty));
+      // Exact DB spellings so the btree index on county is used (filterAllowedCounties already enforced entitlement).
+      const exactNames = finalCounties.map((c) => countyName(countyCode(c) ?? -1)).filter((n): n is string => !!n);
+      conditions.push(`p.county = ANY($${valIdx})`);
+      values.push(exactNames);
       valIdx++;
+      // Text searches run NAL-first (cheap scan by co_no) and then join to geometry; avoids scanning a whole county through the view.
+      if (nalText) {
+        const coNos = exactNames.map((n) => countyCode(n)).filter((n): n is number => !!n);
+        const cols = nalText.kind === 'id' ? ['n.parcel_id', 'n.alt_key'] : ['n.phy_addr1', 'n.own_addr1'];
+        conditions.push(`p.match_key = ANY(ARRAY(SELECT CASE WHEN n.co_no = 74 THEN upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) ELSE n.match_key END FROM dor.nal_2026 n WHERE n.co_no = ANY($${valIdx}) AND (${cols.map((c) => c + ' ILIKE $' + (valIdx + 1)).join(' OR ')})))`);
+        values.push(coNos, `%${nalText.value}%`);
+        valIdx += 2;
+      }
     } else {
        return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });
     }
@@ -190,17 +198,17 @@ export async function POST(request: Request) {
     const sql = `
       WITH user_context AS (SELECT id, role FROM users WHERE clerk_id = $${valIdx})
       SELECT 
-        p.gid as id, p.county, COALESCE(p.parcel_id, p.parcelno) as parcel_id, p.parcelno, p.alt_key, 
+        p.parcel_key as id, p.parcel_key, p.county, COALESCE(p.parcel_id, p.parcelno) as parcel_id, p.parcelno, p.alt_key, 
         p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip, 
         p.acreage, p.dor_uc as land_use, COALESCE(p.phy_addr1, p.own_addr1) as property_address, p.jv as market_value,
         (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
         ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
         (l.id IS NOT NULL) as is_lead,
-        EXISTS (SELECT 1 FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_id = p.parcelno AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin')))) as has_note,
-        (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_id = p.parcelno AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
-      FROM parcels p
-      LEFT JOIN leads l ON p.parcelno = l.parcel_id
+        EXISTS (SELECT 1 FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin')))) as has_note,
+        (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
+      FROM parcels_current_all p
+      LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
       WHERE ${conditions.join(' AND ')}
       LIMIT $${valIdx + 1}
     `;
@@ -218,7 +226,7 @@ export async function POST(request: Request) {
 
       const geojson = {
         type: 'FeatureCollection',
-        features: res.rows.map(row => {
+        features: res.rows.filter(row => row.geojson || (row.latitude && row.longitude)).map(row => {
           let geometry;
           try { geometry = (row.geojson && row.geojson !== 'null') ? JSON.parse(row.geojson) : null; } 
           catch (e) { geometry = null; }

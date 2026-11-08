@@ -22,7 +22,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
         // Analytics: Track View
         import('@/lib/analytics').then(({ trackPropertyView }) => {
             trackPropertyView({
-                parcelId: parcel.parcel_id,
+                parcelId: parcel.parcel_key,
                 county: parcel.county,
                 acreage: parcel.acreage,
                 ownerState: parcel.owner_state
@@ -35,7 +35,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
         
         console.log("[CRM] Fetching notes for:", parcel.parcel_id);
         
-        fetch(`/api/notes/${parcel.parcel_id}`)
+        fetch(`/api/notes/${encodeURIComponent(parcel.parcel_key)}`)
             .then(res => res.json())
             .then(data => {
                 setNotes(data.notes || []);
@@ -54,7 +54,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                parcelId: parcel.parcel_id,
+                parcelId: parcel.parcel_key,
                 note: newNote
             })
         });
@@ -72,7 +72,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
             
             // Analytics
             import('@/lib/analytics').then(({ trackCRMAction }) => {
-                trackCRMAction({ action: 'note_added', parcelId: parcel.parcel_id });
+                trackCRMAction({ action: 'note_added', parcelId: parcel.parcel_key });
             });
         }
     } catch (e) {

@@ -83,7 +83,7 @@ export default function ResultsList({
               parcel={parcel}
               onMarkLead={onMarkLead}
               onSelect={onSelect}
-              isMarking={markingIds.includes(parcel.parcel_id)}
+              isMarking={markingIds.includes(parcel.parcel_key)}
             />
           ))
         )}

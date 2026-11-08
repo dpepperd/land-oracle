@@ -12,8 +12,8 @@ let inflight: Promise<Record<string, number>> | null = null;
 async function loadStats(): Promise<Record<string, number>> {
   const result = await pool.query(
     `SELECT county, COUNT(*) as count
-     FROM parcels
-     WHERE county IS NOT NULL
+     FROM parcels_v2
+     WHERE county IS NOT NULL AND NOT quarantine
      GROUP BY county`
   );
   const stats: Record<string, number> = {};

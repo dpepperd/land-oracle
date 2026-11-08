@@ -6,8 +6,9 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-  const { parcelId, note } = await req.json();
-  if (!parcelId) return new NextResponse("Parcel ID required", { status: 400 });
+  const { parcelKey, parcelId, note } = await req.json();
+  const key = parcelKey || parcelId; // parcel_key (parcelId accepted for older clients)
+  if (!key) return new NextResponse("parcel_key required", { status: 400 });
 
   const client = await pool.connect();
   try {
@@ -19,9 +20,9 @@ export async function POST(req: Request) {
     // 2. Insert Note (Append History)
     // No conflict handling - we want history
     await client.query(`
-        INSERT INTO user_parcel_notes (user_id, parcel_id, content, created_at)
+        INSERT INTO user_parcel_notes (user_id, parcel_key, content, created_at)
         VALUES ($1, $2, $3, NOW())
-    `, [user.id, parcelId, note]);
+    `, [user.id, key, note]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

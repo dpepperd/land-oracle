@@ -1,0 +1,100 @@
+// Generates db/migrations/012_parcels_current.sql from ONE column list so the geometry branches and the NAL-only branch can't drift.
+//   node scripts/launch/gen-012.js
+const fs = require('fs'), path = require('path');
+const root = path.join(__dirname, '..', '..');
+
+// [name, expr for geometry branches (v=parcels_v2, n=dor.nal_current, s=dor.sales_last3), expr for NAL-only branch (n)]
+const cols = [
+  ['gid',                 'v.id',                                   '-(n.co_no::bigint * 10000000 + n.seq_no)'],
+  ['state',               "'FL'::char(2)",                          "'FL'::char(2)"],
+  ['co_no',               'v.co_no',                                'n.co_no::smallint'],
+  ['parcel_key',          "'FL-' || v.parcel_key",                  "'FL-' || n.co_no || '-' || normalize_parcel_id_sep(n.parcel_id, cc.name)"],
+  ['parcel_key_local',    'v.parcel_key',                           "n.co_no || '-' || normalize_parcel_id_sep(n.parcel_id, cc.name)"],   // unprefixed, indexable (parcels_v2_parcel_key_uq); use for lookups
+  ['match_key',           'v.match_key',                            'n.match_key'],
+  ['county',              'v.county',                               'cc.name'],
+  ['parcel_id',           'COALESCE(v.parcel_id, v.parcelno_legacy)',                            'n.parcel_id'],
+  ['parcelno',            'v.parcelno_legacy',                      'n.parcel_id'],
+  ['alt_key',             'n.alt_key',                              'n.alt_key'],
+  ['own_name',            'n.own_name',                             'n.own_name'],
+  ['own_addr1',           'n.own_addr1',                            'n.own_addr1'],
+  ['own_addr2',           'n.own_addr2',                            'n.own_addr2'],
+  ['own_city',            'n.own_city',                             'n.own_city'],
+  ['own_state',           'n.own_state',                            'n.own_state'],
+  ['own_zipcd',           'n.own_zipcd',                            'n.own_zipcd'],
+  ['phy_addr1',           'n.phy_addr1',                            'n.phy_addr1'],
+  ['phy_addr2',           'n.phy_addr2',                            'n.phy_addr2'],
+  ['phy_city',            'n.phy_city',                             'n.phy_city'],
+  ['phy_zipcd',           'n.phy_zipcd',                            'n.phy_zipcd'],
+  ['acreage',             'round(n.lnd_sqfoot / 43560.0, 4)',       'round(n.lnd_sqfoot / 43560.0, 4)'],
+  ['dor_uc',              'n.dor_uc',                               'n.dor_uc'],
+  ['use_code',            'n.dor_uc',                               'n.dor_uc'],
+  ['jv',                  'n.jv',                                   'n.jv'],
+  ['land_value',          'n.lnd_val',                              'n.lnd_val'],
+  ['year_built',          'n.act_yr_blt',                           'n.act_yr_blt'],
+  ['eff_year_built',      'n.eff_yr_blt',                           'n.eff_yr_blt'],
+  ['living_area_sqft',    'n.tot_lvg_area',                         'n.tot_lvg_area'],
+  ['homestead',           '(n.exmpt_01 > 0)',                       '(n.exmpt_01 > 0)'],
+  ['sale1_date',          's.sale1_date',                           'NULL::date'],
+  ['sale_prc1',           's.sale1_price',                          'NULL::bigint'],
+  ['sale_yr1',            'EXTRACT(year FROM s.sale1_date)::int',   'NULL::int'],
+  ['sale_mo1',            "to_char(s.sale1_date, 'MM')",            'NULL::text'],
+  ['sale2_date',          's.sale2_date',                           'NULL::date'],
+  ['sale_prc2',           's.sale2_price',                          'NULL::bigint'],
+  ['sale_yr2',            'EXTRACT(year FROM s.sale2_date)::int',   'NULL::int'],
+  ['sale_mo2',            "to_char(s.sale2_date, 'MM')",            'NULL::text'],
+  ['sale3_date',          's.sale3_date',                           'NULL::date'],
+  ['sale_prc3',           's.sale3_price',                          'NULL::bigint'],
+  ['distance_to_highway', 'NULL::numeric',                          'NULL::numeric'],   // v1 column was empty for most counties (0 of 102K in Clay)
+  ['latitude',            'ST_Y(ST_PointOnSurface(v.geom))',        'NULL::float8'],
+  ['longitude',           'ST_X(ST_PointOnSurface(v.geom))',        'NULL::float8'],
+  ['geom',                'v.geom',                                 'NULL::geometry(MultiPolygon,4326)'],
+  ['has_geom',            'true',                                   'false'],
+  ['needs_review',        'v.needs_review',                         'false'],
+];
+
+const list = (i) => cols.map((c) => `  ${c[i]} AS ${c[0]}`).join(',\n');
+const geomBranch = (cmp) => `SELECT
+${list(1)}
+FROM parcels_v2 v
+LEFT JOIN dor.nal_current n
+       ON n.co_no = v.co_no AND ${cmp}
+      AND (n.sep_key IS NULL OR n.sep_key = substr(v.parcel_key, length(v.co_no::text) + 2))
+LEFT JOIN dor.sales_last3 s ON s.co_no = v.co_no AND s.join_key = v.match_key
+WHERE NOT v.quarantine`;
+
+const sql = `-- GENERATED by scripts/launch/gen-012.js. Do not edit by hand.
+-- parcels_current: the one view every app query reads. parcels_v2 (geometry, keys) LEFT JOIN dor.nal_2026 (attributes)
+-- + dor.sales_last3 (last 3 qualified sales). Column names match what the app used on parcels (v1); see docs/parcels_current_mapping.md.
+--   Volusia joins NAL through ALT_KEY (v2's Volusia key is the county ALT_KEY); every other county joins on match_key.
+--   NAL rows that are strict-key duplicates (Marion, Brevard) join on the separator-preserving key (dor.nal_dupes).
+--   parcels_current_nogeom = NAL parcels with no v2 row (new 2026 parcels, no geometry); parcels_current_all = both.
+DROP VIEW IF EXISTS parcels_current_all;
+DROP VIEW IF EXISTS parcels_current_nogeom;
+DROP VIEW IF EXISTS parcels_current;
+DROP VIEW IF EXISTS dor.nal_current;
+
+CREATE VIEW dor.nal_current AS
+SELECT n.*, d.sep_key FROM dor.nal_2026 n LEFT JOIN dor.nal_dupes d ON d.co_no = n.co_no AND d.seq_no = n.seq_no;
+
+CREATE VIEW parcels_current AS
+${geomBranch('n.match_key = v.match_key').replace('LEFT JOIN dor.nal_current n', 'LEFT JOIN dor.nal_current n')}
+ AND v.county <> 'Volusia'
+UNION ALL
+${geomBranch("n.co_no = 74 AND upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) = v.match_key").replace(/WHERE NOT v.quarantine$/, "WHERE NOT v.quarantine")}
+ AND v.county = 'Volusia' AND v.co_no = 74;
+
+CREATE VIEW parcels_current_nogeom AS
+SELECT
+${list(2)}
+FROM dor.nal_current n
+JOIN county_codes cc ON cc.co_no = n.co_no
+WHERE NOT EXISTS (
+  SELECT 1 FROM parcels_v2 v WHERE v.co_no = n.co_no AND NOT v.quarantine
+     AND v.match_key = CASE WHEN n.co_no = 74 THEN upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) ELSE n.match_key END
+     AND (n.sep_key IS NULL OR n.sep_key = substr(v.parcel_key, length(v.co_no::text) + 2)));
+
+CREATE VIEW parcels_current_all AS
+SELECT * FROM parcels_current UNION ALL SELECT * FROM parcels_current_nogeom;
+`;
+fs.writeFileSync(path.join(root, 'db', 'migrations', '012_parcels_current.sql'), sql);
+console.log('wrote 012,', cols.length, 'columns');

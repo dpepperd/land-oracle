@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // Let's adapt if needed or use schema strictly.
     // Assuming backend standardizes on camelCase for schema but supports legacy snake_case input.
     const body = crmSchema.parse({
-        parcelId: rawBody.parcel_id || rawBody.parcelId,
+        parcelId: rawBody.parcel_key || rawBody.parcel_id || rawBody.parcelId,
         note: rawBody.notes || rawBody.note || ''
     });
 
@@ -37,10 +37,10 @@ export async function POST(request: Request) {
 
       // Note: "leads" table schema usually has snake_case columns
       const result = await client.query(
-        `INSERT INTO leads (user_id, parcel_id, notes) 
-         VALUES ($1, $2, $3) 
+        `INSERT INTO leads (user_id, parcel_key, status) 
+         VALUES ($1, $2, 'new') 
          RETURNING id`,
-        [internalUserId, parcelId, note]
+        [internalUserId, parcelId]
       );
       
       return NextResponse.json({ success: true, id: result.rows[0].id });
