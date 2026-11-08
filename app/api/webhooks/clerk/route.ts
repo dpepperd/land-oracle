@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import pool from '@/lib/db'
 import { isAdminEmail } from '@/lib/admin'
+import { stripe } from '@/lib/stripe'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -103,7 +104,12 @@ export async function POST(req: Request) {
 
     const client = await pool.connect();
     try {
-        // ON DELETE CASCADE on user_county_access will handle the rest if we drop the user.
+        // Never leave a deleted account billing: cancel its Stripe subscription first (best effort, logged).
+        const sub = (await client.query('SELECT stripe_subscription_id FROM users WHERE clerk_id = $1', [id || ''])).rows[0]?.stripe_subscription_id;
+        if (sub && process.env.STRIPE_SECRET_KEY) {
+          try { await stripe.subscriptions.cancel(sub); } catch (e: any) { console.error('Could not cancel Stripe subscription for deleted user', id, e?.message); }
+        }
+        // ON DELETE CASCADE on user_county_access / export_usage handles the rest.
         await client.query(`DELETE FROM users WHERE clerk_id = $1`, [id || '']);
         console.log(`User deleted: ${id}`);
     } catch (e) {
