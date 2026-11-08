@@ -63,7 +63,11 @@ export async function POST(request: Request) {
     let remaining: number | 'unlimited' = 'unlimited';
     if (ent.exports.limit !== 'unlimited') {
         if (ent.exports.used >= ent.exports.limit) {
-             return NextResponse.json({ error: 'Export Limit Reached', upgrade: true }, { status: 403 });
+             return NextResponse.json({
+               error: 'export_cap_reached', upgrade: true, upgradeTo: ent.tier === 'scout' ? 'pro' : 'statewide',
+               message: `You've used all ${ent.exports.limit.toLocaleString()} exported rows for this month on your ${ent.tier} plan. Upgrade to Pro for unlimited exports.`,
+               cap: ent.exports.limit, used: ent.exports.used,
+             }, { status: 402 });
         }
         remaining = (ent.exports.limit as number) - ent.exports.used;
     }
@@ -210,6 +214,8 @@ export async function POST(request: Request) {
         p.dor_uc as land_use,
         COALESCE(p.phy_addr1, p.own_addr1) as property_address,
         p.jv as market_value,
+        p.sale_prc1 as last_sale_price, to_char(p.sale1_date, 'YYYY-MM') as last_sale_date,
+        p.sale_prc2 as prior_sale_price, to_char(p.sale2_date, 'YYYY-MM') as prior_sale_date,
         ST_Y(ST_Centroid(p.geom)) as latitude, 
         ST_X(ST_Centroid(p.geom)) as longitude
       FROM parcels_current_all p
@@ -227,7 +233,10 @@ export async function POST(request: Request) {
       
       // TRACK USAGE
       if (res.rows.length > 0) {
-          await trackExport(userId, res.rows.length);
+          const tr = await trackExport(userId, res.rows.length);
+          if (!tr.allowed) {
+            return NextResponse.json({ error: 'export_cap_reached', upgrade: true, upgradeTo: 'pro', message: 'Monthly export limit reached. Upgrade to Pro for unlimited exports.' }, { status: 402 });
+          }
       }
 
       const csv = toCSV(res.rows);

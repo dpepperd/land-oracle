@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { TIER_QUOTAS } from '@/lib/counties';
 import { isClerkAdmin } from '@/lib/admin';
+import { getEntitlements } from '@/lib/entitlements';
 
 export async function GET(request: Request) {
   const { userId } = await auth();
@@ -81,7 +82,9 @@ export async function GET(request: Request) {
         selectedCounties = accessRes.rows.map(r => r.county);
     }
     
-    const quota = TIER_QUOTAS[tier as keyof typeof TIER_QUOTAS] || 0;
+    const ent = await getEntitlements(userId);
+    const quota = ent.allowance;
+    tier = ent.tier;
 
     // AUTOMATION: Use static list to prevent timeout on large datasets
     // const liveRes = await client.query('SELECT DISTINCT county FROM parcels ORDER BY county');
@@ -110,7 +113,10 @@ export async function GET(request: Request) {
       quota,
       used: selectedCounties.length, // Can be > quota if admin
       selected: selectedCounties,
-      liveCounties 
+      liveCounties,
+      needsCountyRepick: ent.needsCountyRepick,
+      subscriptionStatus: ent.subscriptionStatus,
+      cancelAtPeriodEnd: ent.cancelAtPeriodEnd,
     });
   } catch (error) {
     console.error('Error fetching user counties:', error);
@@ -141,8 +147,9 @@ export async function POST(req: Request) {
         return new NextResponse("User profile not initialized. Please sign out and sign in again.", { status: 403 });
     }
 
-    const tier = user.subscription_tier || 'demo';
-    const quota = TIER_QUOTAS[tier as keyof typeof TIER_QUOTAS] || 0;
+    const ent = await getEntitlements(userId);
+    const tier = ent.tier;
+    const quota = ent.allowance;
     const dbUserId = user.id;
 
     // 2. Check current usage

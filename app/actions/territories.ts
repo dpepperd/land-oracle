@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { claimCounty, hasCountyAccess, getEntitlements } from '@/lib/entitlements';
+import { claimCounty, hasCountyAccess, getEntitlements, setCounties } from '@/lib/entitlements';
 import { revalidatePath } from 'next/cache';
 import { requireBetaAccess } from '@/lib/auth-guard';
 
@@ -21,10 +21,10 @@ export async function claimCountyAction(county: string) {
     }
 
     // 2. Attempt Claim
-    const success = await claimCounty(userId, county);
+    const claim = await claimCounty(userId, county);
     
-    if (!success) {
-        return { success: false, error: 'Could not claim county. You may have already selected your trial territory.' };
+    if (!claim.ok) {
+        return { success: false, error: claim.reason === 'full' ? 'Your plan has no county slots left. Add counties or upgrade.' : 'Could not select this county.' };
     }
 
     // 3. Revalidate to update UI
@@ -44,4 +44,13 @@ export async function checkEntitlementsAction() {
     const { userId } = await auth();
     if (!userId) return null;
     return await getEntitlements(userId);
+}
+
+export async function setCountiesAction(counties: string[]) {
+  const { userId } = await auth();
+  if (!userId) return { success: false, error: 'Unauthorized' };
+  if (!Array.isArray(counties) || counties.length > 67 || counties.some((c) => typeof c !== 'string' || c.length > 40)) return { success: false, error: 'Invalid selection' };
+  const r = await setCounties(userId, counties);
+  if (r.ok) { revalidatePath('/dashboard'); revalidatePath('/territories'); }
+  return { success: r.ok, error: r.error };
 }

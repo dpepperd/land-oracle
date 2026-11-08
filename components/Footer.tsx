@@ -34,9 +34,7 @@ export default function Footer() {
             <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Platform</h4>
             <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <li><Link href="/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</Link></li>
-              <li><Link href="/features" className="hover:text-blue-600 transition-colors">Features</Link></li>
               <li><Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link></li>
-              <li><Link href="/data" className="hover:text-blue-600 transition-colors">Data Coverage</Link></li>
             </ul>
           </div>
 
@@ -45,8 +43,6 @@ export default function Footer() {
             <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <li><Link href="/about" className="hover:text-blue-600 transition-colors">About Us</Link></li>
-              <li><Link href="/blog" className="hover:text-blue-600 transition-colors">Insights</Link></li>
-              <li><Link href="/careers" className="hover:text-blue-600 transition-colors">Careers</Link></li>
               <li><Link href="/contact" className="hover:text-blue-600 transition-colors">Contact</Link></li>
             </ul>
           </div>
@@ -79,7 +75,8 @@ export default function Footer() {
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Terms of Service</Link>
-            <Link href="/cookies" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Cookie Settings</Link>
+            <Link href="/acceptable-use" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Acceptable Use</Link>
+            <Link href="/data-disclaimer" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Data Disclaimer</Link>
           </div>
         </div>
       </div>

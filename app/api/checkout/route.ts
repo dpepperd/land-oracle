@@ -1,91 +1,67 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { z } from 'zod';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { stripe } from '@/lib/stripe';
+import pool from '@/lib/db';
+import { PLANS, lookupKey } from '@/lib/plans';
 
-// PLAN CONFIGURATION (You should sync these Price IDs with your Stripe Dashboard)
-// For now, we mistakenly use hardcoded amounts if Price IDs aren't ready, 
-// BUT typically you use price_123 or just pass line_items with custom amount (not recommended for subs).
-// Best Practice: Create Products in Stripe and use their API IDs. 
-// For this 'Painless' setup, we can use inline price data if we want, but Subscriptions REQUIRE Price IDs.
-// We will assume environment variables for Price IDs or fallback to generic logic if needed.
+export const runtime = 'nodejs';
 
-// MOCK PRICE IDs for now - User must populate these in .env later
-// STRIPE_PRICE_SCOUT_MONTHLY
-// STRIPE_PRICE_LOCAL_MONTHLY
-// STRIPE_PRICE_REGIONAL_MONTHLY
-
-const PLANS = {
-    1: { name: 'Scout', priceId: process.env.STRIPE_PRICE_SCOUT_MONTHLY, quota: 1 },
-    3: { name: 'Local', priceId: process.env.STRIPE_PRICE_LOCAL_MONTHLY, quota: 3 },
-    regional: { name: 'Regional', priceId: process.env.STRIPE_PRICE_REGIONAL_MONTHLY, quota: 15 } // 15 is placeholder for region
-};
+const bodySchema = z.object({
+  plan: z.enum(['scout', 'pro', 'statewide']),
+  interval: z.enum(['month', 'year']),
+  addonCounties: z.number().int().min(0).max(66).default(0),
+});
 
 export async function POST(req: Request) {
-    try {
-        const { userId } = await auth();
-        const user = await currentUser();
-        
-        if (!userId || !user) {
-            return new NextResponse("Unauthorized", { status: 401 });
-        }
+  const { userId } = await auth();
+  const user = await currentUser();
+  if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const body = await req.json();
-        const { counties, planType } = body; // planType: 'scout', 'scout_plus', 'local', 'local_plus', 'regional'
+  let body;
+  try { body = bodySchema.parse(await req.json()); } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }); }
+  const { plan, interval } = body;
+  const addon = PLANS[plan].addonAllowed ? body.addonCounties : 0;     // add-ons: scout and pro only
 
-        if (!counties || counties.length === 0) {
-            return new NextResponse("No counties selected", { status: 400 });
-        }
+  // Resolve prices by lookup_key (never hardcoded price ids).
+  const keys = [lookupKey(plan, interval), ...(addon > 0 ? [lookupKey('addon_county', interval)] : [])];
+  const prices = await stripe.prices.list({ lookup_keys: keys, active: true, limit: 10 });
+  const byKey = new Map(prices.data.map((p) => [p.lookup_key, p]));
+  if (keys.some((k) => !byKey.has(k))) {
+    console.error('[checkout] missing Stripe prices for lookup_keys', keys.filter((k) => !byKey.has(k)));
+    return NextResponse.json({ error: 'Billing is not configured yet.' }, { status: 503 });
+  }
 
-        const line_items = [];
-        const count = counties.length;
-
-        // Pricing Logic Construction
-        if (planType.includes('scout')) {
-            // Base Scout
-             line_items.push({ price: process.env.STRIPE_PRICE_SCOUT_MONTHLY, quantity: 1 });
-             // Add-ons
-             if (count > 1) {
-                const addons = count - 1;
-                line_items.push({ price: process.env.STRIPE_PRICE_ADDON_MONTHLY, quantity: addons });
-             }
-        } 
-        else if (planType.includes('local')) {
-            // Base Local
-            line_items.push({ price: process.env.STRIPE_PRICE_LOCAL_MONTHLY, quantity: 1 });
-            // Add-ons (Over 3)
-            if (count > 3) {
-                const addons = count - 3;
-                line_items.push({ price: process.env.STRIPE_PRICE_ADDON_MONTHLY, quantity: addons });
-            }
-        }
-        else if (planType === 'regional') {
-             line_items.push({ price: process.env.STRIPE_PRICE_REGIONAL_MONTHLY, quantity: 1 });
-        }
-
-        const session = await stripe.checkout.sessions.create({
-            customer_email: user.emailAddresses[0].emailAddress,
-            line_items: line_items,
-            mode: 'subscription',
-            allow_promotion_codes: true,
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/territories`,
-            metadata: {
-                userId: userId,
-                planType: planType,
-                selectedCounties: JSON.stringify(counties),
-            },
-            subscription_data: {
-                metadata: {
-                    userId: userId,
-                    planType: planType
-                }
-            }
-        });
-
-        return NextResponse.json({ url: session.url });
-
-    } catch (error) {
-        console.error("Stripe Checkout Error:", error);
-        return new NextResponse("Internal Error", { status: 500 });
+  const db = await pool.connect();
+  try {
+    const row = (await db.query('SELECT id, stripe_customer_id, stripe_subscription_id, subscription_status FROM users WHERE clerk_id = $1', [userId])).rows[0];
+    if (!row) return NextResponse.json({ error: 'Account is still being set up. Please retry in a moment.' }, { status: 409 });
+    if (row.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(row.subscription_status)) {
+      // Plan changes go through /api/billing/change-plan (or the portal); never create a second subscription.
+      return NextResponse.json({ error: 'You already have a subscription. Use Manage Billing to change plans.', code: 'already_subscribed' }, { status: 409 });
     }
+
+    const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+    const email = user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)?.emailAddress || user.emailAddresses[0]?.emailAddress;
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [
+        { price: byKey.get(keys[0])!.id, quantity: 1 },
+        ...(addon > 0 ? [{ price: byKey.get(keys[1])!.id, quantity: addon }] : []),
+      ],
+      allow_promotion_codes: true,
+      ...(row.stripe_customer_id ? { customer: row.stripe_customer_id } : { customer_email: email }),
+      client_reference_id: userId,
+      success_url: `${origin}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/pricing`,
+      metadata: { userId, plan, interval, addonCounties: String(addon) },
+      subscription_data: { metadata: { userId, plan, interval, addonCounties: String(addon) } },
+    });
+    return NextResponse.json({ url: session.url });
+  } catch (error: any) {
+    console.error('[checkout] error', error?.message);
+    return NextResponse.json({ error: 'Could not start checkout.' }, { status: 500 });
+  } finally {
+    db.release();
+  }
 }

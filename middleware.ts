@@ -11,6 +11,7 @@ const isPublicPage = createRouteMatcher([
   "/terms(.*)",
   "/privacy(.*)",
   "/acceptable-use(.*)",
+  "/data-disclaimer(.*)",
   "/territories(.*)",
   "/support(.*)",
   "/pricing(.*)"

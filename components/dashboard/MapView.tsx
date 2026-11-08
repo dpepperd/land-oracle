@@ -760,6 +760,22 @@ export default function MapView({
                </div>
              </div>
 
+             {/* Recent qualified sales (DOR SDF, 2026 roll) */}
+             <div className="mt-3">
+               <div className="font-bold text-gray-900 text-xs mb-0.5">Recent Sales:</div>
+               {[1, 2, 3].map((n) => {
+                 const price = popupInfo.properties[`sale_prc${n}`];
+                 const when = popupInfo.properties[`sale${n}_date`];
+                 if (!price || !when) return null;
+                 return (
+                   <div key={n} className="text-gray-600 text-xs">
+                     ${Number(price).toLocaleString()} <span className="text-gray-400">({new Date(when).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })})</span>
+                   </div>
+                 );
+               })}
+               {!popupInfo.properties.sale_prc1 && <div className="text-gray-400 text-xs">No qualified sale on record</div>}
+             </div>
+
              <div className="mt-3">
                <div className="font-bold text-gray-900 text-xs mb-0.5 max-w-[250px] truncate">Owner: <span className="font-normal uppercase">{popupInfo.properties.owner_name}</span></div>
                <div className="font-bold text-gray-900 text-xs mb-0.5">Owner Address:</div>

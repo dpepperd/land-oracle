@@ -201,6 +201,7 @@ export async function POST(request: Request) {
         p.parcel_key as id, p.parcel_key, p.county, COALESCE(p.parcel_id, p.parcelno) as parcel_id, p.parcelno, p.alt_key, 
         p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip, 
         p.acreage, p.dor_uc as land_use, COALESCE(p.phy_addr1, p.own_addr1) as property_address, p.jv as market_value,
+        p.sale_prc1, p.sale1_date, p.sale_prc2, p.sale2_date, p.sale_prc3, p.sale3_date, p.living_area_sqft, p.year_built,
         (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
         ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,

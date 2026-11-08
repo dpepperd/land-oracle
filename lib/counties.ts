@@ -9,50 +9,8 @@ export const FLORIDA_COUNTIES = [
   "Suwannee", "Taylor", "Union", "Volusia", "Wakulla", "Walton", "Washington"
 ];
 
-// Counties with data currently loaded in the database
-export const LIVE_COUNTIES = [
-  "Alachua", "Baker", "Bradford", "Brevard", "Broward", "Charlotte", "Clay", "Collier", 
-  "Duval", "Flagler", "Glades", "Hardee", "Hendry", "Highlands", "Indian River", "Lake", 
-  "Lee", "Marion", "Martin", "Miami-Dade", "Monroe", "Nassau", "Okeechobee", "Orange", 
-  "Osceola", "Palm Beach", "Polk", "Putnam", "Saint Johns", "St. Lucie", "Seminole", "Sarasota", "Volusia",
-  'Union',
-  'Dixie',
-  'Gilchrist',
-  'Columbia',
-  'Lafayette',
-  'Suwannee',
-  'Hamilton',
-  'Taylor',
-  'Madison',
-  'Jefferson',
-  'Wakulla',
-  'Leon',
-  'Franklin',
-  'Liberty',
-  'Gadsden',
-  'Gulf',
-  'Calhoun',
-  'Jackson',
-  'Bay',
-  'Escambia',
-  'Holmes',
-  'Washington',
-  'Walton',
-  'Okaloosa',
-  'Santa Rosa',
-  'Bradford',
-  'Putnam',
-  'Desoto',
-  'Manatee',
-  'Hillsborough',
-  'Pinellas',
-  'Pasco',
-  'Sumter',
-  'Hernando',
-  'Hernando',
-  'Citrus',
-  'Levy'
-];
+// parcels_v2 + DOR 2026 roll cover all 67 counties.
+export const LIVE_COUNTIES = FLORIDA_COUNTIES;
 
 
 
@@ -97,11 +55,11 @@ export const FLORIDA_REGIONS = {
   ]
 };
 
+// Included counties per plan (add-ons raise a subscriber's allowance; see lib/plans.ts and users.county_allowance).
 export const TIER_QUOTAS = {
-  demo: 0,
+  free: 1,
   scout: 1,
-  local: 3,
-  regional: 100, // All counties in a region?
+  pro: 3,
   statewide: 67,
   enterprise: 67
 };

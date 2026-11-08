@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
 import { Loader2, ShieldCheck, X } from "lucide-react";
-import { FLORIDA_REGIONS } from "@/lib/counties";
+import { ADDON, PLANS, annualPerMonth, type Interval, type PlanId } from "@/lib/plans";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -11,186 +10,80 @@ interface CheckoutModalProps {
   selectedCounties: string[];
 }
 
+const usd = (n: number) => `$${n.toLocaleString()}`;
+
 export default function CheckoutModal({ isOpen, onClose, selectedCounties }: CheckoutModalProps) {
+  const n = Math.max(1, selectedCounties.length);
+  const [interval, setInterval] = useState<Interval>('month');
+  const [choice, setChoice] = useState<PlanId | null>(null);
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Calculate Plan & Add-ons
-  const plan = useMemo(() => {
-    let remaining = [...selectedCounties];
-    let regionsFound: string[] = [];
+  const options = useMemo(() => (['scout', 'pro', 'statewide'] as PlanId[]).map((id) => {
+    const p = PLANS[id];
+    const included = p.counties === 'all' ? 67 : p.counties;
+    const addons = p.counties === 'all' ? 0 : Math.max(0, n - included);
+    const base = interval === 'month' ? p.monthly : p.annual;
+    const add = interval === 'month' ? ADDON.monthly : ADDON.annual;
+    return { id, name: p.name, addons, total: base + addons * add, included };
+  }), [n, interval]);
 
-    // 1. Detect Full Regions
-    Object.entries(FLORIDA_REGIONS).forEach(([regionName, regionCounties]: [string, any]) => {
-        const hasAll = regionCounties.every((rc: string) => remaining.includes(rc));
-        if (hasAll) {
-            regionsFound.push(regionName);
-            // Remove these from remaining to avoid double counting
-            remaining = remaining.filter(c => !regionCounties.includes(c));
-        }
-    });
-
-    const extraCount = remaining.length;
-
-    // SCENARIO A: Regional Plan(s) Active
-    if (regionsFound.length > 0) {
-        const basePrice = 699 * regionsFound.length;
-        const extraPrice = extraCount * 97;
-        
-        let name = `${regionsFound.join(' & ')} Region${regionsFound.length > 1 ? 's' : ''}`;
-        if (extraCount > 0) name += ` + ${extraCount} Extra`;
-
-        return {
-            name,
-            basePrice,
-            addons: extraCount,
-            total: basePrice + extraPrice,
-            type: 'regional', // We might need a flexible stripe ID or meta
-            limit: 100 // High limit
-        };
-    }
-
-    // SCENARIO B: Standard Counting (No Full Regions)
-    const count = selectedCounties.length;
-    
-    // Scout (1 County)
-    if (count === 1) return { name: 'Scout Plan', basePrice: 199, addons: 0, total: 199, type: 'scout', limit: 1 };
-    
-    // Scout + 1 Addon (2 Counties) -> $199 + $97 = $296
-    if (count === 2) return { name: 'Scout Plan + 1 Add-on', basePrice: 199, addons: 1, total: 296, type: 'scout_plus', limit: 2 };
-    
-    // Local (3 Counties)
-    if (count === 3) return { name: 'Local Plan', basePrice: 349, addons: 0, total: 349, type: 'local', limit: 3 };
-
-    // Local + Addons (>3 Counties)
-    if (count > 3) {
-        const extra = count - 3;
-        const total = 349 + (extra * 97);
-        return { name: `Local Plan + ${extra} Add-on${extra > 1 ? 's' : ''}`, basePrice: 349, addons: extra, total: total, type: 'local_plus', limit: count };
-    }
-
-    return { name: 'Select a Territory', basePrice: 0, addons: 0, total: 0, type: 'none', limit: 0 };
-  }, [selectedCounties]);
-
-  const handleCheckout = async () => {
-    if (!agreed) return;
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            counties: selectedCounties,
-            planType: plan.type
-        })
-      });
-
-      if (!res.ok) throw new Error('Checkout failed');
-
-      const { url } = await res.json();
-      window.location.href = url; // Redirect to Stripe
-    } catch (error) {
-        console.error(error);
-        alert("Something went wrong. Please try again.");
-        setLoading(false);
-    }
-  };
+  const selected = options.find((o) => o.id === (choice ?? 'pro')) ?? options[1];
 
   if (!isOpen) return null;
 
+  const checkout = async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selected.id, interval, addonCounties: selected.addons }) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) { window.location.href = data.url; return; }
+      setError(res.status === 401 ? 'Please sign in to subscribe.' : data.error || 'Could not start checkout.');
+    } catch { setError('Network error. Please try again.'); }
+    setLoading(false);
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-slate-800 overflow-hidden">
-        
-        {/* Header */}
-        <div className="p-4 border-b border-zinc-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-blue-600" />
-            Confirm Selection
-          </h2>
-          <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition">
-            <X className="w-5 h-5 text-slate-500" />
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white">Choose your plan</h3>
+          <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full" aria-label="Close"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">You selected <b>{n}</b> {n === 1 ? 'county' : 'counties'}. Counties are chosen after checkout.</p>
+          <div className="flex gap-2 text-sm">
+            {(['month', 'year'] as Interval[]).map((i) => (
+              <button key={i} onClick={() => setInterval(i)} className={`flex-1 py-2 rounded-lg border font-medium ${interval === i ? 'border-blue-600 bg-blue-600/10 text-blue-700 dark:text-blue-300' : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                {i === 'month' ? 'Monthly' : 'Annual: 2 months free'}
+              </button>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {options.map((o) => (
+              <button key={o.id} onClick={() => setChoice(o.id)} className={`w-full text-left p-3 rounded-xl border transition ${selected.id === o.id ? 'border-blue-600 bg-blue-600/5' : 'border-slate-300 dark:border-slate-700'}`}>
+                <div className="flex justify-between font-semibold text-slate-900 dark:text-white"><span>{o.name}{o.id === 'pro' && <span className="ml-2 text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full align-middle">BEST VALUE</span>}</span>
+                  <span>{usd(o.total)}/{interval === 'month' ? 'mo' : 'yr'}</span></div>
+                <div className="text-xs text-slate-500 mt-0.5">
+                  {o.id === 'statewide' ? 'All 67 counties' : `${o.included} included${o.addons ? ` + ${o.addons} add-on ${o.addons === 1 ? 'county' : 'counties'}` : ''}`}
+                  {interval === 'year' && ` (= ${usd(annualPerMonth(o.total))}/mo)`}
+                </div>
+              </button>
+            ))}
+          </div>
+          <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5" />
+            <span>I agree to the <a href="/terms" target="_blank" className="underline text-blue-600">Terms</a> and the <a href="/data-disclaimer" target="_blank" className="underline text-blue-600">Data Disclaimer</a>, including that I am responsible for DNC/TCPA compliance on any outreach, and I authorize recurring {interval === 'month' ? 'monthly' : 'annual'} billing of <b>{usd(selected.total)}</b>. Cancel anytime.</span>
+          </label>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <button onClick={checkout} disabled={!agreed || loading} className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 ${agreed && !loading ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}>
+            {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />} Continue to secure checkout
           </button>
+          <p className="text-[11px] text-center text-slate-500">Payments by Stripe. Promo codes can be entered at checkout.</p>
         </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-            
-            {/* Selection Summary */}
-            <div className="space-y-3">
-                <div className="text-sm font-medium text-slate-500">Selected Territories</div>
-                <div className="flex flex-wrap gap-2">
-                    {selectedCounties.map(c => (
-                        <span key={c} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-semibold rounded-full border border-blue-200 dark:border-blue-800">
-                            {c}
-                        </span>
-                    ))}
-                </div>
-            </div>
-
-            {/* Plan Details */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">Total Monthly</span>
-                    <span className="font-bold text-lg text-foreground">${plan.total}/mo</span>
-                </div>
-                
-                <div className="space-y-1 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500">
-                    <div className="flex justify-between">
-                        <span>Base Plan ({plan.type.includes('scout') ? 'Scout' : 'Local'})</span>
-                        <span>${plan.basePrice}</span>
-                    </div>
-                    {plan.addons > 0 && (
-                        <div className="flex justify-between text-blue-600">
-                            <span>{plan.addons} x Add-on County ($97/ea)</span>
-                            <span>+${plan.addons * 97}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Terms Checkbox */}
-            <label className="flex items-start gap-3 cursor-pointer group">
-                <div className="relative flex items-center">
-                    <input 
-                        type="checkbox" 
-                        className="peer sr-only"
-                        checked={agreed}
-                        onChange={(e) => setAgreed(e.target.checked)}
-                    />
-                    <div className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all flex items-center justify-center text-white">
-                        {agreed && <CheckIcon />}
-                    </div>
-                </div>
-                <span className="text-xs text-slate-500 leading-snug select-none group-hover:text-slate-600 dark:group-hover:text-slate-400 transition">
-                    I agree to the <a href="#" className="underline text-blue-600 hover:text-blue-700">Terms and Conditions</a> and authorize a recurring monthly charge of <b>${plan.total}</b>. I understand I can cancel anytime from my dashboard.
-                </span>
-            </label>
-
-            {/* Checkout Button */}
-            <button
-                onClick={handleCheckout}
-                disabled={!agreed || loading}
-                className={`w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all ${
-                    agreed && !loading
-                    ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/25 hover:scale-[1.02]' 
-                    : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed text-slate-500'
-                }`}
-            >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Proceed to Payment'}
-            </button>
-        </div>
-
       </div>
     </div>
   );
-}
-
-function CheckIcon() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-            <polyline points="20 6 9 17 4 12" />
-        </svg>
-    )
 }
