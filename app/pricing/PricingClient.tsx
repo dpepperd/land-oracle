@@ -24,28 +24,28 @@ function features(id: PlanId, aiEnabled: boolean): { text: string; soon?: boolea
 
 export default function PricingClient({ aiEnabled, founding }: { aiEnabled: boolean; founding: boolean }) {
   const { isSignedIn } = useAuth();
-  const [interval, setInterval] = useState<Interval>('month');
+  const [billing, setBilling] = useState<Interval>('month');
   const [addons, setAddons] = useState<Record<string, number>>({ scout: 0, pro: 0 });
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const subscribe = async (plan: PlanId) => {
-    if (!isSignedIn) { window.location.href = `/sign-up?redirect_url=${encodeURIComponent('/pricing')}`; return; }
+    if (!isSignedIn) { window.location.assign(`/sign-up?redirect_url=${encodeURIComponent('/pricing')}`); return; }
     setBusy(plan); setError(null);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, interval, addonCounties: addons[plan] ?? 0 }),
+        body: JSON.stringify({ plan, interval: billing, addonCounties: addons[plan] ?? 0 }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) { window.location.href = data.url; return; }
+      if (res.ok && data.url) { window.location.assign(data.url); return; }
       setError(data.error || 'Could not start checkout. Please try again.');
     } catch { setError('Network error. Please try again.'); }
     setBusy(null);
   };
 
-  const addonPrice = interval === 'month' ? ADDON.monthly : ADDON.annual;
-  const per = interval === 'month' ? 'mo' : 'yr';
+  const addonPrice = billing === 'month' ? ADDON.monthly : ADDON.annual;
+  const per = billing === 'month' ? 'mo' : 'yr';
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300">
@@ -62,18 +62,18 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
           )}
 
           <div className="flex items-center justify-center gap-4">
-            <span className={`text-sm font-medium ${interval === 'month' ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
-            <button onClick={() => setInterval(interval === 'month' ? 'year' : 'month')} aria-label="Toggle billing interval" className="w-14 h-7 bg-slate-200 dark:bg-slate-700 rounded-full relative transition p-1 cursor-pointer">
-              <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${interval === 'year' ? 'translate-x-7' : 'translate-x-0'}`} />
+            <span className={`text-sm font-medium ${billing === 'month' ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
+            <button onClick={() => setBilling(billing === 'month' ? 'year' : 'month')} aria-label="Toggle billing interval" className="w-14 h-7 bg-slate-200 dark:bg-slate-700 rounded-full relative transition p-1 cursor-pointer">
+              <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${billing === 'year' ? 'translate-x-7' : 'translate-x-0'}`} />
             </button>
-            <span className={`text-sm font-medium ${interval === 'year' ? 'text-foreground' : 'text-muted-foreground'}`}>Annual — 2 months free</span>
+            <span className={`text-sm font-medium ${billing === 'year' ? 'text-foreground' : 'text-muted-foreground'}`}>Annual — 2 months free</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
           {Object.values(PLANS).map((p) => {
             const best = p.id === 'pro';
-            const price = interval === 'month' ? p.monthly : p.annual;
+            const price = billing === 'month' ? p.monthly : p.annual;
             const q = addons[p.id] ?? 0;
             return (
               <div key={p.id} className={`relative flex flex-col p-8 rounded-3xl border transition-all duration-300 ${best ? 'bg-card border-amber-400 dark:border-amber-500 shadow-2xl md:scale-105 z-10' : 'bg-card border-border shadow-lg hover:shadow-xl'}`}>
@@ -83,7 +83,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
                   <span className="text-4xl font-extrabold">{usd(price)}</span>
                   <span className="text-muted-foreground font-medium">/{per}</span>
                 </div>
-                <p className="text-xs text-muted-foreground h-5 mt-1">{interval === 'year' && `(=${usd(annualPerMonth(price))}/mo)`}</p>
+                <p className="text-xs text-muted-foreground h-5 mt-1">{billing === 'year' && `(=${usd(annualPerMonth(price))}/mo)`}</p>
 
                 <div className="flex-1 space-y-3 my-6">
                   {features(p.id, aiEnabled).map((f) => (

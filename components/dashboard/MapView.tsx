@@ -14,7 +14,6 @@ import Map, {
 import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Database, Droplets } from 'lucide-react';
 
 
-import EditParcelModal from './EditParcelModal';
 import ConfirmModal from './ConfirmModal';
 import GeocoderControl from './GeocoderControl';
 import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
@@ -293,7 +292,6 @@ export default function MapView({
   const [isShapeVisible, setIsShapeVisible] = useState(true);
 
   // Admin Edit State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // External Link State
   // External Link State
@@ -343,34 +341,6 @@ export default function MapView({
   
   // Handle Save (Keep for Admin Edit Modal if needed, or move to Panel?)
   // For now keeping Admin Edit Modal logic here as it's separate from Notes.
-
-  // Handle Save
-  const handleSaveParcel = async (updatedData: any) => {
-    try {
-        const res = await fetch(`/api/parcels/${updatedData.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
-        });
-
-        if (!res.ok) throw new Error('Failed to update');
-
-        // Update local popup info to reflect changes immediately
-        if (popupInfo && popupInfo.properties.parcel_id === updatedData.id) {
-            setPopupInfo({
-                ...popupInfo,
-                properties: {
-                    ...popupInfo.properties,
-                    ...updatedData
-                }
-            });
-        }
-        alert('Parcel updated successfully!');
-    } catch (err) {
-        console.error(err);
-        alert('Failed to update parcel.');
-    }
-  };
 
   // Fetch Highways once on mount
   useEffect(() => {
@@ -1146,15 +1116,6 @@ export default function MapView({
          </div>
       )}
 
-      {/* Admin Edit Modal */}
-      {isEditModalOpen && popupInfo && (
-          <EditParcelModal
-            isOpen={isEditModalOpen}
-            onClose={() => setIsEditModalOpen(false)}
-            parcel={popupInfo}
-            onSave={handleSaveParcel}
-          />
-      )}
       {/* External Link Confirmation */}
       <ConfirmModal 
         isOpen={!!externalLink}
