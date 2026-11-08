@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Twitter, Linkedin, Facebook, MapPin, Mail, Phone } from 'lucide-react';
+import { Twitter, Linkedin, Facebook, Mail, Phone } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -57,14 +57,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} className="text-blue-600" />
-                <span>+1 (800) 555-LAND</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin size={16} className="text-blue-600 mt-0.5" />
-                <span>
-                  100 Tech Blvd, Suite 200<br />
-                  Miami, FL 33132
-                </span>
+                <span>(904) 210-7697</span>
               </li>
             </ul>
           </div>
