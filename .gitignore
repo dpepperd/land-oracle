@@ -58,15 +58,5 @@ dump.sql
 scripts/convert-columns-to-numeric.js
 scripts/scriptsload-highways.js.txt
 
-# --- one-off admin/user scripts with hardcoded personal emails (public repo) ---
-scripts/check-users.js
-scripts/debug-search-query.js
-scripts/grant-sumter-access.js
-scripts/manual-insert-user.js
-scripts/migrate-admin.js
-scripts/migrate-beta-access.js
-scripts/promote-admin.js
-scripts/promote-tatjana.js
-
 # --- logs containing owner PII ---
 verify_*.txt
