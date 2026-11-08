@@ -14,7 +14,10 @@ export default function AccessDenied() {
         <div className="p-4 bg-slate-900 rounded-lg border border-slate-800 text-sm text-slate-400">
           Viewing as: <span className="font-mono text-blue-300">Logged In User</span>
         </div>
-        <div className="pt-4">
+        <div className="pt-4 flex flex-col items-center gap-4">
+            <Link href="/pricing" className="inline-block px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors">
+                See plans
+            </Link>
             <Link href="/" className="text-blue-400 hover:text-blue-300 underline underline-offset-4">
                 Return to Home
             </Link>

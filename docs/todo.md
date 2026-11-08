@@ -8,9 +8,9 @@
 - [x] FOUNDING40 re-tested: $94.20/mo, persists on renewals.
 - [ ] Still untested live: upgrade / downgrade / cancel via the portal (county re-pick prompt), failed payment (`4000 0000 0000 0341`).
 - [ ] Clerk webhook for preview (dev instance): create endpoint, set `CLERK_WEBHOOK_SECRET` on Preview; then test `user.deleted` cancelling the Stripe subscription.
-- [ ] Make the sign-up fallback insert in `app/api/user/counties/route.ts` use `ON CONFLICT` (will collide with the Clerk webhook once enabled).
-- [ ] Pricing page: signed-out users are sent to `/sign-up`; send them to sign-in (or show both).
-- [ ] `/access-denied` has no link to `/pricing`: new signups hit a dead end.
+- [x] Make the sign-up fallback insert in `app/api/user/counties/route.ts` use `ON CONFLICT` (will collide with the Clerk webhook once enabled).
+- [x] Pricing page: signed-out users are sent to `/sign-up`; send them to sign-in (or show both).
+- [x] `/access-denied` has no link to `/pricing`: new signups hit a dead end.
 - [ ] Tatjana's DB row is `role=admin` (also bypasses the beta gate): confirm intended.
 - [ ] `npm run lint` (bare `eslint`) crashes on a config quirk (`react-hooks` plugin not found when linting non-app files); `eslint app lib components proxy.ts` is clean (0 errors).
 - [ ] Route smoke prints `lead=undefined note=undefined` for the search is_lead/has_note flags; check those fields are really returned.

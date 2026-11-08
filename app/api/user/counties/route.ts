@@ -51,6 +51,7 @@ export async function GET(request: Request) {
         await client.query(`
             INSERT INTO users (clerk_id, email, subscription_tier, role)
             VALUES ($1, $2, 'demo', $3)
+            ON CONFLICT (clerk_id) DO NOTHING
         `, [userId, email, role]);
         
         // Refetch

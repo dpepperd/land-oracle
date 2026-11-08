@@ -30,7 +30,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
   const [error, setError] = useState<string | null>(null);
 
   const subscribe = async (plan: PlanId) => {
-    if (!isSignedIn) { window.location.assign(`/sign-up?redirect_url=${encodeURIComponent('/pricing')}`); return; }
+    if (!isSignedIn) { window.location.assign(`/sign-in?redirect_url=${encodeURIComponent('/pricing')}`); return; }
     setBusy(plan); setError(null);
     try {
       const res = await fetch('/api/checkout', {
