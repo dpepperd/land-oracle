@@ -1,0 +1,243 @@
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser');
+const shapefile = require('shapefile');
+const proj4 = require('proj4');
+const turf = require('turf');
+const { Pool } = require('pg');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+
+// node scripts/load-hillsborough-full.js
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace('?sslmode=require', ''),
+  ssl: { rejectUnauthorized: false }
+});
+
+const PROJECTIONS = {
+    'Florida_North': '+proj=lcc +lat_1=29.58333333333333 +lat_2=30.75 +lat_0=29 +lon_0=-84.5 +x_0=600000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=us-ft +no_defs', 
+    'Florida_East': '+proj=tmerc +lat_0=24.33333333333333 +lon_0=-81 +k=0.9999411764705882 +x_0=200000.0001016002 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=us-ft +no_defs', 
+    'Florida_West': '+proj=tmerc +lat_0=24.33333333333333 +lon_0=-82 +k=0.9999411764705882 +x_0=200000.0001016002 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=us-ft +no_defs' 
+};
+let currentProj = PROJECTIONS['Florida_West']; 
+
+function transformGeometry(geom) {
+  if (!geom || !geom.coordinates) return null;
+  try {
+    const transform = (coord) => proj4(currentProj, 'EPSG:4326', coord);
+    if (geom.type === 'Polygon') {
+      return { type: 'Polygon', coordinates: geom.coordinates.map(ring => ring.map(transform)) };
+    } else if (geom.type === 'MultiPolygon') {
+      return { type: 'MultiPolygon', coordinates: geom.coordinates.map(poly => poly.map(ring => ring.map(transform))) };
+    }
+  } catch (err) { return null; }
+  return geom;
+}
+
+function getGeoStats(geom) {
+  if (!geom) return { lat: null, lon: null, acres: null };
+  try {
+    const feature = { type: 'Feature', geometry: geom, properties: {} };
+    const center = turf.centroid(feature);
+    const areaSqMeters = turf.area(feature);
+    return { 
+        lat: center.geometry.coordinates[1], 
+        lon: center.geometry.coordinates[0], 
+        acres: areaSqMeters * 0.000247105 
+    };
+  } catch (err) { return { lat: null, lon: null, acres: null }; }
+}
+
+async function loadFull() {
+  const countyName = 'Hillsborough';
+  console.log(`\n🚀 Starting FULL Data Load for: ${countyName}`);
+  const BASE_DIR = 'D:/LandOracle/Florida/Hillsborough';
+  
+  if (!fs.existsSync(BASE_DIR)) { console.error('County dir not found'); return; }
+  const files = fs.readdirSync(BASE_DIR);
+  // NAL CSV
+  const csvFile = files.find(f => f.startsWith('NAL') && f.endsWith('.csv'));
+  const nalPath = path.join(BASE_DIR, csvFile);
+  
+  const gisDir = path.join(BASE_DIR, 'gis');
+  if (!fs.existsSync(gisDir)) { console.error('gis dir not found'); return; }
+  const gFiles = fs.readdirSync(gisDir);
+  const shpFile = gFiles.find(f => f.endsWith('.shp'));
+  const shpPath = path.join(gisDir, shpFile);
+  
+  // Projection Detection
+  const prjPath = shpPath.replace('.shp', '.prj');
+  if (fs.existsSync(prjPath)) {
+       const prjContent = fs.readFileSync(prjPath, 'utf8');
+       if (prjContent.includes('Florida_East')) currentProj = PROJECTIONS['Florida_East'];
+       else if (prjContent.includes('Florida_West')) currentProj = PROJECTIONS['Florida_West'];
+       else currentProj = PROJECTIONS['Florida_North'];
+       console.log(`🌎 Projection: ${currentProj === PROJECTIONS['Florida_East'] ? 'East' : currentProj === PROJECTIONS['Florida_West'] ? 'West' : 'North'}`);
+  }
+
+  // ARGS
+  const args = process.argv.slice(2);
+  const resumeIdx = args.indexOf('--resume');
+  const RESUME_COUNT = resumeIdx !== -1 ? parseInt(args[resumeIdx + 1]) : 0;
+
+  // 1. Load NAL into Map
+  console.log(`\n📖 Reading Tax Roll (NAL)...`);
+  const nalMap = new Map();
+  let nalCount = 0;
+  
+  await new Promise((resolve, reject) => {
+      fs.createReadStream(nalPath)
+        .pipe(csv())
+        .on('data', (row) => {
+            const id = row.PARCEL_ID;
+            if (id) {
+                nalMap.set(id, {
+                    OWN_NAME: row.OWN_NAME,
+                    OWN_ADDR1: row.OWN_ADDR1,
+                    OWN_CITY: row.OWN_CITY,
+                    OWN_STATE: row.OWN_STATE, 
+                    OWN_ZIP: row.OWN_ZIP,
+                    DOR_UC: row.DOR_UC,
+                    JV: row.JV,
+                    AV_SD: row.AV_SD
+                });
+                nalCount++;
+            }
+        })
+        .on('end', () => {
+             const used = process.memoryUsage().heapUsed / 1024 / 1024;
+             console.log(`   ✅ Loaded ${nalCount.toLocaleString()} NAL records (~${Math.round(used)} MB heap).`);
+             resolve();
+        })
+        .on('error', reject);
+  });
+
+  if (RESUME_COUNT === 0) {
+      console.log(`\n🧹 Clearing ${countyName}...`);
+      const delClient = await pool.connect();
+      delClient.on('error', err => console.error('Delete Client Error', err));
+      await delClient.query('DELETE FROM parcels WHERE county = $1', [countyName]);
+      delClient.release();
+  } else {
+      console.log(`⏩ RESUMING from ${RESUME_COUNT} records. Skipping DELETE.`);
+  }
+
+  // 3. Stream SHP
+  console.log(`\n🔗 Streaming Shapefile (FULL)...`);
+  const source = await shapefile.open(shpPath);
+  let batch = [];
+  const BATCH_SIZE = 100;
+  const CHUNK_SIZE = 5000;
+  let loadedCount = RESUME_COUNT;
+  let chunkCount = 0;
+  let totalRead = 0;
+
+  while (true) {
+      const result = await source.read();
+      if (result.done) break;
+
+      totalRead++;
+      if (totalRead <= RESUME_COUNT) {
+          if (totalRead % 10000 === 0) process.stdout.write(`\r⏩ Skipped ${totalRead}...`);
+          continue;
+      }
+
+      const feature = result.value;
+      const shpProps = feature.properties;
+      const parcelId = shpProps.PARCEL_ID || shpProps.PARCELNO || shpProps.PIN || shpProps.RE || shpProps.STRAP || shpProps.FOLIO;
+      
+      if (!parcelId) continue;
+
+      const nalData = nalMap.get(parcelId); 
+      const geom = transformGeometry(feature.geometry);
+      if (!geom) continue;
+
+      const { lat, lon, acres } = getGeoStats(geom);
+
+      const marketValue = parseFloat(nalData?.JV) || 0;
+      const assessedValue = parseFloat(nalData?.AV_SD) || 0;
+      const cleanAcres = acres || 0;
+      const ownerState = nalData?.OWN_STATE || null;
+      const outOfState = (ownerState && ownerState !== 'FL');
+      
+      batch.push([
+          countyName, parcelId, parcelId, nalData?.OWN_NAME, nalData?.OWN_ADDR1, nalData?.OWN_CITY,
+          ownerState, nalData?.OWN_ZIP, cleanAcres, null, nalData?.DOR_UC,
+          assessedValue, marketValue, lat, lon, JSON.stringify(geom), outOfState, JSON.stringify(geom)
+      ]);
+
+      if (batch.length >= BATCH_SIZE) {
+          await insertBatchSafe(batch);
+          loadedCount += batch.length;
+          chunkCount += batch.length;
+          batch = [];
+
+          if (chunkCount >= CHUNK_SIZE) {
+               if (global.gc) global.gc(); 
+               chunkCount = 0;
+               const mem = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+               process.stdout.write(`\r   Loaded ${loadedCount.toLocaleString()}... (GC Triggered - ${mem} MB)`);
+          } else {
+               process.stdout.write(`\r   Loaded ${loadedCount.toLocaleString()}...`);
+          }
+      }
+  }
+
+  if (batch.length > 0) {
+      await insertBatchSafe(batch);
+      loadedCount += batch.length;
+  }
+
+  console.log(`\n\n✅ DONE! Total Loaded: ${loadedCount.toLocaleString()}`);
+}
+
+async function insertBatchSafe(rows) {
+    let retries = 3;
+    while (retries > 0) {
+        let client;
+        try {
+            client = await pool.connect();
+            client.on('error', err => console.error('Batch Client Error', err));
+            await insertBatch(client, rows);
+            return;
+        } catch (e) {
+            console.error(`\n⚠️ Batch failed. Retrying... (${e.message})`);
+            retries--;
+            await new Promise(r => setTimeout(r, 2000));
+        } finally {
+            if (client) client.release();
+        }
+    }
+    console.error('\n❌ Failed to insert batch after retries. Skipping.');
+}
+
+async function insertBatch(client, rows) {
+    if (rows.length === 0) return;
+    const cols = 18;
+    const valuePlaceholders = [];
+    const flatValues = [];
+    for (let i = 0; i < rows.length; i++) {
+        const offset = i * cols;
+        const placeholders = [];
+        for (let j = 1; j <= cols; j++) { 
+            if (j === 18) {
+                placeholders.push(`ST_SetSRID(ST_GeomFromGeoJSON($${offset + j}), 4326)`);
+            } else {
+                placeholders.push(`$${offset + j}`); 
+            }
+        }
+        valuePlaceholders.push(`(${placeholders.join(',')})`);
+        flatValues.push(...rows[i]);
+    }
+    const query = `
+        INSERT INTO parcels (
+          county, parcel_id, parcelno, own_name, own_addr1, own_city, 
+          own_state, own_zipcd, acreage, phy_addr1, dor_uc, 
+          av_sd, jv, latitude, longitude, geojson, out_of_state, geom
+        ) VALUES ${valuePlaceholders.join(',')}
+    `;
+
+    try { await client.query(query, flatValues); } catch (e) { throw e; }
+}
+
+loadFull().then(() => process.exit(0));
