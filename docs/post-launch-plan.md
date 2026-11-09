@@ -29,6 +29,25 @@ Rule for all phases: ONE small step at a time. Secrets are entered by the owner 
 - Add a Preview Clerk webhook (dev instance).
 - DO disk limit check (DB is 46 GB).
 
+## Phase B2: Free "motivated seller" filters + positioning (after Phase B, before paid data)
+
+Build filters from data already in `parcels_current_nogeom` (no new data, no cost):
+- Absentee owner: mailing address differs from the property (situs) address.
+- Out-of-state owner: `own_state` is not FL.
+- Years owned: from `sale1_date` (most recent sale); long-hold = 10+ years.
+- Vacant / land: `dor_uc` / `use_code`, `year_built` empty, `acreage`, land value vs total value (`land_value`/`jv`).
+- Homestead flag (`homestead`) to exclude or target non-homestead.
+- Flip/recent-activity signals from the last three sales (`sale1..3_date`, `sale_prc1..3`).
+- Optional saved presets, e.g. "Absentee, out-of-state, 10+ years, vacant, 5+ acres".
+Positioning: sell as the Florida LAND tool (not a PropStream clone). Before buying any paid data, interview 5-10 real Florida land buyers/realtors (start with Tat) and ask what they would switch for.
+
+## Other investor data (decide AFTER the interviews)
+- Mortgage / equity estimate: license from a vendor (BatchData, ATTOM or similar); expose as filters or per-record credits.
+- Liens, pre-foreclosure (lis pendens), probate, divorce: license rather than collect county by county; privacy-sensitive; only if customers ask.
+- Tax delinquency: county tax collectors publish it but formats differ per county; medium-hard.
+- Zoning / future land use (county GIS layers): likely MORE valuable to land buyers than mortgage data; start with the top counties.
+- Building permits / code violations: hard and uneven; skip unless requested.
+
 ## Phase C: Site chatbot upgrade (small, optional)
 
 Current bubble = keyword answers (`lib/chat-knowledge.ts`, route `/api/chat`). To make it conversational: owner creates an Anthropic Console account with credits + a spend limit, adds `ANTHROPIC_API_KEY` (Production) in Vercel. It then uses Haiku 5.5 (about half a cent per conversation). Falls back to keywords if the call fails. NOTE: a Claude Max plan does NOT cover API usage.
