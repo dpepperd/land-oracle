@@ -21,3 +21,10 @@
 ## Before merging feat/pricing-v2 to main
 - [ ] `main` (`cba7594`) is already contained in the branch (16 ahead, 0 behind): nothing to merge in.
 - [ ] Follow `docs/go-live.md`: separate production DB, Clerk production keys/webhook/Google OAuth, Stripe live, then cutover.
+
+## Added 2026-11-09 (see post-launch-plan.md)
+- [ ] Delete the extra Stripe API key made for setup-products; rotate landoracle_prod + doadmin DB passwords; fix ADMIN_EMAILS to include the owner.
+- [ ] One live purchase test with a non-admin account (Scout + FOUNDING40), then refund + cancel.
+- [ ] Site chatbot is keyword-only; optional ANTHROPIC_API_KEY upgrades it (Haiku 5.5).
+- [ ] AI assistant: use /api/assistant (not /api/chat); caps + cost test (Clay County, 5 questions).
+- [ ] Skip tracing (quotes from Tracerfy + BatchData, then build), then mail (Lob). Texting: do not build by default.
