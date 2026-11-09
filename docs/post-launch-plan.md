@@ -80,6 +80,25 @@ Current bubble = keyword answers (`lib/chat-knowledge.ts`, route `/api/chat`). T
 - Highest legal risk (federal TCPA + Florida telemarketing law) and recurring fees (10DLC brand $4.50-$46 one-time, campaign vetting $15, $2-$10/month, about $0.01/message).
 - Default decision: do NOT build. The CSV export already lets customers load leads into their own texting tools, which keeps the risk with them.
 
+## Phase H: State expansion to Georgia (late; only after Florida is proven)
+
+Trigger: Florida has paying customers AND real buyers ask for Georgia. Do not start before Phases A-B2 are done.
+
+What the 2026-11-09 check found (verify before committing money):
+- Georgia has 159 counties (Florida: 67). Each county assessor holds its own roll.
+- The Georgia Dept of Revenue publishes tax DIGEST files, but these are aggregate values per taxing jurisdiction, not parcel-level owner records. I found no free statewide parcel+owner file.
+- Aggregators advertise Georgia parcels with owner names across 159 counties (e.g. landrecords.us) but licensing/pricing was not clear and owner-name coverage varies by county. Regrid coverage/terms for Georgia were NOT confirmed. Sales history is likely patchier than Florida DOR data.
+
+Steps:
+1. Data decision: get written quotes and sample data (3 counties, e.g. one metro, one rural, one coastal) from at least two sources (a nationwide parcel vendor such as Regrid, and an aggregator). Check license terms for resale/redistribution, owner-data restrictions, update frequency, and sales-history fields. Compare field coverage to the Florida columns in `parcels_current_nogeom` (owner name/mailing, situs, acreage, use code, values, year built, sales 1-3).
+2. Storage/perf: Florida is ~40 GB. Estimate Georgia size from the sample; confirm DO disk limit and plan for indexes by state/county; fix the slow stats query first.
+3. Schema: use the existing `state` column; make `parcel_key` unique across states; add a state-aware county list (159 GA counties) and per-state loaders; keep Florida data untouched.
+4. App changes: remove Florida assumptions (the FLORIDA_COUNTY_COUNT, "Florida" copy, county picker, plan text, chatbot facts, Stripe product descriptions, legal pages review).
+5. Pricing: 159 counties changes the math. Options: sell Georgia as its own add-on / plan (e.g. Georgia Scout/Pro) or a multi-state tier; decide with customer input. Statewide for Georgia needs its own price.
+6. Filters: the free motivated-seller filters (Phase B2) may be weaker where owner/sales fields are missing; hide or label filters per state by field coverage.
+7. Launch Georgia as a small beta (one or two metro counties first), then widen.
+8. Rough effort: weeks if the vendor data is clean; the first extra state costs the most because it forces the app to stop assuming Florida.
+
 ---
 
 ## Competitive notes (2026-11-09 web check, verify before quoting)
