@@ -28,6 +28,7 @@ const isPublicApi = createRouteMatcher([
   "/api/map/flood",
   "/api/highways",
   "/api/parcels/stats",
+  "/api/chat", // public site chatbot: static product facts only, no user data
 ]);
 
 // The public /territories page reads the guest branch of this endpoint

@@ -15,7 +15,7 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm the Land Oracle AI. How can I assist with your property research today?",
+      text: "Hi! I can answer questions about Land Oracle plans, pricing, counties and how our data works.",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -56,13 +56,14 @@ export default function ChatWidget() {
     setIsTyping(true);
 
     try {
-      // Call the webhook
-      const response = await fetch('https://n8n.srv1186790.hstgr.cloud/webhook/chat', {
+      // Land Oracle's own chat endpoint (answers from Land Oracle product facts only)
+      const history = messages.slice(1).map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: messageToSend }),
+        body: JSON.stringify({ message: messageToSend, history }),
       });
 
       if (!response.ok) {
@@ -202,7 +203,7 @@ export default function ChatWidget() {
                         className="w-full bg-slate-800 border border-slate-700 hover:border-slate-600 focus:border-blue-500/50 rounded-xl pl-4 pr-12 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Ask about a property..."
+                        placeholder="Ask about plans, counties, data..."
                         disabled={isTyping}
                     />
                     <button 
