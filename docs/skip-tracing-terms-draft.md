@@ -29,6 +29,8 @@ You may not use Skip Tracing or its results:
 6. To scrape, bulk-download or reverse-engineer the feature or the data.
 
 ### 5. Calls, texts and email are your responsibility
+**Compliance with Do Not Call (DNC), TCPA and all telemarketing, texting and email laws is entirely your responsibility. Land Oracle and Fortune Oracle Media LLC are not responsible for it, whether or not you use any DNC checking we offer.**
+
 Land Oracle does not make calls, send texts or send emails for you. If you contact anyone, you alone are responsible for following all laws that apply, including the Telephone Consumer Protection Act (TCPA), the federal and Florida Do Not Call and telemarketing rules, the CAN-SPAM Act, and any similar laws. This includes getting any required consent, scrubbing numbers against Do Not Call lists, respecting opt-outs, and honoring calling-time limits. A result that appears in Land Oracle is not permission to contact that person. Optional Do Not Call checking, where we offer it, does not make your outreach compliant, and we do not guarantee that it is complete or current.
 
 ### 6. Credits and charges
