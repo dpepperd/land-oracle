@@ -89,6 +89,13 @@ What the 2026-11-09 check found (verify before committing money):
 - The Georgia Dept of Revenue publishes tax DIGEST files, but these are aggregate values per taxing jurisdiction, not parcel-level owner records. I found no free statewide parcel+owner file.
 - Aggregators advertise Georgia parcels with owner names across 159 counties (e.g. landrecords.us) but licensing/pricing was not clear and owner-name coverage varies by county. Regrid coverage/terms for Georgia were NOT confirmed. Sales history is likely patchier than Florida DOR data.
 
+Georgia data source options (2026-11-10 check, verify before committing money):
+- Nationwide parcel vendor (Regrid): sells by county/state; no public Georgia price. Get a written quote. Questions to ask: price for all 159 counties vs a few counties; license (can we resell/redistribute through a subscription app? owner names allowed?); update frequency; owner-name and mailing-address coverage by county; sales-history/last-sale fields; use/land-use codes; flood or zoning extras; API vs bulk files; term length and renewal pricing.
+- Aggregators (e.g. landrecords.us): cheaper-looking, but licensing and per-county owner coverage unclear. Ask the same questions.
+- Property data vendors (ATTOM, Cotality/CoreLogic): richest fields (sales, mortgage) but usually the most expensive; likely overkill for a first state.
+- Individual county assessor files: some counties will sell or give their full roll if asked. Clear permitted use, but 159 separate formats. Good for a pilot with 1-2 counties.
+- Schneider Geospatial / qPublic: hosts many Georgia county lookup sites. NOT a data source: no public API or bulk download, scraping terms not confirmed (third-party scrapers exist). Do not build on scraping; ask the county GIS/assessor office for a file instead.
+
 Steps:
 1. Data decision: get written quotes and sample data (3 counties, e.g. one metro, one rural, one coastal) from at least two sources (a nationwide parcel vendor such as Regrid, and an aggregator). Check license terms for resale/redistribution, owner-data restrictions, update frequency, and sales-history fields. Compare field coverage to the Florida columns in `parcels_current_nogeom` (owner name/mailing, situs, acreage, use code, values, year built, sales 1-3).
 2. Storage/perf: Florida is ~40 GB. Estimate Georgia size from the sample; confirm DO disk limit and plan for indexes by state/county; fix the slow stats query first.
