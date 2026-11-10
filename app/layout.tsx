@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import ChatWidget from "@/components/chat/ChatWidget";
+import AssistantPanel from "@/components/assistant/AssistantPanel";
 import CountyPickerModal from "@/components/paywall/CountyPickerModal";
 import "./globals.css";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Providers>
             {children}
             <ChatWidget />
+            <AssistantPanel />
             <CountyPickerModal />
         </Providers>
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-H5QNLG61TP'} />
