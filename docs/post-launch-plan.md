@@ -99,6 +99,8 @@ Current bubble = keyword answers (`lib/chat-knowledge.ts`, route `/api/chat`). T
 
 Trigger: Florida has paying customers AND real buyers ask for Georgia. Do not start before Phases A-B2 are done.
 
+UPDATE 2026-11-10: a 50-state survey is in `docs/state-data-survey.md`. Georgia is confirmed county-only (no free statewide file). Texas and North Carolina each publish free statewide parcel layers with owner + mailing address (no sale price; licenses not stated, so confirm commercial use in writing first), and are likely cheaper first expansion states than Georgia. Montana, Washington and Idaho have mailing-list/commercial-list laws: do not mail or skip-trace owners there without legal advice.
+
 What the 2026-11-09 check found (verify before committing money):
 - Georgia has 159 counties (Florida: 67). Each county assessor holds its own roll.
 - The Georgia Dept of Revenue publishes tax DIGEST files, but these are aggregate values per taxing jurisdiction, not parcel-level owner records. I found no free statewide parcel+owner file.
