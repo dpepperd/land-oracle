@@ -57,6 +57,8 @@ Current bubble = keyword answers (`lib/chat-knowledge.ts`, route `/api/chat`). T
 - Separate panel from the site bubble (owner decision). Pro + Statewide only, inside the signed-in app.
 - Move the assistant route to `/api/assistant` (the spec says `/api/chat`, now used by the site bubble).
 - Cost estimate (to be replaced by measured numbers): about $0.05-0.10 per question on Sonnet 5.5 with a 3-tool-call question. Starting caps proposed: Pro 150 questions/mo, Statewide 500/mo, overage pack (e.g. 100 for $15), Anthropic console spend limit as backstop, admins exempt. Bring-your-own-key: not at launch (maybe later, optional, Statewide).
+- Built and live (admin-only, 2026-11-10): `/api/assistant`, question-based caps, launch switch `AI_ASSISTANT_ENABLED`, Anthropic spend limit $50/mo on the Land Oracle workspace. Measured so far (2 admin questions): about $0.009 and $0.042 per question (Sonnet 5.5), below the estimate above; keep measuring on the Clay County 5-question test.
+- Scout teaser (decided 2026-11-10): Scout gets 10 free AI questions a month so the AI sells the Pro upgrade (about $0.40 per Scout user per month at the measured cost). No code needed: set `AI_CAP_SCOUT=10` in Vercel (Production) when the AI is switched on for customers; reaching the limit points to Pro. Not a paid Scout add-on for now (it could pull one-county buyers away from Pro at $199); revisit if customers or Tat say they would pay extra for the AI on a one-county plan.
 - Test: 5 real realtor questions on Clay County (picked with Tat); record tool calls, tokens, cost per question. Merge only if answers are good.
 - Fair housing rule stays in the system prompt: never filter or rank by owner demographics.
 
