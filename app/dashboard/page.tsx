@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [unlockedCounties, setUnlockedCounties] = useState<string[]>([]); // User's unlocked list
   const [showUpsell, setShowUpsell] = useState(false); // Shared Upsell State
   const [searchError, setSearchError] = useState<string | null>(null); // Error message
+  const [aiResults, setAiResults] = useState<{ count: number } | null>(null); // parcels pushed in by the AI Analyst
   
   // Track leads being saved
   const [markingIds, setMarkingIds] = useState<string[]>([]);
@@ -145,6 +146,39 @@ export default function Dashboard() {
     }
   }, [fetchData, isLoaded]);
 
+  // AI Analyst -> dashboard: show the parcels it found in the normal list and map.
+  const showAiParcels = useCallback(async (keys: string[], select?: string) => {
+    try {
+      const res = await fetch('/api/assistant/parcels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keys }) });
+      const data = await res.json();
+      if (data.error) { setSearchError(data.error); return; }
+      abortControllerRef.current?.abort();
+      setParcels(data.list || []);
+      setGeojson(data.geojson || { type: 'FeatureCollection', features: [] });
+      setTotalCount(data.count || 0);
+      setAiResults({ count: data.count || 0 });
+      if (select) {
+        const hit = (data.list || []).find((p: any) => p.parcel_key === select);
+        if (hit && hit.latitude && hit.longitude) setPopupInfo({ start_lat: hit.latitude, start_lng: hit.longitude, properties: hit });
+      }
+    } catch (err) {
+      console.error('AI results error:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    const take = (d: { keys?: string[]; select?: string } | null) => { if (d?.keys?.length) void showAiParcels(d.keys, d.select); };
+    // Results handed over before the dashboard was open (assistant used on another page)
+    try {
+      const pending = sessionStorage.getItem('lo:ai-parcels');
+      if (pending) { sessionStorage.removeItem('lo:ai-parcels'); take(JSON.parse(pending)); }
+    } catch { /* ignore */ }
+    const onShow = (e: Event) => take((e as CustomEvent).detail);
+    window.addEventListener('landoracle:show-parcels', onShow);
+    return () => window.removeEventListener('landoracle:show-parcels', onShow);
+  }, [isLoaded, showAiParcels]);
+
   const handleExport = async () => {
     try {
       const res = await fetch('/api/parcels/export', {
@@ -238,6 +272,13 @@ export default function Dashboard() {
         </div>
       )}
       
+      {aiResults && (
+        <div className="bg-emerald-700 text-white px-6 py-2 shadow flex items-center justify-between text-sm">
+          <span>Showing {aiResults.count} parcel{aiResults.count === 1 ? '' : 's'} from the AI Analyst</span>
+          <button onClick={() => { setAiResults(null); void fetchData(); }} className="underline hover:text-emerald-100">Back to my filters</button>
+        </div>
+      )}
+
       <div className="flex-1 flex overflow-hidden relative">
         {/* Sidebar - Mobile Drawer & Desktop Static */}
         <div className={`
