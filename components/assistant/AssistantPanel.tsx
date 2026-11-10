@@ -5,6 +5,7 @@
 // Events in: window 'landoracle:open-assistant' { prefill?: string }
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { usePathname, useRouter } from 'next/navigation';
 import { X, Send, Bot, User, Loader2, Search, MapPin, Sparkles } from 'lucide-react';
 
 interface ToolChip { id: string; name: string; done: boolean; ok?: boolean; summary?: string }
@@ -14,7 +15,19 @@ const TOOL_LABEL: Record<string, string> = {
   search_parcels: 'Searching parcels', get_parcel: 'Reading parcel', get_comps: 'Finding comparable sales', get_parcel_context: 'Checking flood and highways',
 };
 
-function Inline({ text, known }: { text: string; known: Set<string> }) {
+/** Hand parcels to the dashboard (list + map). If the user is elsewhere, open the dashboard and pass them via sessionStorage. */
+function showOnDashboard(keys: string[], pathname: string, push: (url: string) => void, select?: string) {
+  const uniq = [...new Set(keys)].slice(0, 50);
+  if (!uniq.length) return;
+  if (!pathname.startsWith('/dashboard')) {
+    try { sessionStorage.setItem('lo:ai-parcels', JSON.stringify({ keys: uniq, select })); } catch { /* ignore */ }
+    push('/dashboard');
+    return;
+  }
+  window.dispatchEvent(new CustomEvent('landoracle:show-parcels', { detail: { keys: uniq, select } }));
+}
+
+function Inline({ text, known, onShow }: { text: string; known: Set<string>; onShow: (k: string) => void }) {
   // [label](parcel:KEY) | [label](https://...) | **bold** | `code` | bare parcel_key seen in tool results
   const out: React.ReactNode[] = [];
   const re = /\[([^\]]+)\]\((parcel:[^)\s]+|https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\b([A-Z]{2}-\d{2,3}-[A-Z0-9][A-Z0-9\-+*()_<>]*[A-Z0-9])\b/g;
@@ -23,14 +36,14 @@ function Inline({ text, known }: { text: string; known: Set<string> }) {
     if (m.index > last) out.push(text.slice(last, m.index));
     if (m![1] && m![2]?.startsWith('parcel:')) {
       const key = decodeURIComponent(m[2].slice(7));
-      out.push(<span key={i++} className="inline-flex items-center gap-0.5 text-blue-300 font-mono text-[12px] bg-blue-950/60 px-1 rounded" title={key}><MapPin size={11} />{m[1]}</span>);
+      out.push(<button key={i++} onClick={() => onShow(key)} className="inline-flex items-center gap-0.5 text-blue-300 hover:text-blue-200 font-mono text-[12px] bg-blue-950/60 px-1 rounded" title="Show on map"><MapPin size={11} />{m[1]}</button>);
     } else if (m[1] && m[2]) {
       out.push(<a key={i++} href={m[2]} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{m[1]}</a>);
     } else if (m[3]) out.push(<strong key={i++} className="font-semibold text-white">{m[3]}</strong>);
     else if (m[4]) out.push(<code key={i++} className="bg-slate-900 px-1 rounded text-[12px]">{m[4]}</code>);
     else if (m[5]) {
       const bare = m[5];
-      if (known.has(bare)) out.push(<span key={i++} className="inline-flex items-center gap-0.5 text-blue-300 font-mono text-[12px] bg-blue-950/60 px-1 rounded"><MapPin size={11} />{m[5]}</span>);
+      if (known.has(bare)) out.push(<button key={i++} onClick={() => onShow(bare)} className="inline-flex items-center gap-0.5 text-blue-300 hover:text-blue-200 font-mono text-[12px] bg-blue-950/60 px-1 rounded" title="Show on map"><MapPin size={11} />{m[5]}</button>);
       else out.push(m[5]);
     }
     last = m.index + m[0].length;
@@ -39,7 +52,7 @@ function Inline({ text, known }: { text: string; known: Set<string> }) {
   return <>{out.map((n, k) => <Fragment key={k}>{n}</Fragment>)}</>;
 }
 
-function Markdown({ text, known }: { text: string; known: Set<string> }) {
+function Markdown({ text, known, onShow }: { text: string; known: Set<string>; onShow: (k: string) => void }) {
   const lines = text.split('\n');
   const blocks: React.ReactNode[] = [];
   for (let i = 0; i < lines.length; i++) {
@@ -53,25 +66,25 @@ function Markdown({ text, known }: { text: string; known: Set<string> }) {
       i--;
       blocks.push(
         <div key={i} className="overflow-x-auto my-2"><table className="text-[12px] border-collapse">
-          <thead><tr>{rows[0]?.map((c, j) => <th key={j} className="border border-slate-700 px-2 py-1 text-left bg-slate-900"><Inline text={c} known={known} /></th>)}</tr></thead>
-          <tbody>{rows.slice(1).map((r, a) => <tr key={a}>{r.map((c, j) => <td key={j} className="border border-slate-700 px-2 py-1"><Inline text={c} known={known} /></td>)}</tr>)}</tbody>
+          <thead><tr>{rows[0]?.map((c, j) => <th key={j} className="border border-slate-700 px-2 py-1 text-left bg-slate-900"><Inline text={c} known={known} onShow={onShow} /></th>)}</tr></thead>
+          <tbody>{rows.slice(1).map((r, a) => <tr key={a}>{r.map((c, j) => <td key={j} className="border border-slate-700 px-2 py-1"><Inline text={c} known={known} onShow={onShow} /></td>)}</tr>)}</tbody>
         </table></div>);
     } else if (/^\s*[-*]\s+/.test(l)) {
       const items: string[] = [];
       while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*[-*]\s+/, '')); i++; }
       i--;
-      blocks.push(<ul key={i} className="list-disc pl-5 my-1 space-y-0.5">{items.map((t, j) => <li key={j}><Inline text={t} known={known} /></li>)}</ul>);
+      blocks.push(<ul key={i} className="list-disc pl-5 my-1 space-y-0.5">{items.map((t, j) => <li key={j}><Inline text={t} known={known} onShow={onShow} /></li>)}</ul>);
     } else if (/^\s*\d+\.\s+/.test(l)) {
       const items: string[] = [];
       while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*\d+\.\s+/, '')); i++; }
       i--;
-      blocks.push(<ol key={i} className="list-decimal pl-5 my-1 space-y-0.5">{items.map((t, j) => <li key={j}><Inline text={t} known={known} /></li>)}</ol>);
+      blocks.push(<ol key={i} className="list-decimal pl-5 my-1 space-y-0.5">{items.map((t, j) => <li key={j}><Inline text={t} known={known} onShow={onShow} /></li>)}</ol>);
     } else if (/^#{1,4}\s+/.test(l)) {
-      blocks.push(<p key={i} className="font-semibold text-white mt-2"><Inline text={l.replace(/^#{1,4}\s+/, '')} known={known} /></p>);
+      blocks.push(<p key={i} className="font-semibold text-white mt-2"><Inline text={l.replace(/^#{1,4}\s+/, '')} known={known} onShow={onShow} /></p>);
     } else if (l.trim() === '') {
       blocks.push(<div key={i} className="h-1.5" />);
     } else {
-      blocks.push(<p key={i}><Inline text={l} known={known} /></p>);
+      blocks.push(<p key={i}><Inline text={l} known={known} onShow={onShow} /></p>);
     }
   }
   return <div className="space-y-0.5">{blocks}</div>;
@@ -79,6 +92,8 @@ function Markdown({ text, known }: { text: string; known: Set<string> }) {
 
 export default function AssistantPanel() {
   const { isSignedIn } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname() || '/';
   const [enabled, setEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
@@ -102,6 +117,10 @@ export default function AssistantPanel() {
     window.addEventListener('landoracle:open-assistant', open);
     return () => window.removeEventListener('landoracle:open-assistant', open);
   }, []);
+
+  const lastKeys = useRef<string[]>([]);
+  // Chip click: keep the whole latest result set on the map and highlight the clicked parcel.
+  const onShow = (k: string) => showOnDashboard([k, ...lastKeys.current], pathname, router.push, k);
 
   useEffect(() => {
     if (!isSignedIn) { setEnabled(false); return; }
@@ -142,6 +161,7 @@ export default function AssistantPanel() {
           else if (ev.type === 'tool_result') {
             patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
             if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
+            if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showOnDashboard(ev.keys, pathname, router.push); }
           } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
           else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
           else if (ev.type === 'error') patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message }));
@@ -184,7 +204,7 @@ export default function AssistantPanel() {
                     </div>
                   ))}
                   {m.role === 'assistant' && m.cost !== undefined && m.cost !== null && <div className="text-[10px] text-slate-500 mb-1">Admin: this answer cost about ${m.cost.toFixed(3)} ({m.tools?.length ?? 0} tool calls)</div>}
-                  {m.role === 'user' ? m.text : m.text ? <Markdown text={m.text} known={known} /> : busy && !m.tools?.length ? <Loader2 size={14} className="animate-spin text-slate-400" /> : null}
+                  {m.role === 'user' ? m.text : m.text ? <Markdown text={m.text} known={known} onShow={onShow} /> : busy && !m.tools?.length ? <Loader2 size={14} className="animate-spin text-slate-400" /> : null}
                 </div>
               </div>
             ))}
