@@ -3,7 +3,7 @@ export interface FloodLabel { text: string; tone: 'high' | 'low' | 'none' }
 
 export function floodLabel(p: { flood_checked?: boolean; flood_zone?: string | null; flood_sfha?: boolean }): FloodLabel | null {
   if (!p.flood_checked) return null; // not looked up (large result sets)
-  if (!p.flood_zone) return { text: 'No FEMA flood zone mapped', tone: 'none' };
+  if (!p.flood_zone) return { text: 'Flood zone unknown - check FEMA map', tone: 'none' };
   if (p.flood_sfha) return { text: `Flood zone ${p.flood_zone} (high risk)`, tone: 'high' };
   return { text: `Flood zone ${p.flood_zone} (lower risk)`, tone: 'low' };
 }
