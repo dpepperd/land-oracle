@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
+import { addSellerSignalConditions } from '@/lib/sellerSignals';
 import { exportSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       spatialShape,
       maxDistance, 
       ownerType,
+      absentee, nonHomestead, noSaleYears,
       parcelId, 
       address
     } = body;
@@ -148,6 +150,9 @@ export async function POST(request: Request) {
       // 6. Owner Type
       if (ownerType === 'in_state') conditions.push(`(p.own_state = 'FL' OR p.own_state IS NULL)`);
       else if (ownerType === 'out_of_state') conditions.push(`(p.own_state != 'FL' AND p.own_state IS NOT NULL)`);
+
+      // 6b. Seller signals (absentee / not homestead / no recent sale)
+      valIdx = addSellerSignalConditions({ absentee, nonHomestead, noSaleYears }, conditions, values, valIdx);
 
       // 7. Highway Distance (Optional)
       if (maxDistance && maxDistance > 0) {

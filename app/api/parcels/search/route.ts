@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getEntitlements } from '@/lib/entitlements';
 import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
 import { countyCode, countyName } from '@/lib/parcels/key';
+import { ABSENTEE_SQL, addSellerSignalConditions } from '@/lib/sellerSignals';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
       spatialShape,
       maxDistance, 
       ownerType,
+      absentee, nonHomestead, noSaleYears,
       parcelId, 
       address, // New field
       limit = 500
@@ -144,6 +146,9 @@ export async function POST(request: Request) {
       if (ownerType === 'in_state') conditions.push(`(p.own_state = 'FL' OR p.own_state IS NULL)`);
       else if (ownerType === 'out_of_state') conditions.push(`(p.own_state != 'FL' AND p.own_state IS NOT NULL)`);
 
+      // 6b. Seller signals (absentee / not homestead / no recent sale)
+      valIdx = addSellerSignalConditions({ absentee, nonHomestead, noSaleYears }, conditions, values, valIdx);
+
       // 7. Highway Distance (Optional)
       if (maxDistance && maxDistance > 0) {
         conditions.push(`p.distance_to_highway <= $${valIdx}`);
@@ -205,6 +210,7 @@ export async function POST(request: Request) {
         (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
         ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
+        ${ABSENTEE_SQL} as is_absentee,
         (l.id IS NOT NULL) as is_lead,
         EXISTS (SELECT 1 FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin')))) as has_note,
         (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
