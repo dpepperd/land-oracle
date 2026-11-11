@@ -215,6 +215,7 @@ export default function MapView({
     if (pr?.parcel_key) requestFlood(pr.parcel_key, pr.flood_lat ?? pr.latitude, pr.flood_lon ?? pr.longitude);
   }, [popupInfo]);
   const [floodData, setFloodData] = useState<any>({ type: 'FeatureCollection', features: [] });
+  const [floodZoomIn, setFloodZoomIn] = useState(false); // true when the view is too wide for flood data
   
   const [dataLayersOpen, setDataLayersOpen] = useState(false);
 
@@ -240,6 +241,13 @@ export default function MapView({
       if (!showFlood) return;
       try {
           const [minLng, minLat, maxLng, maxLat] = bounds;
+          // Server refuses views wider than 3 degrees; tell the user instead of showing nothing
+          if (maxLat - minLat > 3 || maxLng - minLng > 3) {
+              setFloodZoomIn(true);
+              setFloodData({ type: 'FeatureCollection', features: [] });
+              return;
+          }
+          setFloodZoomIn(false);
           const query = new URLSearchParams({
               minLat: minLat.toString(),
               maxLat: maxLat.toString(),
@@ -957,7 +965,11 @@ export default function MapView({
                                 <Droplets size={14} className="text-blue-500"/>
                                 FEMA Flood Zones
                             </span>
-                            <span className="text-[10px] text-gray-400">DFIRM Layer</span>
+                            {showFlood && floodZoomIn ? (
+                                <span className="text-[10px] text-amber-600 font-medium">Zoom in to a county to see flood zones</span>
+                            ) : (
+                                <span className="text-[10px] text-gray-400">DFIRM Layer</span>
+                            )}
                         </div>
                      </label>
                 </div>
