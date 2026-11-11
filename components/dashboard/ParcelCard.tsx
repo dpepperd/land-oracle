@@ -1,4 +1,5 @@
-import { MapPin, StickyNote, Home } from 'lucide-react';
+import { MapPin, StickyNote, Home, Droplets } from 'lucide-react';
+import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
 
 interface Parcel {
   parcel_id: string;
@@ -11,6 +12,9 @@ interface Parcel {
   is_lead?: boolean;
   has_note?: boolean;
   property_address?: string;
+  flood_checked?: boolean;
+  flood_zone?: string | null;
+  flood_sfha?: boolean;
 }
 
 interface ParcelCardProps {
@@ -50,6 +54,15 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
         </div>
       </div>
       
+      {(() => {
+        const fl = floodLabel(parcel);
+        return fl ? (
+          <span className={`mt-2 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${FLOOD_TONE_CLASS[fl.tone]}`}>
+            <Droplets className="w-3 h-3" />{fl.text}
+          </span>
+        ) : null;
+      })()}
+
       <div className="mt-3 flex items-center justify-between">
         <div className="text-xs text-theme-secondary">
           State: <span className="font-medium text-theme-primary">{parcel.owner_state || 'N/A'}</span>

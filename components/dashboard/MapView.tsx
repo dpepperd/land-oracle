@@ -18,6 +18,7 @@ import ConfirmModal from './ConfirmModal';
 import GeocoderControl from './GeocoderControl';
 import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
 import { useTheme } from 'next-themes';
+import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
 import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -722,6 +723,15 @@ export default function MapView({
                <span className="font-bold text-gray-900">Property Value:</span>
                <span>${Number(popupInfo.properties.market_value).toLocaleString()}</span>
              </div>
+
+             {(() => {
+               const fl = floodLabel(popupInfo.properties);
+               return fl ? (
+                 <div className="mt-2">
+                   <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${FLOOD_TONE_CLASS[fl.tone]}`}>{fl.text}</span>
+                 </div>
+               ) : null;
+             })()}
 
              <div className="mt-3">
                <div className="font-bold text-gray-900 text-xs mb-0.5">Property Address:</div>

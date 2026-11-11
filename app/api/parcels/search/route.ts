@@ -235,6 +235,36 @@ export async function POST(request: Request) {
         return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });
       }
 
+      // FEMA flood zone for the first FLOOD_LOOKUP_MAX parcels (a spatial lookup per parcel; ~1s per 500 rows).
+      // flood_zone: zone code, or null when no mapped flood hazard polygon covers the parcel. flood_checked=false means not looked up.
+      const FLOOD_LOOKUP_MAX = 500;
+      const floodKeys = res.rows.slice(0, FLOOD_LOOKUP_MAX).map((r: any) => r.parcel_key);
+      const floodByKey = new Map<string, { zone: string; sfha: boolean }>();
+      try {
+        const fr = await client.query(
+          `SELECT p.parcel_key, fz.fld_zone, fz.sfha_tf
+             FROM parcels_current_all p
+             CROSS JOIN LATERAL (
+               SELECT fh.fld_zone, fh.sfha_tf FROM flood_hazard fh
+                WHERE fh.geom_safe && ST_PointOnSurface(p.geom) AND ST_Intersects(fh.geom_safe, ST_PointOnSurface(p.geom))
+                ORDER BY (fh.sfha_tf = 'T') DESC LIMIT 1
+             ) fz
+            WHERE p.county = ANY($1) AND p.parcel_key = ANY($2)`,
+          [Array.from(new Set(res.rows.map((r: any) => r.county))), floodKeys]
+        );
+        for (const r of fr.rows) floodByKey.set(r.parcel_key, { zone: r.fld_zone, sfha: r.sfha_tf === 'T' });
+      } catch (e) {
+        console.error('[search] flood lookup failed', e);
+        floodKeys.length = 0; // leave flood_checked false so the card shows nothing rather than a wrong answer
+      }
+      const checked = new Set(floodKeys);
+      res.rows.forEach((r: any) => {
+        r.flood_checked = checked.has(r.parcel_key);
+        const fz = floodByKey.get(r.parcel_key);
+        r.flood_zone = fz ? fz.zone : null;
+        r.flood_sfha = fz ? fz.sfha : false;
+      });
+
       const geojson = {
         type: 'FeatureCollection',
         features: res.rows.filter(row => row.geojson || (row.latitude && row.longitude)).map(row => {
