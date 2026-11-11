@@ -89,24 +89,24 @@ export async function POST(request: Request) {
 
       // 3. Acreage
       if (acreageMin !== undefined) {
-        conditions.push(`p.acreage >= ${valIdx}`);
+        conditions.push(`p.acreage >= $${valIdx}`);
         values.push(acreageMin);
         valIdx += 1;
       }
       if (acreageMax !== undefined) {
-        conditions.push(`p.acreage <= ${valIdx}`);
+        conditions.push(`p.acreage <= $${valIdx}`);
         values.push(acreageMax);
         valIdx += 1;
       }
 
       // 4. Market Value
       if (marketValueMin !== undefined) {
-        conditions.push(`p.jv >= ${valIdx}`);
+        conditions.push(`p.jv >= $${valIdx}`);
         values.push(marketValueMin);
         valIdx += 1;
       }
       if (marketValueMax !== undefined) {
-        conditions.push(`p.jv <= ${valIdx}`);
+        conditions.push(`p.jv <= $${valIdx}`);
         values.push(marketValueMax);
         valIdx += 1;
       }
