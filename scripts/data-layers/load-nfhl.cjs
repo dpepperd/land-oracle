@@ -11,19 +11,19 @@ const table = process.argv[2];
 const fips = (process.argv[3] || '').split(',').filter(Boolean);
 if (!/^[a-z_]+$/.test(table || '') || fips.length === 0) { console.error('usage: <table> <fips,...>'); process.exit(1); }
 
-async function page(where, offset) {
+async function page(where, offset, size = PAGE) {
   const body = new URLSearchParams({
     where, outFields: 'FLD_AR_ID,DFIRM_ID,FLD_ZONE,ZONE_SUBTY,SFHA_TF,STATIC_BFE,DEPTH,VELOCITY',
-    returnGeometry: 'true', outSR: '4326', orderByFields: 'OBJECTID', resultOffset: String(offset), resultRecordCount: String(PAGE), f: 'geojson',
+    returnGeometry: 'true', outSR: '4326', orderByFields: 'OBJECTID', resultOffset: String(offset), resultRecordCount: String(size), f: 'geojson',
   });
-  for (let a = 1; a <= 4; a++) {
+  for (let a = 1; a <= 3; a++) {
     try {
       const r = await fetch(SRC, { method: 'POST', body, signal: AbortSignal.timeout(120000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       if (j.error) throw new Error(JSON.stringify(j.error));
       return j.features || [];
-    } catch (e) { if (a === 4) throw e; await new Promise((s) => setTimeout(s, 2000 * a)); }
+    } catch (e) { if (a === 3) throw e; await new Promise((s) => setTimeout(s, 2000 * a)); }
   }
 }
 
@@ -35,10 +35,22 @@ async function page(where, offset) {
   await pool.query(`CREATE INDEX IF NOT EXISTS ${table}_geom_gix ON public.${table} USING gist (geom)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS ${table}_cty ON public.${table} (county_fips)`);
   for (const f of fips) {
+    // Resume support: skip a county that is already fully loaded (same polygon count as FEMA)
+    try {
+      const cr = await fetch(SRC, { method: 'POST', body: new URLSearchParams({ where: `DFIRM_ID LIKE '${f}%'`, returnCountOnly: 'true', f: 'json' }), signal: AbortSignal.timeout(60000) });
+      const want = (await cr.json()).count;
+      const have = Number((await pool.query(`SELECT count(*) n FROM public.${table} WHERE county_fips = $1`, [f])).rows[0].n);
+      if (want && have === want) { console.log(`county ${f}: already complete (${have}), skipped`); continue; }
+    } catch (e) { /* if the check fails, just reload the county */ }
     await pool.query(`DELETE FROM public.${table} WHERE county_fips = $1`, [f]);
-    let off = 0, total = 0; const t = Date.now();
+    let off = 0, total = 0, size = PAGE, skipped = 0; const t = Date.now();
     for (;;) {
-      const feats = await page(`DFIRM_ID LIKE '${f}%'`, off);
+      let feats;
+      try { feats = await page(`DFIRM_ID LIKE '${f}%'`, off, size); }
+      catch (e) {
+        if (size > 1) { size = Math.max(1, Math.floor(size / 5)); continue; } // FEMA 500s on heavy shapes: shrink the page
+        console.log(`  skipped record at offset ${off} in ${f}: ${e.message}`); skipped++; off += 1; size = PAGE; continue;
+      }
       if (!feats.length) break;
       const vals = [], ph = [];
       feats.forEach((ft, i) => {
@@ -48,9 +60,10 @@ async function page(where, offset) {
       });
       await pool.query(`INSERT INTO public.${table} (county_fips,dfirm_id,fld_ar_id,fld_zone,zone_subty,sfha_tf,static_bfe,depth,velocity,geom) VALUES ${ph.join(',')}`, vals);
       total += feats.length; off += feats.length;
-      if (feats.length < PAGE) break;
+      if (feats.length < size) break;
+      if (size < PAGE) size = Math.min(PAGE, size * 2);
     }
-    console.log(`county ${f}: ${total} polygons in ${Math.round((Date.now() - t) / 1000)}s`);
+    console.log(`county ${f}: ${total} polygons in ${Math.round((Date.now() - t) / 1000)}s${skipped ? ' SKIPPED ' + skipped : ''}`);
   }
   const s = await pool.query(`SELECT pg_size_pretty(pg_total_relation_size('public.${table}')) sz, (SELECT count(*) FROM public.${table}) n`);
   console.log('table', table, JSON.stringify(s.rows[0]));
