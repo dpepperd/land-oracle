@@ -18,6 +18,9 @@ interface Parcel {
   flood_lon?: number | null;
   latitude?: number | null;
   longitude?: number | null;
+  is_absentee?: boolean;
+  out_of_state?: boolean;
+  sale1_date?: string | null;
 }
 
 interface ParcelCardProps {
@@ -81,6 +84,13 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
           </span>
         ) : null;
       })()}
+      {(parcel.is_absentee || parcel.out_of_state || parcel.sale1_date === null) && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Out of state</span>}
+          {parcel.is_absentee && !parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Absentee</span>}
+          {parcel.sale1_date === null && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">No sale on record</span>}
+        </div>
+      )}
 
       <div className="mt-3 flex items-center justify-between">
         <div className="text-xs text-theme-secondary">

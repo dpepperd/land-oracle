@@ -27,6 +27,10 @@ export const searchSchema = z.object({
   counties: z.array(z.string()).optional(), 
   landUse: z.array(z.string()).optional(),
   ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),
+  // Seller signals (lib/sellerSignals.ts)
+  absentee: z.boolean().optional(),
+  nonHomestead: z.boolean().optional(),
+  noSaleYears: z.number().min(1).max(50).optional(),
   limit: z.number().min(1).max(5000).optional(),
   acreageMin: z.number().optional(),
   acreageMax: z.number().optional(),
@@ -52,6 +56,10 @@ export const exportSchema = z.object({
   counties: z.array(z.string()).optional(),
   landUse: z.array(z.string()).optional(),
   ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),
+  // Seller signals (lib/sellerSignals.ts)
+  absentee: z.boolean().optional(),
+  nonHomestead: z.boolean().optional(),
+  noSaleYears: z.number().min(1).max(50).optional(),
   acreageMin: z.number().optional(),
   acreageMax: z.number().optional(),
   marketValueMin: z.number().optional(),

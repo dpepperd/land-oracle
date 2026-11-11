@@ -257,6 +257,25 @@ export default function FilterSidebar({
     onFilterChange(filtersToApply);
   };
 
+  // One-click seller-signals starting point; applies immediately.
+  const applyOutOfStateVacantPreset = () => {
+    const next = {
+      ...filters,
+      landUse: ['000', '010', '020', '040', '068', '070', '080'],
+      ownerType: 'out_of_state',
+      absentee: true,
+      nonHomestead: true,
+      noSaleYears: undefined,
+      spatialShape: initialFilters.spatialShape || filters.spatialShape,
+      minLat: initialFilters.minLat || filters.minLat,
+      maxLat: initialFilters.maxLat || filters.maxLat,
+      minLon: initialFilters.minLon || filters.minLon,
+      maxLon: initialFilters.maxLon || filters.maxLon,
+    };
+    setFilters(next);
+    onFilterChange(next);
+  };
+
   const handleReset = () => {
     const reset = {
       counties: [],
@@ -267,6 +286,9 @@ export default function FilterSidebar({
       marketValueMax: undefined,
       maxDistance: 0,
       ownerType: 'all',
+      absentee: undefined,
+      nonHomestead: undefined,
+      noSaleYears: undefined,
       limit: 1000,
       // EXPLICITLY clear spatial filters
       spatialShape: null,
@@ -347,7 +369,8 @@ export default function FilterSidebar({
            (filters.acreageMin !== undefined && filters.acreageMin !== 0) || 
            filters.acreageMax !== undefined ||
            filters.marketValueMin !== undefined ||
-           filters.marketValueMax !== undefined
+           filters.marketValueMax !== undefined ||
+           filters.absentee || filters.nonHomestead || filters.noSaleYears
         ) && (
           <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-lg">
              <div className="flex justify-between items-center mb-2">
@@ -420,6 +443,33 @@ export default function FilterSidebar({
                      &lt; {filters.maxDistance} Miles
                      <button onClick={() => handleChange('maxDistance', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
                    </span>
+                 </div>
+               </div>
+             )}
+
+             {/* Seller signals */}
+             {(filters.absentee || filters.nonHomestead || filters.noSaleYears) && (
+               <div className="mt-2">
+                 <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Seller Signals</span>
+                 <div className="flex flex-wrap gap-1">
+                   {filters.absentee && (
+                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">
+                       Absentee owner
+                       <button onClick={() => handleChange('absentee', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   )}
+                   {filters.nonHomestead && (
+                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">
+                       Not a homestead
+                       <button onClick={() => handleChange('nonHomestead', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   )}
+                   {filters.noSaleYears && (
+                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">
+                       No sale shown in {filters.noSaleYears}+ yrs
+                       <button onClick={() => handleChange('noSaleYears', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   )}
                  </div>
                </div>
              )}
@@ -716,6 +766,47 @@ export default function FilterSidebar({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Seller Signals */}
+        <div className="mb-6">
+          <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Seller Signals</label>
+          <p className="text-[10px] text-gray-400 mb-2">Clues from public records, not proof an owner wants to sell.</p>
+          <button
+            type="button"
+            onClick={applyOutOfStateVacantPreset}
+            className="w-full mb-3 py-2 text-xs font-semibold rounded-md bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+          >
+            Preset: absentee out-of-state vacant land
+          </button>
+          <label className="flex items-start gap-2 mb-2 cursor-pointer">
+            <input type="checkbox" checked={!!filters.absentee} onChange={(e) => handleChange('absentee', e.target.checked ? true : undefined)} className="mt-0.5 w-4 h-4" />
+            <span className="text-sm text-slate-900 dark:text-white">
+              Absentee owner
+              <span className="block text-[10px] text-gray-400">Mailing address is out of state, in a different zip code, or a different house number than the property.</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 mb-2 cursor-pointer">
+            <input type="checkbox" checked={!!filters.nonHomestead} onChange={(e) => handleChange('nonHomestead', e.target.checked ? true : undefined)} className="mt-0.5 w-4 h-4" />
+            <span className="text-sm text-slate-900 dark:text-white">
+              Not a homestead
+              <span className="block text-[10px] text-gray-400">No homestead exemption on the 2026 roll, so it is probably not the owner&apos;s home.</span>
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-900 dark:text-white">No sale shown in</span>
+            <select
+              value={filters.noSaleYears || ''}
+              onChange={(e) => handleChange('noSaleYears', e.target.value ? parseInt(e.target.value, 10) : undefined)}
+              className="px-2 py-1 border border-theme rounded-md bg-white text-black font-bold text-sm"
+            >
+              <option value="">Any</option>
+              <option value="3">3+ years</option>
+              <option value="5">5+ years</option>
+              <option value="10">10+ years</option>
+            </select>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1">Sales data covers only a recent window, so &quot;no sale shown&quot; does not always mean a long-time owner.</p>
         </div>
 
         {/* Distance from Highway */}
