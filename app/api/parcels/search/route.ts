@@ -78,17 +78,27 @@ export async function POST(request: Request) {
       }
 
       // 3. Acreage
-      if (acreageMin !== undefined && acreageMax !== undefined) {
-        conditions.push(`p.acreage BETWEEN $${valIdx} AND $${valIdx + 1}`);
-        values.push(acreageMin, acreageMax);
-        valIdx += 2;
+      if (acreageMin !== undefined) {
+        conditions.push(`p.acreage >= ${valIdx}`);
+        values.push(acreageMin);
+        valIdx += 1;
+      }
+      if (acreageMax !== undefined) {
+        conditions.push(`p.acreage <= ${valIdx}`);
+        values.push(acreageMax);
+        valIdx += 1;
       }
 
       // 4. Market Value (OPTIMIZED: Direct Numeric Comparison)
-      if (marketValueMin !== undefined && marketValueMax !== undefined) {
-        conditions.push(`p.jv BETWEEN $${valIdx} AND $${valIdx + 1}`);
-        values.push(marketValueMin, marketValueMax);
-        valIdx += 2;
+      if (marketValueMin !== undefined) {
+        conditions.push(`p.jv >= ${valIdx}`);
+        values.push(marketValueMin);
+        valIdx += 1;
+      }
+      if (marketValueMax !== undefined) {
+        conditions.push(`p.jv <= ${valIdx}`);
+        values.push(marketValueMax);
+        valIdx += 1;
       }
 
       // 5. Spatial Filters
