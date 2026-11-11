@@ -9,7 +9,7 @@ Web service: https://feature.geographic.texas.gov/arcgis/rest/services/Parcels/s
 ## 1. Short verdict
 
 - License is the best of any state surveyed: the catalog tags the dataset **CC0 1.0 (public domain dedication)**.
-- Coverage is complete on paper: all 254 counties have a 2025 file, and every county answered in sampling.
+- Coverage is 253 of 254 counties: every county has a 2025 file **except Donley County (FIPS 48129)**, which has no file of its own in the catalog and only 8% of random points returned a parcel in the web service. The 254 catalog files are 253 county files plus one statewide combined file.
 - Owner name and mailing address are present in nearly every county (owner >= 80% in 242 of 254 sampled counties, mailing >= 80% in 249).
 - It is weaker than North Carolina for our core searches:
   - **Land use is empty in every county** (0 of 254 sampled). No "vacant land" filter; a stand-in is weak.
@@ -40,7 +40,7 @@ Our reading (not legal advice):
 
 ## 3. Coverage and data year
 
-- Collection: StratMap 2025 Land Parcels, acquisition date 2025-06-01, published 2025-09-11. Every one of the 254 counties has a 2025 file (no county missing, none older than 2025, no tiny/empty files; smallest is Kenedy at about 0.3 MB).
+- Collection: StratMap 2025 Land Parcels, acquisition date 2025-06-01, published 2025-09-11. 253 of 254 counties have a 2025 file (none older than 2025; no tiny or empty files; smallest is Kenedy at about 0.3 MB). **Missing: Donley County (48129).** The catalog lists 254 files because one of them is the statewide combined file, not a county.
 - Inside the records the `tax_year` field read **2026** in all 2,917 sampled records, and each county's `date_acq` (file acquisition month) runs from early to mid 2026, so the "most recent" service appears newer than the 2025 collection name suggests. Treat the exact vintage as UNVERIFIED until a file is opened.
 - Parcel count: not stated by TxGIO. The highest objectid seen was 14,305,886; objectids appear to run statewide, so there are roughly 14 million parcels (upper bound).
 - Weak coverage in sampling: Donley (8% of random points hit a parcel), Aransas (42%), Cameron and Galveston (50%), Matagorda and Nueces and Calhoun (58%). Coastal counties may be partly water; Donley looks genuinely sparse.
@@ -87,7 +87,7 @@ Statewide (12-point samples, 254 counties; share of counties with the field at 8
 - Suggested order: NC first (already tested, loaded in progress); Texas after, as an admin-only pilot, with these gaps labelled in the app ("not available in this county").
 - Before any Texas build: download the Travis, Harris and Bexar files from the public bucket and confirm that land use and values are really empty in the files and not only in the web service (the service and the files may differ). If the files have land use, the picture improves a lot.
 
-## 8. All 254 counties
+## 8. All 254 counties (253 with files; Donley has no file)
 
 Columns: county file year (2025 for all), file size, then the sample from 12 random points (hit = share of points that landed on a parcel; other columns = share of hit parcels with the field filled), and the month the county's file was acquired (from `date_acq`). Flags: LOW HIT (hit < 70%), NO OWNER / NO MAIL (< 30%).
 
