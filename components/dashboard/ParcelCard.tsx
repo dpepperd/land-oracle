@@ -1,5 +1,7 @@
 import { MapPin, StickyNote, Home, Droplets } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
+import { useFlood, requestFlood } from '@/lib/floodClient';
 
 interface Parcel {
   parcel_id: string;
@@ -12,9 +14,10 @@ interface Parcel {
   is_lead?: boolean;
   has_note?: boolean;
   property_address?: string;
-  flood_checked?: boolean;
-  flood_zone?: string | null;
-  flood_sfha?: boolean;
+  flood_lat?: number | null;
+  flood_lon?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface ParcelCardProps {
@@ -25,8 +28,24 @@ interface ParcelCardProps {
 }
 
 export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: ParcelCardProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const flood = useFlood(parcel.parcel_key);
+  // Look up the flood zone only once the card scrolls into view
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || flood) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        requestFlood(parcel.parcel_key, parcel.flood_lat ?? parcel.latitude, parcel.flood_lon ?? parcel.longitude);
+        io.disconnect();
+      }
+    }, { rootMargin: '200px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [parcel, flood]);
   return (
     <div 
+      ref={ref}
       onClick={() => onSelect(parcel)}
       className="bg-theme-card p-4 rounded-lg shadow-sm border border-theme hover:shadow-md transition-shadow cursor-pointer"
     >
@@ -55,7 +74,7 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
       </div>
       
       {(() => {
-        const fl = floodLabel(parcel);
+        const fl = floodLabel(flood);
         return fl ? (
           <span className={`mt-2 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${FLOOD_TONE_CLASS[fl.tone]}`}>
             <Droplets className="w-3 h-3" />{fl.text}

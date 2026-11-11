@@ -1,11 +1,16 @@
-// Plain-language flood label for a parcel tile. Source: FEMA NFHL polygon at a point inside the parcel. Not a flood determination.
+// Plain-language flood label for a parcel tile. Source: FEMA NFHL (live service, our own table as backup).
+// Research aid only, not a flood determination.
 export interface FloodLabel { text: string; tone: 'high' | 'low' | 'none' }
 
-export function floodLabel(p: { flood_checked?: boolean; flood_zone?: string | null; flood_sfha?: boolean }): FloodLabel | null {
-  if (!p.flood_checked) return null; // not looked up (large result sets)
-  if (!p.flood_zone) return { text: 'Flood zone unknown - check FEMA map', tone: 'none' };
-  if (p.flood_sfha) return { text: `Flood zone ${p.flood_zone} (high risk)`, tone: 'high' };
-  return { text: `Flood zone ${p.flood_zone} (lower risk)`, tone: 'low' };
+export interface FloodInfo { zone: string | null; sfha: boolean; source: 'fema' | 'db' | 'none' }
+
+export function floodLabel(f: FloodInfo | undefined | null): FloodLabel | null {
+  if (!f) return null; // not looked up yet
+  if (f.source === 'none') return { text: 'Flood zone unknown - check FEMA map', tone: 'none' };
+  if (!f.zone) return { text: 'No FEMA flood zone mapped here', tone: 'none' };
+  if (f.zone === 'OPEN WATER') return { text: 'Open water', tone: 'none' };
+  if (f.sfha) return { text: `Flood zone ${f.zone} (high risk)`, tone: 'high' };
+  return { text: `Flood zone ${f.zone} (lower risk)`, tone: 'low' };
 }
 
 export const FLOOD_TONE_CLASS: Record<FloodLabel['tone'], string> = {

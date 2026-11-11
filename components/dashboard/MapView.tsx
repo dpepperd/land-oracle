@@ -19,6 +19,7 @@ import GeocoderControl from './GeocoderControl';
 import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
 import { useTheme } from 'next-themes';
 import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
+import { useFlood, requestFlood } from '@/lib/floodClient';
 import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -206,6 +207,13 @@ export default function MapView({
   
   // Flood Layer State
   const [showFlood, setShowFlood] = useState(false);
+  // FEMA flood zone for the open parcel popup (live FEMA lookup, cached)
+  const popupKey: string | undefined = popupInfo?.properties?.parcel_key;
+  const popupFlood = useFlood(popupKey);
+  useEffect(() => {
+    const pr = popupInfo?.properties;
+    if (pr?.parcel_key) requestFlood(pr.parcel_key, pr.flood_lat ?? pr.latitude, pr.flood_lon ?? pr.longitude);
+  }, [popupInfo]);
   const [floodData, setFloodData] = useState<any>({ type: 'FeatureCollection', features: [] });
   
   const [dataLayersOpen, setDataLayersOpen] = useState(false);
@@ -725,7 +733,7 @@ export default function MapView({
              </div>
 
              {(() => {
-               const fl = floodLabel(popupInfo.properties);
+               const fl = floodLabel(popupFlood);
                return fl ? (
                  <div className="mt-2">
                    <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${FLOOD_TONE_CLASS[fl.tone]}`}>{fl.text}</span>
