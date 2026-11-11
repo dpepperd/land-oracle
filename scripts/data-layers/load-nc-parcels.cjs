@@ -28,6 +28,20 @@ async function post(params) {
   }
 }
 
+// Gentle mode: pause between pages and slow down whenever a normal site query gets slow (the live site shares this database).
+const THROTTLE_MS = Number(process.env.THROTTLE_MS || 250);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const probeSql = "SELECT count(*) FROM parcels_current_all p WHERE p.county = 'Duval' AND p.jv >= 2000000";
+async function probe() { const t = Date.now(); await pool.query(probeSql); return Date.now() - t; }
+let baseline = null, pages = 0;
+async function gentle() {
+  await sleep(THROTTLE_MS);
+  if (++pages % 10 !== 0) return;
+  if (baseline === null) { const a = []; for (let i = 0; i < 3; i++) a.push(await probe()); a.sort((x, y) => x - y); baseline = Math.max(a[1], 50); console.log('  baseline search probe ms:', baseline); return; }
+  let t = await probe(), waited = 0;
+  while (t > Math.max(baseline * 3, 1500) && waited < 600000) { console.log('  site probe slow (' + t + 'ms vs ' + baseline + '), pausing 30s'); await sleep(30000); waited += 30000; t = await probe(); }
+}
+
 const clean = (v) => { if (v === null || v === undefined) return null; const s = String(v).replace(/\s+/g, ' ').trim(); return s === '' ? null : s; };
 const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.round(n) : null; };
 const titleCase = (s) => (s ? s.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()) : s);
@@ -104,6 +118,7 @@ const COLS = ['parcel_key', 'parcel_key_local', 'county', 'co_no', 'parcel_id', 
         await pool.query(`INSERT INTO public.${table} (${COLS.join(',')},geom) VALUES ${ph.join(',')}`, vals);
       }
       total += rows.length;
+      await gentle();
       lastOid = Math.max(...raw.map((x) => Number(x.properties.objectid)));
       if (raw.length < size) break;
       if (size < PAGE) size = Math.min(PAGE, size * 2);
