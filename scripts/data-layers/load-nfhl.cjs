@@ -1,6 +1,6 @@
 // Load FEMA NFHL flood hazard polygons (layer 28, S_FLD_HAZ_AR) for Florida counties into a staging table.
 // Usage: node scripts/data-layers/load-nfhl.cjs <table> <fips5,fips5,...>   e.g. flood_nfhl_stage 12019,12031,12087
-// Safe to re-run: each county is deleted and reloaded. One geometry column (4326, made valid). Read-only against FEMA.
+// Safe to re-run: each county is deleted and reloaded. One geometry column (4326, simplified to ~2 m, made valid; keeps size ~10x smaller). Read-only against FEMA.
 require('dotenv').config({ path: '.env.local', quiet: true });
 const { Pool } = require('pg');
 const url = process.env.DATABASE_URL.replace(/([?&])sslmode=[^&]*&?/, '$1').replace(/[?&]$/, '');
@@ -43,7 +43,7 @@ async function page(where, offset) {
       const vals = [], ph = [];
       feats.forEach((ft, i) => {
         const p = ft.properties || {}, b = i * 10;
-        ph.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},ST_Multi(ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($${b+10}),4326))))`);
+        ph.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},ST_Multi(ST_CollectionExtract(ST_MakeValid(ST_SimplifyPreserveTopology(ST_SetSRID(ST_GeomFromGeoJSON($${b+10}),4326),0.00002)),3)))`);
         vals.push(f, p.DFIRM_ID, p.FLD_AR_ID, p.FLD_ZONE, p.ZONE_SUBTY, p.SFHA_TF, p.STATIC_BFE, p.DEPTH, p.VELOCITY, JSON.stringify(ft.geometry));
       });
       await pool.query(`INSERT INTO public.${table} (county_fips,dfirm_id,fld_ar_id,fld_zone,zone_subty,sfha_tf,static_bfe,depth,velocity,geom) VALUES ${ph.join(',')}`, vals);
