@@ -151,6 +151,8 @@ eq('Caldwell placeholder ids -> null', ncCountyLink(27, { parcel_id: 'OID123' })
 eq('Pasquotank 12-digit PIN', ncCountyLink(139, { parcel_id: '881901270913' })?.url, 'https://link.co.pasquotank.nc.us/taxcard/DisplayTax.cfm?SEARCH=PIN&SearchVal=881901270913');
 eq('Pasquotank spaced PIN gets two spaces', ncCountyLink(139, { parcel_id: '8902 980340' })?.url, 'https://link.co.pasquotank.nc.us/taxcard/DisplayTax.cfm?SEARCH=PIN&SearchVal=8902%20%20980340');
 eq('Pasquotank odd ids -> null', [ncCountyLink(139, { parcel_id: 'FIX' }), ncCountyLink(139, { parcel_id: '8902 980340&x=1' })], [null, null]);
+eq('Warren copies the 10-digit PIN', ncCountyLink(185, { parcel_id: '2912829477' })?.copy, '2912829477');
+eq('Warren placeholder ids -> null', ncCountyLink(185, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

@@ -205,6 +205,9 @@ export const NC_LINKS: Record<number, Entry> = {
   5: { kind: 'search', label: 'Alleghany County WebGIS (accept, Search > Form, paste into PIN, Enter)', url: 'https://www.webgis.net/nc/alleghany/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Caldwell: county GIS (supplied by the owner); no disclaimer; paste the 10-digit PIN (our parcel_id) into "Enter Search String" and press Enter (1 parcel checked)
   27: { kind: 'search', label: 'Caldwell County GIS (paste the PIN into Enter Search String, Enter)', url: 'https://gis.caldwellcountync.org/maps/default.htm', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Warren (NC): ROKMAPS viewer (supplied by the owner; an earlier link was Warren County, Illinois). Menu > Search > "Parcels" tab, paste the 10-digit PIN (our parcel_id) into "PIN",
+  // click Search; the result shows NEWPIN and owner with a Property Report link (1 parcel checked). The Basic tab's "Record #" does NOT take our PIN.
+  185: { kind: 'search', label: 'Warren County Maps (Search > Parcels tab, paste into PIN, Search)', url: 'https://maps.roktech.net/ROKMAPS_Warren/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
