@@ -175,6 +175,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Currituck: county GIS portal (supplied by the owner); click Accept, paste the dashed PIN (our alt_key, e.g. 9021-09-0950) into "Enter Global PIN", Enter (1 parcel
   // checked; the "Parcel ID Number" shown is our parcel_id)
   53: { kind: 'search', label: 'Currituck County GIS (accept, paste into Enter Global PIN, Enter)', url: 'https://maps.currituckcountync.gov/gis/', copy: 'alt_key', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Clay: county ArcGIS Experience viewer (supplied by the owner); tick the agreement + OK, paste the 12-digit PIN (our alt_key; Clay's parcel_id is a placeholder)
+  // into "Find Address, Name, Parcel #", Enter (1 parcel checked: owner matched, parcel highlighted)
+  43: { kind: 'search', label: 'Clay County Map (agree, OK, paste the PIN in the search box, Enter)', url: 'https://experience.arcgis.com/experience/d706343410ba46c586bfb15b0ca30bdb/', copy: 'alt_key', pick: p => (/^\d{12}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

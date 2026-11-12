@@ -124,6 +124,8 @@ eq('Dare direct Spatialest card (alt_key)', ncCountyLink(55, { parcel_id: '05490
 eq('Dare without alt_key -> null', ncCountyLink(55, { parcel_id: '054909263444', alt_key: null }), null);
 eq('Currituck copies the dashed PIN from alt_key', ncCountyLink(53, { parcel_id: '087A00000690007', alt_key: '9021-09-0950' })?.copy, '9021-09-0950');
 eq('Currituck without that alt_key -> null', ncCountyLink(53, { parcel_id: '087A00000690007', alt_key: null }), null);
+eq('Clay copies the 12-digit PIN from alt_key (its parcel_id is a placeholder)', ncCountyLink(43, { parcel_id: 'OID36492972', alt_key: '555100331266' })?.copy, '555100331266');
+eq('Clay without an alt_key -> null', ncCountyLink(43, { parcel_id: 'OID36492972', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
