@@ -116,6 +116,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Rockingham: webgis.net viewer (supplied by the owner); click Accept, open Search > Form, paste the 12-digit PIN into "PIN", Enter (1 parcel checked;
   // the result shows Account = our alt_key)
   157: { kind: 'search', label: 'Rockingham County WebGIS (accept, Search > Form, paste into PIN, Enter)', url: 'https://www.webgis.net/nc/Rockingham/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Richmond: county GIS viewer (supplied by the owner); click "Accept and close", paste the 12-digit PIN into "Parcel Number", press Enter twice (once to
+  // list the suggestion, once to run it) (1 parcel checked)
+  153: { kind: 'search', label: 'Richmond County GIS (accept, paste into Parcel Number, press Enter twice)', url: 'https://gis.richmondnc.com/maps/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
