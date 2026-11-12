@@ -21,7 +21,7 @@ Founding Member offer: ${FOUNDING.percentOff}% off for life with code ${FOUNDING
 The AI research assistant inside the app is not available yet ("coming soon"); it is planned for Pro and Statewide.
 Skip tracing (finding owner phone numbers and emails) and postcard/direct mail from inside Land Oracle are planned for later. They are NOT available yet, and there is no release date or price to quote. Do not promise them, guess prices or describe how well they will work. Today you can export a list to CSV and use your own mail or texting tools. Land Oracle does not make calls or send texts.
 Subscribers pick their counties on the Territories page after subscribing. Plans can be changed or cancelled from the customer portal.
-Refund policy (full text at /refund-policy): new subscribers get a 7-day money-back guarantee on the first payment if they have exported fewer than 500 rows; annual plans get 14 days under the same limit; monthly plans have no partial-month refunds and keep access until the period ends; billing errors are always refunded. Refunds are requested by emailing support from the account email.
+Refund policy (full text at /refund-policy): new subscribers get a 7-day money-back guarantee on the first payment if their account has exported fewer than 500 rows and asked fewer than 25 AI Analyst questions (refunds may be declined if the service was substantially used); annual plans get 14 days under the same limits; monthly plans have no partial-month refunds and keep access until the period ends; billing errors are always refunded. Refunds are requested by emailing support from the account email.
 Data is from the 2026 Florida Department of Revenue tax roll. It is for research and should be verified before transacting (see the Data Disclaimer page).
 Contact: ${SUPPORT_EMAIL}.`;
 
@@ -55,7 +55,7 @@ export function fallbackAnswer(message: string): string {
     return `${(['scout', 'pro', 'statewide'] as const).map((id) => planLine(id).replace(/^- /, '')).join(' ')} See the Pricing page for details.`;
   }
   if (has('cancel', 'refund', 'billing')) {
-    return `You can change or cancel your plan any time from the billing portal in your account. New subscribers have a 7-day money-back guarantee on their first payment (14 days for annual plans) if they have exported fewer than 500 rows; the full policy is at landoracle.ai/refund-policy. For refunds or billing problems, email ${SUPPORT_EMAIL} from your account email.`;
+    return `You can change or cancel your plan any time from the billing portal in your account. New subscribers have a 7-day money-back guarantee on their first payment (14 days for annual plans) if the account has exported fewer than 500 rows and asked fewer than 25 AI Analyst questions; the full policy is at landoracle.ai/refund-policy. For refunds or billing problems, email ${SUPPORT_EMAIL} from your account email.`;
   }
   if (has('data', 'source', 'tax roll', 'accurate', 'flood')) {
     return 'Land Oracle uses the 2026 Florida DOR tax roll (owners, mailing addresses, recent qualified sales) plus a FEMA flood zone overlay. Please verify before transacting.';

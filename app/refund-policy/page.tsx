@@ -21,8 +21,15 @@ export default function RefundPolicyPage() {
           <section>
             <h2 className={H2}>1. 7-day money-back guarantee (first payment only)</h2>
             <p className={P}>
-              New subscribers can request a full refund within 7 days of their first payment, as long as they have exported fewer than 500
-              rows. After 500 rows are exported, the first payment is non-refundable.
+              New subscribers can request a full refund within 7 days of their first payment, as long as their account has:
+            </p>
+            <ul className={`${P} list-disc pl-6 mt-3 space-y-1`}>
+              <li>exported fewer than 500 rows, and</li>
+              <li>asked fewer than 25 AI Analyst questions.</li>
+            </ul>
+            <p className={`${P} mt-3`}>
+              Refunds may be declined where account activity shows the service was substantially used during the trial window, for example
+              extensive parcel lookups or saved lead lists.
             </p>
           </section>
 
@@ -36,8 +43,9 @@ export default function RefundPolicyPage() {
           <section>
             <h2 className={H2}>3. Annual plans</h2>
             <p className={P}>
-              Full refund within 14 days of the initial annual purchase, under the same export limit. After that, annual plans are
-              non-refundable, but you can turn off auto-renewal anytime and keep access through the end of the term.
+              Full refund within 14 days of the initial annual purchase, under the same limits as section 1 (fewer than 500 rows exported and
+              fewer than 25 AI Analyst questions, and the same right to decline where the service was substantially used). After that, annual
+              plans are non-refundable, but you can turn off auto-renewal anytime and keep access through the end of the term.
             </p>
           </section>
 
