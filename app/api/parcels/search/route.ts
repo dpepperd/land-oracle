@@ -229,7 +229,7 @@ export async function POST(request: Request) {
       FROM parcels_current_all p
       LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
       WHERE ${conditions.join(' AND ')}${extra}
-      LIMIT ${valIdx + 1}
+      LIMIT $${valIdx + 1}
     `;
 
     values.push(userId, limit);
