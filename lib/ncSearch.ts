@@ -94,7 +94,7 @@ export async function searchNc(body: SearchBody, userId: string): Promise<NextRe
   const sql = `
     WITH user_context AS (SELECT id, role FROM users WHERE clerk_id = $${valIdx})
     SELECT
-      p.parcel_key as id, p.parcel_key, p.state, p.county, p.parcel_id, p.parcelno, p.alt_key,
+      p.parcel_key as id, p.parcel_key, p.state, p.co_no, p.county, p.parcel_id, p.parcelno, p.alt_key,
       p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip,
       p.acreage, p.acreage_source, p.dor_uc as land_use, p.use_desc, p.likely_vacant, COALESCE(p.phy_addr1, p.own_addr1) as property_address,
       p.jv as market_value, p.land_value, p.improvement_value,

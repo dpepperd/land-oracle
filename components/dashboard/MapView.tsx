@@ -24,6 +24,7 @@ import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { STATE_VIEW, type SearchState } from '@/lib/searchState';
 import { NC_CREDIT } from '@/lib/ncStates';
+import { ncCountyLink } from '@/lib/ncCountyLinks';
 
 // Traffic Styles
 const trafficLayer: any = {
@@ -338,7 +339,7 @@ export default function MapView({
   useEffect(() => { if (clearShapeSignal > 0) { setDrawPoints([]); setIsDrawing(false); } }, [clearShapeSignal]);
   // Fly to the chosen state when it changes (not on first load, which keeps the existing Florida start)
   // County appraiser link: Florida only for now (never reuse a Florida county's link for a North Carolina parcel with the same county name)
-  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? null : getPropertyAppraiserUrl(p.county, p.parcel_id));
+  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : getPropertyAppraiserUrl(p.county, p.parcel_id));
   const firstFocus = useRef(true);
   useEffect(() => {
     if (firstFocus.current) { firstFocus.current = false; return; }
@@ -745,6 +746,8 @@ export default function MapView({
                             // Auto-copy ID
                             if (popupInfo.properties.parcel_id) {
                                let val = popupInfo.properties.parcel_id;
+                               // North Carolina search-page counties: copy the ID that county's site expects
+                               if (popupInfo.properties.state === 'NC') { const nl = ncCountyLink(popupInfo.properties.co_no, popupInfo.properties); if (nl?.copy) val = nl.copy; }
                                // Pinellas Search requires 01-30-14... (S-T-R) not 14-30-01... (R-T-S)
                                if (popupInfo.properties.county === 'Pinellas') {
                                    const p = val.trim().replace(/\s+/g, '-').split('-');
