@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Play, ArrowRight, Map } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -16,7 +16,7 @@ export default function Hero() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
           </span>
-          Live in Baker County
+          Live in all 67 Florida counties
         </div>
 
         {/* Headline */}
@@ -42,12 +42,12 @@ export default function Hero() {
             Start Analyzing Now
             <ArrowRight className="ml-2 w-5 h-5" />
           </Link>
-          <button 
+          <Link
+            href="/sign-up"
             className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-zinc-700 dark:text-zinc-200 transition-all bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-sm"
           >
-            <Play className="mr-2 w-5 h-5 fill-current" />
-            Watch Demo
-          </button>
+            Create a free account
+          </Link>
         </div>
 
         {/* Video Placeholder (The "WOW" Visual) */}
@@ -57,13 +57,7 @@ export default function Hero() {
              {/* Mock Map UI Background */}
              <div className="absolute inset-0 opacity-50 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/-82.2,30.3,11,0/1280x720?access_token=pk.eyJ1IjoiZGFzaGJvYXJkIiwiYSI6ImNrdjR4Z2o0MDBpMzYydm94b3g0c3drc2EifQ.W7aD4g_t8w8q8e1c6q6g')] bg-cover bg-center grayscale hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
              
-             {/* Play Overlay */}
-             <div className="absolute inset-0 flex items-center justify-center">
-                <button className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20 text-white hover:scale-110 transition-transform cursor-pointer group-hover:bg-blue-600 group-hover:border-blue-500">
-                   <Play className="w-8 h-8 fill-white ml-1" />
-                </button>
-             </div>
-             
+
              {/* UI Mockup Details */}
              <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
                 <div className="h-8 w-32 bg-white/10 backdrop-blur rounded-md" />

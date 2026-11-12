@@ -74,7 +74,7 @@ export default function AboutPage() {
                <div className="mt-8 text-center">
                  <div className="text-sm font-semibold uppercase tracking-wider text-blue-500 mb-1">Coverage</div>
                  <h3 className="text-2xl font-bold text-theme-primary">Florida Focused</h3>
-                 <p className="text-theme-secondary mt-2 text-sm">Currently tracking 12,000+ parcels in Baker County</p>
+                 <p className="text-theme-secondary mt-2 text-sm">Over 10 million parcels across all 67 Florida counties</p>
                </div>
             </div>
 
