@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Lock, MapPin } from 'lucide-react';
+import { NC_COUNTY_NAMES } from '@/lib/ncStates';
+import { STATE_NOTES, type SearchState } from '@/lib/searchState';
 
 /**
  * FIXED FilterSidebar
@@ -153,6 +155,10 @@ interface FilterSidebarProps {
   onUpsell?: () => void;
   /** Called by Clear All / Reset so the page also drops the drawn area and the map clears its outline. */
   onClearArea?: () => void;
+  /** Admin-only state picker (Florida is the live product; North Carolina is an admin pilot). */
+  searchState?: SearchState;
+  onStateChange?: (state: SearchState) => void;
+  isAdmin?: boolean;
 }
 
 export default function FilterSidebar({ 
@@ -161,7 +167,10 @@ export default function FilterSidebar({
   userTier = 'demo', 
   unlockedCounties = ['Baker'],
   onUpsell,
-  onClearArea
+  onClearArea,
+  searchState = 'FL',
+  onStateChange,
+  isAdmin = false
 }: FilterSidebarProps) {
   const isInitialMount = useRef(true);
   const previousSpatialShapeRef = useRef<any>(null);
@@ -221,7 +230,7 @@ export default function FilterSidebar({
   };
 
   const handleCountyToggle = (county: string) => {
-    const isLocked = !unlockedCounties.includes(county);
+    const isLocked = searchState !== 'NC' && !unlockedCounties.includes(county);
     if (isLocked) {
       if (onUpsell) onUpsell();
       return;
@@ -264,10 +273,11 @@ export default function FilterSidebar({
   const applyOutOfStateVacantPreset = () => {
     const next = {
       ...filters,
-      landUse: ['000', '010', '020', '040', '068', '070', '080'],
+      landUse: searchState === 'NC' ? [] : ['000', '010', '020', '040', '068', '070', '080'],
+      vacantOnly: searchState === 'NC' ? true : undefined,
       ownerType: 'out_of_state',
       absentee: true,
-      nonHomestead: true,
+      nonHomestead: searchState === 'NC' ? undefined : true,
       noSaleYears: undefined,
       spatialShape: initialFilters.spatialShape || filters.spatialShape,
       minLat: initialFilters.minLat || filters.minLat,
@@ -292,6 +302,7 @@ export default function FilterSidebar({
       absentee: undefined,
       nonHomestead: undefined,
       noSaleYears: undefined,
+      vacantOnly: undefined,
       limit: 1000,
       // EXPLICITLY clear spatial filters
       spatialShape: null,
@@ -352,6 +363,29 @@ export default function FilterSidebar({
       <div>
         <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">FILTERS</h2>
 
+        {/* STATE PICKER (admin only) */}
+        {isAdmin && onStateChange && (
+          <div className="mb-4">
+            <div className="flex rounded-lg overflow-hidden border border-slate-600" role="group" aria-label="State">
+              {(['FL', 'NC'] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => { if (st !== searchState) onStateChange(st); }}
+                  className={`flex-1 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${searchState === st ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+                >
+                  {st === 'FL' ? 'Florida' : 'North Carolina'}
+                </button>
+              ))}
+            </div>
+            {searchState === 'NC' && (
+              <ul className="mt-2 space-y-1">
+                {STATE_NOTES.NC.map((n) => (<li key={n} className="text-[10px] text-amber-700 dark:text-amber-300 leading-snug">{n}</li>))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* SPATIAL FILTER INDICATOR */}
         {hasSpatialFilter && (
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -374,7 +408,7 @@ export default function FilterSidebar({
            filters.acreageMax !== undefined ||
            filters.marketValueMin !== undefined ||
            filters.marketValueMax !== undefined ||
-           filters.absentee || filters.nonHomestead || filters.noSaleYears
+           filters.absentee || filters.nonHomestead || filters.noSaleYears || filters.vacantOnly
         ) && (
           <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-lg">
              <div className="flex justify-between items-center mb-2">
@@ -452,7 +486,7 @@ export default function FilterSidebar({
              )}
 
              {/* Seller signals */}
-             {(filters.absentee || filters.nonHomestead || filters.noSaleYears) && (
+             {(filters.absentee || filters.nonHomestead || filters.noSaleYears || filters.vacantOnly) && (
                <div className="mt-2">
                  <span className="text-[10px] text-blue-800 dark:text-gray-400 block mb-1">Seller Signals</span>
                  <div className="flex flex-wrap gap-1">
@@ -466,6 +500,12 @@ export default function FilterSidebar({
                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">
                        Not a homestead
                        <button onClick={() => handleChange('nonHomestead', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
+                     </span>
+                   )}
+                   {filters.vacantOnly && (
+                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">
+                       Likely vacant land
+                       <button onClick={() => handleChange('vacantOnly', undefined)} className="ml-1 hover:text-red-200"><X size={10}/></button>
                      </span>
                    )}
                    {filters.noSaleYears && (
@@ -552,10 +592,10 @@ export default function FilterSidebar({
           </div>
 
           <div className="h-40 overflow-y-auto border border-theme rounded p-2 bg-theme-input shadow-sm">
-            {FLORIDA_COUNTIES
+            {(searchState === 'NC' ? NC_COUNTY_NAMES : FLORIDA_COUNTIES)
               .filter(c => c.toLowerCase().includes(countySearch.toLowerCase()))
               .map(county => {
-              const isLocked = county !== 'Baker' && !unlockedCounties.includes(county);
+              const isLocked = searchState !== 'NC' && county !== 'Baker' && !unlockedCounties.includes(county);
               const isChecked = (filters.counties || []).includes(county);
 
               if (isLocked) {
@@ -596,8 +636,21 @@ export default function FilterSidebar({
           </div>
         </div>
 
-        {/* Land Use */}
-        <div className="mb-6">
+        {searchState === 'NC' && (
+          <div className="mb-6">
+            <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">Vacant Land</label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked={!!filters.vacantOnly} onChange={(e) => handleChange('vacantOnly', e.target.checked ? true : undefined)} className="mt-0.5 w-4 h-4" />
+              <span className="text-sm text-slate-900 dark:text-white">
+                Likely vacant land
+                <span className="block text-[10px] text-gray-400">Estimated: land value but no building value or year built. NC land-use codes are missing for about half of parcels.</span>
+              </span>
+            </label>
+          </div>
+        )}
+
+        {/* Land Use (Florida DOR codes) */}
+        <div className={searchState === 'NC' ? 'hidden' : 'mb-6'}>
           <div className="flex justify-between items-center mb-2">
             <label className="block text-base font-bold text-slate-900 dark:text-white uppercase tracking-wide">
               Land Use <span className="text-xs font-normal text-slate-500 dark:text-slate-300 ml-1">({(filters.landUse || []).length})</span>
@@ -790,7 +843,7 @@ export default function FilterSidebar({
               <span className="block text-[10px] text-gray-400">Mailing address is out of state, in a different zip code, or a different house number than the property.</span>
             </span>
           </label>
-          <label className="flex items-start gap-2 mb-2 cursor-pointer">
+          <label className={`flex items-start gap-2 mb-2 cursor-pointer ${searchState === 'NC' ? 'hidden' : ''}`}>
             <input type="checkbox" checked={!!filters.nonHomestead} onChange={(e) => handleChange('nonHomestead', e.target.checked ? true : undefined)} className="mt-0.5 w-4 h-4" />
             <span className="text-sm text-slate-900 dark:text-white">
               Not a homestead
@@ -813,8 +866,8 @@ export default function FilterSidebar({
           <p className="text-[10px] text-gray-400 mt-1">Sales data covers only a recent window, so &quot;no sale shown&quot; does not always mean a long-time owner.</p>
         </div>
 
-        {/* Distance from Highway */}
-        <div className="mb-6">
+        {/* Distance from Highway (Florida only) */}
+        <div className={searchState === 'NC' ? 'hidden' : 'mb-6'}>
           <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
              Distance to Highway
           </label>
