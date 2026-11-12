@@ -28,6 +28,12 @@ export const lookupKey = (plan: PlanId | 'addon_county', interval: Interval) => 
 
 export const isPlanId = (v: unknown): v is PlanId => v === 'scout' || v === 'pro' || v === 'statewide';
 
+/** Most extra counties that make sense for a plan (Florida has 67 counties in total); 0 for plans without add-ons. */
+export function maxAddonCounties(plan: PlanId): number {
+  const p = PLANS[plan];
+  return p.addonAllowed && typeof p.counties === 'number' ? FLORIDA_COUNTY_COUNT - p.counties : 0;
+}
+
 /** Counties a subscriber may select: base + add-ons (statewide: all). */
 export function countyAllowance(plan: PlanId, addonQty = 0): number {
   const p = PLANS[plan];

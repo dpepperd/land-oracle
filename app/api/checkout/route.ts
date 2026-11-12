@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { stripe } from '@/lib/stripe';
 import pool from '@/lib/db';
-import { PLANS, lookupKey } from '@/lib/plans';
+import { PLANS, lookupKey, maxAddonCounties } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   let body;
   try { body = bodySchema.parse(await req.json()); } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }); }
   const { plan, interval } = body;
-  const addon = PLANS[plan].addonAllowed ? body.addonCounties : 0;     // add-ons: scout and pro only
+  const addon = PLANS[plan].addonAllowed ? Math.min(body.addonCounties, maxAddonCounties(plan)) : 0;     // add-ons: scout and pro only, never more than Florida has
 
   // Resolve prices by lookup_key (never hardcoded price ids).
   const keys = [lookupKey(plan, interval), ...(addon > 0 ? [lookupKey('addon_county', interval)] : [])];

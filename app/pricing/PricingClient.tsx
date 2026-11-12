@@ -5,24 +5,24 @@ import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { Check, Loader2, Minus, Plus } from "lucide-react";
 import Header from "@/components/dashboard/Header";
-import { ADDON, FOUNDING, PLANS, annualPerMonth, type Interval, type PlanId } from "@/lib/plans";
+import { ADDON, FOUNDING, PLANS, annualPerMonth, maxAddonCounties, type Interval, type PlanId } from "@/lib/plans";
 
 const usd = (n: number) => `$${n.toLocaleString()}`;
 
 // Only features that exist in the app today (see report for what was left out).
-function features(id: PlanId, aiEnabled: boolean): { text: string; soon?: boolean }[] {
+function features(id: PlanId, aiEnabled: boolean, aiQuestions: { pro: number; statewide: number }): { text: string; soon?: boolean }[] {
   const p = PLANS[id];
   return [
     { text: p.counties === 'all' ? 'All 67 Florida counties' : `${p.counties} Florida ${p.counties === 1 ? 'county' : 'counties'} of your choice` },
     { text: p.exportsPerMonth === 'unlimited' ? 'Unlimited CSV exports' : `CSV exports: ${p.exportsPerMonth.toLocaleString()} rows/month` },
-    { text: 'Owner + mailing address data' },
-    { text: '2026 sales history (recent qualified sales)' },
+    { text: 'Owner + mailing address from county tax rolls' },
+    { text: 'Recent qualified sales (2026 tax roll)' },
     { text: 'FEMA flood zone map overlay' },
-    ...(p.ai ? [{ text: 'AI research assistant', soon: !aiEnabled }] : []),
+    ...(p.ai ? [{ text: `AI research assistant (${(id === 'statewide' ? aiQuestions.statewide : aiQuestions.pro).toLocaleString()} questions/month)`, soon: !aiEnabled }] : []),
   ];
 }
 
-export default function PricingClient({ aiEnabled, founding }: { aiEnabled: boolean; founding: boolean }) {
+export default function PricingClient({ aiEnabled, founding, aiQuestions }: { aiEnabled: boolean; founding: boolean; aiQuestions: { pro: number; statewide: number } }) {
   const { isSignedIn } = useAuth();
   const [billing, setBilling] = useState<Interval>('month');
   const [addons, setAddons] = useState<Record<string, number>>({ scout: 0, pro: 0 });
@@ -57,7 +57,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
 
           {founding && (
             <div className="mb-8 mx-auto max-w-2xl rounded-2xl border border-amber-400/60 bg-amber-500/10 px-5 py-3 text-sm md:text-base font-medium text-amber-700 dark:text-amber-300">
-              Founding Member: {FOUNDING.percentOff}% off for life — first {FOUNDING.maxRedemptions} subscribers. Code <span className="font-mono font-bold">{FOUNDING.code}</span>.
+              Founding Member: {FOUNDING.percentOff}% off for as long as your subscription stays active — first {FOUNDING.maxRedemptions} subscribers. Code <span className="font-mono font-bold">{FOUNDING.code}</span>.
             </div>
           )}
 
@@ -86,7 +86,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
                 <p className="text-xs text-muted-foreground h-5 mt-1">{billing === 'year' && `(=${usd(annualPerMonth(price))}/mo)`}</p>
 
                 <div className="flex-1 space-y-3 my-6">
-                  {features(p.id, aiEnabled).map((f) => (
+                  {features(p.id, aiEnabled, aiQuestions).map((f) => (
                     <div key={f.text} className="flex items-start gap-3">
                       <Check className="w-5 h-5 shrink-0 text-blue-500" />
                       <span className="text-sm text-foreground/80 leading-snug">
@@ -103,7 +103,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
                     <span className="flex items-center gap-2">
                       <button onClick={() => setAddons({ ...addons, [p.id]: Math.max(0, q - 1) })} className="p-1 rounded-full border border-border hover:bg-background" aria-label="Fewer counties"><Minus size={14} /></button>
                       <span className="w-5 text-center font-semibold">{q}</span>
-                      <button onClick={() => setAddons({ ...addons, [p.id]: Math.min(66, q + 1) })} className="p-1 rounded-full border border-border hover:bg-background" aria-label="More counties"><Plus size={14} /></button>
+                      <button onClick={() => setAddons({ ...addons, [p.id]: Math.min(maxAddonCounties(p.id), q + 1) })} className="p-1 rounded-full border border-border hover:bg-background" aria-label="More counties"><Plus size={14} /></button>
                     </span>
                   </div>
                 ) : <div className="mb-5 h-[52px]" />}
@@ -121,7 +121,7 @@ export default function PricingClient({ aiEnabled, founding }: { aiEnabled: bool
         {error && <p className="mt-6 text-center text-sm text-red-500">{error}</p>}
 
         <div className="mt-16 text-center space-y-2">
-          <p className="text-muted-foreground text-sm">Secure payments processed by <span className="font-bold text-foreground">Stripe</span>. Cancel anytime.</p>
+          <p className="text-muted-foreground text-sm">Secure payments processed by <span className="font-bold text-foreground">Stripe</span>. Cancel anytime. New subscribers get a 7-day money-back guarantee on their first payment: see the{' '}<Link href="/refund-policy" className="underline hover:text-foreground">Refund Policy</Link>.</p>
           <p className="text-muted-foreground text-xs">
             Data is from the 2026 Florida DOR tax roll. Verify before transacting.{' '}
             <Link href="/data-disclaimer" className="underline hover:text-foreground">Read the data disclaimer</Link>.
