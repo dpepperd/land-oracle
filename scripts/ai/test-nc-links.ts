@@ -134,6 +134,8 @@ eq('Chatham direct Spatialest card (parcel_id)', ncCountyLink(37, { parcel_id: '
 eq('Chatham odd ids -> null', [ncCountyLink(37, { parcel_id: 'OID123' }), ncCountyLink(37, { parcel_id: '15127' })], [null, null]);
 eq('Caswell copies the Map and Parcel number (alt_key)', [ncCountyLink(33, { parcel_id: '0035000000600000', alt_key: '0035 060' })?.copy, ncCountyLink(33, { alt_key: '139B 076' })?.copy], ['0035 060', '139B 076']);
 eq('Caswell without that alt_key -> null', ncCountyLink(33, { parcel_id: '0035000000600000', alt_key: null }), null);
+eq('Camden copies the 18-digit PIN', ncCountyLink(29, { parcel_id: '028936009008830000' })?.copy, '028936009008830000');
+eq('Camden odd ids -> null', [ncCountyLink(29, { parcel_id: 'RIDGE CREST' }), ncCountyLink(29, { parcel_id: 'OID123' })], [null, null]);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
