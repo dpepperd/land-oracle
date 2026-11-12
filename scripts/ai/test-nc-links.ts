@@ -94,6 +94,8 @@ eq('Nash copies the 6-digit parcel id', ncCountyLink(127, { parcel_id: '019794',
 eq('Nash placeholder ids -> null', ncCountyLink(127, { parcel_id: 'OID123' }), null);
 eq('Montgomery copies the PIN as stored (spaces included)', ncCountyLink(123, { parcel_id: '6588 18 21 6386' })?.copy, '6588 18 21 6386');
 eq('Montgomery placeholder ids -> null', ncCountyLink(123, { parcel_id: 'OID123' }), null);
+eq('Martin copies the 7-digit parcel id', ncCountyLink(117, { parcel_id: '0503819' })?.copy, '0503819');
+eq('Martin placeholder ids -> null', ncCountyLink(117, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
