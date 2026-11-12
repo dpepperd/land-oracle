@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
@@ -50,30 +51,19 @@ export default function Hero() {
           </Link>
         </div>
 
-        {/* Video Placeholder (The "WOW" Visual) */}
-        <div className="w-full max-w-5xl relative group animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-          <div className="relative aspect-video rounded-xl bg-zinc-900 border border-zinc-800 shadow-2xl overflow-hidden flex items-center justify-center">
-             {/* Mock Map UI Background */}
-             <div className="absolute inset-0 opacity-50 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/-82.2,30.3,11,0/1280x720?access_token=pk.eyJ1IjoiZGFzaGJvYXJkIiwiYSI6ImNrdjR4Z2o0MDBpMzYydm94b3g0c3drc2EifQ.W7aD4g_t8w8q8e1c6q6g')] bg-cover bg-center grayscale hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
-             
-
-             {/* UI Mockup Details */}
-             <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
-                <div className="h-8 w-32 bg-white/10 backdrop-blur rounded-md" />
-                <div className="flex gap-2">
-                   <div className="h-8 w-8 bg-white/10 backdrop-blur rounded-full" />
-                   <div className="h-8 w-8 bg-white/10 backdrop-blur rounded-full" />
-                </div>
-             </div>
-             <div className="absolute bottom-4 right-4 h-32 w-64 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 p-4">
-                <div className="h-4 w-3/4 bg-white/20 rounded mb-2" />
-                <div className="h-3 w-1/2 bg-white/10 rounded mb-4" />
-                <div className="space-y-2">
-                   <div className="h-2 w-full bg-white/5 rounded" />
-                   <div className="h-2 w-full bg-white/5 rounded" />
-                </div>
-             </div>
+        {/* Product screenshot (temporary, until the demo video is ready) */}
+        <div className="w-full max-w-5xl relative animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25"></div>
+          <div className="relative rounded-xl border border-zinc-800 shadow-2xl overflow-hidden bg-zinc-900">
+            <Image
+              src="/images/homepage-demo.png"
+              alt="Land Oracle dashboard: parcels found by the AI Analyst shown on the map, with the parcel details panel and flood zone"
+              width={3330}
+              height={1854}
+              priority
+              sizes="(min-width: 1024px) 1024px, 100vw"
+              className="w-full h-auto"
+            />
           </div>
         </div>
         
