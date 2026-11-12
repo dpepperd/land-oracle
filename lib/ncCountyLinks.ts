@@ -185,6 +185,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Cherokee: county GIS viewer (supplied by the owner); click the agree button, then the "GIS Viewer" page; paste the 15-digit PIN (no dashes, our parcel_id) into the search
   // box and press Enter, then pick the suggestion (1 parcel checked: owner matched)
   39: { kind: 'search', label: 'Cherokee County GIS Viewer (agree, paste the PIN in the search box, Enter)', url: 'https://maps.cherokeecounty-nc.gov/GISweb/GISviewer/?page=GIS-Viewer', copy: 'parcel_id', pick: p => (/^\d{15}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Caswell: webgis.net viewer (supplied by the owner); click Accept, paste the "Map and Parcel" number (our alt_key, e.g. 0035 060, space included) into "Map and Parcel", Enter (1 parcel checked)
+  33: { kind: 'search', label: 'Caswell County WebGIS (accept, paste into Map and Parcel, Enter)', url: 'https://www.webgis.net/nc/caswell/', copy: 'alt_key', pick: p => (/^\d{3,4}[A-Z]? \d{3}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

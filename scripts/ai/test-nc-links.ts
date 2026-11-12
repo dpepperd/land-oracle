@@ -132,6 +132,8 @@ eq('Cherokee copies the 15-digit PIN', ncCountyLink(39, { parcel_id: '4593168259
 eq('Cherokee odd ids -> null', [ncCountyLink(39, { parcel_id: 'RIDGE CREST X' }), ncCountyLink(39, { parcel_id: 'OID123' })], [null, null]);
 eq('Chatham direct Spatialest card (parcel_id)', ncCountyLink(37, { parcel_id: '0015127', alt_key: '876107570533' })?.url, 'https://property.spatialest.com/nc/chatham#/property/0015127');
 eq('Chatham odd ids -> null', [ncCountyLink(37, { parcel_id: 'OID123' }), ncCountyLink(37, { parcel_id: '15127' })], [null, null]);
+eq('Caswell copies the Map and Parcel number (alt_key)', [ncCountyLink(33, { parcel_id: '0035000000600000', alt_key: '0035 060' })?.copy, ncCountyLink(33, { alt_key: '139B 076' })?.copy], ['0035 060', '139B 076']);
+eq('Caswell without that alt_key -> null', ncCountyLink(33, { parcel_id: '0035000000600000', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
