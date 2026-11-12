@@ -191,6 +191,8 @@ export const NC_LINKS: Record<number, Entry> = {
   29: { kind: 'search', label: 'Camden County Property Information (acknowledge, paste the PIN in the search box, Enter)', url: 'https://ccnc.maps.arcgis.com/apps/instant/sidebar/index.html?appid=0b5925a5657e45c5937aada475ca76a7', copy: 'parcel_id', pick: p => (/^\d{18}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Bladen: Avineon viewer (supplied by the owner); click "Accept and close", paste the 12-digit PIN (our parcel_id) into "Parcel PIN", press Enter twice (1 parcel checked; our Bladen data has no site addresses)
   17: { kind: 'search', label: 'Bladen County GIS (accept, paste into Parcel PIN, press Enter twice)', url: 'https://gis.bladenco.org/bladenmap/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Beaufort: "Real Property PWA" like Madison/Hyde (the owner sent the county's ArcGIS viewer; the PWA from the vendor research is easier); paste the dashed PIN (our parcel_id) into the search box, Enter (1 parcel checked)
+  13: { kind: 'search', label: 'Beaufort County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/Beaufort/parcel-search', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
