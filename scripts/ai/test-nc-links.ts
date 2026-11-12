@@ -64,6 +64,10 @@ eq('Transylvania copies the PIN as 13 digits', ncCountyLink(175, { parcel_id: '8
 eq('Transylvania odd id -> null', ncCountyLink(175, { parcel_id: 'ABC12345' }), null);
 eq('Swain copies the 12-digit alt_key (its parcel_id is a placeholder)', ncCountyLink(173, { parcel_id: 'OID33301043', alt_key: '666319523143' })?.copy, '666319523143');
 eq('Swain without an alt_key -> null', ncCountyLink(173, { parcel_id: 'OID33301043', alt_key: null }), null);
+eq('Surry copies the 12-digit PIN', ncCountyLink(171, { parcel_id: '595300060782' })?.copy, '595300060782');
+eq('Surry untested 15-digit shape -> null', ncCountyLink(171, { parcel_id: '595300060782000' }), null);
+eq('Stokes copies the 10-digit PIN', ncCountyLink(169, { parcel_id: '6000318549', alt_key: '600000318549' })?.copy, '6000318549');
+eq('Stokes placeholder ids -> null', ncCountyLink(169, { parcel_id: 'OID33301043' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
