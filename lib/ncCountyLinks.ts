@@ -69,6 +69,9 @@ export const NC_LINKS: Record<number, Entry> = {
   55: { kind: 'direct', label: 'Dare County Property', build: p => (p.alt_key && /^\d{6,10}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/dare#/property/${p.alt_key}` : null) },
   // Chatham: Spatialest record card (found by the vendor research; the owner sent the county's land information site); the card number is our 7-digit parcel_id (3 parcels checked)
   37: { kind: 'direct', label: 'Chatham County Property', build: p => (p.parcel_id && /^\d{7}$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/chatham#/property/${p.parcel_id}` : null) },
+  // Pasquotank: county tax card search (page supplied by the owner); its search takes the PIN in the address. A 12-digit PIN goes in as is; the spaced form ("8902 980340")
+  // must have TWO spaces, as the county's page says (3 12-digit parcels and 2 spaced parcels checked, owner and address matched)
+  139: { kind: 'direct', label: 'Pasquotank County Tax Search', build: p => { const id = p.parcel_id ?? ''; if (/^\d{12}$/.test(id)) return `https://link.co.pasquotank.nc.us/taxcard/DisplayTax.cfm?SEARCH=PIN&SearchVal=${id}`; const m = /^(\d{4}) (\d{6})$/.exec(id); return m ? `https://link.co.pasquotank.nc.us/taxcard/DisplayTax.cfm?SEARCH=PIN&SearchVal=${m[1]}%20%20${m[2]}` : null; } },
   89: { kind: 'direct', label: 'Henderson County Property', build: p => (p.alt_key && /^\d{5,10}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/henderson#/property/${p.alt_key}` : null) },
 
   // ---- search: the county's own lookup page (linked from the county website); the parcel ID is copied for pasting ----
