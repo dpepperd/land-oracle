@@ -210,7 +210,7 @@ export async function POST(request: Request) {
     }
 
     // Build SQL
-    const sql = `
+    const buildSql = (extra: string) => `
       WITH user_context AS (SELECT id, role FROM users WHERE clerk_id = $${valIdx})
       SELECT 
         p.parcel_key as id, p.parcel_key, p.county, COALESCE(p.parcel_id, p.parcelno) as parcel_id, p.parcelno, p.alt_key, 
@@ -227,8 +227,8 @@ export async function POST(request: Request) {
         (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
       FROM parcels_current_all p
       LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
-      WHERE ${conditions.join(' AND ')}
-      LIMIT $${valIdx + 1}
+      WHERE ${conditions.join(' AND ')}${extra}
+      LIMIT ${valIdx + 1}
     `;
 
     values.push(userId, limit);
@@ -236,7 +236,14 @@ export async function POST(request: Request) {
     // Execute
     const client = await pool.connect();
     try {
-      const res = await client.query(sql, values);
+      // Parcels with a map outline come first, so the map is not filled with results it cannot draw. Parcels without an outline
+      // (about half of some counties) still fill the rest of the list. Two bounded queries avoid sorting a huge result set.
+      let rows = (await client.query(buildSql(' AND p.has_geom IS TRUE'), values)).rows;
+      if (rows.length < limit) {
+        const rest = [...values]; rest[rest.length - 1] = limit - rows.length;
+        rows = rows.concat((await client.query(buildSql(' AND p.has_geom IS NOT TRUE'), rest)).rows);
+      }
+      const res = { rows };
       
       if (res.rows.length === 0) {
         return NextResponse.json({ geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 });
