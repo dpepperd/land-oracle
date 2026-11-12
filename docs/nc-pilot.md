@@ -46,7 +46,7 @@ NC county property-record links (feat/nc-county-links), NC CSV export, AI Analys
 `lib/ncCountyLinks.ts`, keyed by NC FIPS (`co_no`). Counties without an entry show the parcel ID as plain text.
 
 - **Direct (5):** Wake 183 (alt_key = REID), Buncombe 21 (parcel_id), Durham 63 and Randolph 151 (alt_key = REID), Gaston 71 (alt_key; year segment 2026). Each was fetched against 3 real parcels and the owner and address matched our data. Builders return null on an unusable ID.
-- **Search page + copied ID (8):** Mecklenburg, Cabarrus, Catawba, Orange, Pitt, Robeson, Carteret, Harnett. The county's official lookup opens and the app copies the ID. These sites are JS or form-based, so a deep link was not verified.
+- **Search page + copied ID (9):** Anson (added at the owner's request), Mecklenburg, Cabarrus, Catawba, Orange, Pitt, Robeson, Carteret, Harnett. The county's official lookup opens and the app copies the ID. These sites are JS or form-based, so a deep link was not verified.
 - **Not listed (need a browser check):** Guilford, Forsyth, Johnston, Davidson, Cleveland, Moore, Iredell, Cumberland, Rowan, Union, New Hanover, Brunswick, Craven, Henderson, Alamance. Not used: Wayne (source unconfirmed as official) and Onslow (expired TLS certificate).
 - Wake's link uses the legacy `services.wake.gov/realestate` path because the newer TaxPortal was down during testing. Re-test it periodically.
 - Tests: `npx tsx scripts/ai/test-nc-links.ts`.

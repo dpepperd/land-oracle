@@ -18,6 +18,7 @@ eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
 eq('search copies parcel_id', ncCountyLink(119, { parcel_id: '12345678' }), { url: 'https://polaris3g.mecklenburgcountync.gov/', kind: 'search', copy: '12345678', label: 'Mecklenburg County Polaris' });
 eq('search copies alt_key', ncCountyLink(25, { parcel_id: 'a', alt_key: '08-021A-0024.00' })?.copy, '08-021A-0024.00');
+eq('Anson search copies the 12-digit parcel_id', ncCountyLink(7, { parcel_id: '744200261886', alt_key: '744200261886' }), { url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', kind: 'search', copy: '744200261886', label: 'Anson County Tax' });
 eq('search missing id -> null', ncCountyLink(119, {}), null);
 eq('unlisted county -> null', ncCountyLink(43, { parcel_id: '1', alt_key: '1' }), null);
 eq('no co_no -> null', ncCountyLink(null, { parcel_id: '1' }), null);
