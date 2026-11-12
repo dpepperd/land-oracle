@@ -28,7 +28,7 @@ export default function RefundPolicyPage() {
               <li>asked fewer than 25 AI Analyst questions.</li>
             </ul>
             <p className={`${P} mt-3`}>
-              Refunds may be declined where account activity shows the service was substantially used during the trial window, for example
+              Refunds may be declined where account activity shows the service was substantially used during the refund window, for example
               extensive parcel lookups or saved lead lists.
             </p>
           </section>

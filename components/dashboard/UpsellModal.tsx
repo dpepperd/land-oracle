@@ -4,7 +4,6 @@ import { X, Check, Lock } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 
 interface UpsellModalProps {
   isOpen: boolean;
@@ -14,8 +13,6 @@ interface UpsellModalProps {
 
 export default function UpsellModal({ isOpen, onClose, feature = "this feature" }: UpsellModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -57,60 +54,25 @@ export default function UpsellModal({ isOpen, onClose, feature = "this feature" 
           
           <h2 className="text-xl font-bold mb-2">Unlock {feature}</h2>
           <p className="text-muted-foreground mb-6">
-            Upgrade to a paid plan to export data, view unlimited parcels, and access premium county records.
+            CSV export is included with paid plans. Pick the plan that fits and add more counties as you grow.
           </p>
 
           <div className="space-y-3 mb-6 text-left bg-muted/50 p-4 rounded-lg">
             <div className="flex items-center gap-2 text-sm text-foreground">
               <Check className="w-4 h-4 text-green-500" />
-              <span>Unlimited csv exports</span>
+              <span>CSV exports of your searches</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-foreground">
               <Check className="w-4 h-4 text-green-500" />
-              <span>Full owner details</span>
+              <span>More Florida counties</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-foreground">
               <Check className="w-4 h-4 text-green-500" />
-              <span>Advanced filtering</span>
+              <span>AI Analyst on Pro and Statewide</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            <button 
-              onClick={async () => {
-                 setLoading(true);
-                 // Analytics
-                 import('@/lib/analytics').then(({ trackBeginCheckout }) => {
-                     trackBeginCheckout({ tier: 'trial' });
-                 });
-                 try {
-                     const res = await fetch('/api/user/trial/start', { method: 'POST' });
-                     if (res.ok) {
-                         onClose();
-                         window.location.reload(); // Refresh to update tier access in UI
-                     } else {
-                         const txt = await res.text();
-                         console.error(txt);
-                         // Fallback to pricing if failed (e.g. already used)
-                         router.push('/pricing');
-                     }
-                 } catch (e) {
-                     console.error("Trial start failed", e);
-                 } finally {
-                     setLoading(false);
-                 }
-              }}
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-green-500/20 flex items-center justify-center gap-2"
-            >
-              {loading ? "Activating..." : "Start 7-Day Free Trial"}
-            </button>
-            
-            <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-border"></div>
-                <span className="flex-shrink mx-4 text-muted-foreground text-xs uppercase">or</span>
-                <div className="flex-grow border-t border-border"></div>
-            </div>
             <Link 
               href="/pricing" 
               onClick={() => {

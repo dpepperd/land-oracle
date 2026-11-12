@@ -11,7 +11,7 @@ interface ResultsListProps {
   onMarkLead: (id: string) => void;
   onSelect: (parcel: any) => void;
   markingIds: string[];
-  userTier?: 'demo' | 'trial' | 'paid';
+  userTier?: 'demo' | 'paid';
   onUpsell: () => void; // Shared callback
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { uiTier } from '@/lib/tierAccess';
 import { useAuth } from "@clerk/nextjs";
 import Header from "@/components/dashboard/Header";
 import FilterSidebar from "@/components/dashboard/FilterSidebar";
@@ -23,7 +24,7 @@ export default function Dashboard() {
     limit: 1000
   });
 
-  const [userTier, setUserTier] = useState<'demo' | 'trial' | 'paid'>('demo');
+  const [userTier, setUserTier] = useState<'demo' | 'paid'>('demo');
   const [userRole, setUserRole] = useState<string>('user'); // Admin Role
 
   const [parcels, setParcels] = useState<any[]>([]);
@@ -53,13 +54,7 @@ export default function Dashboard() {
            
            if (data.selected) setUnlockedCounties(data.selected); // Set Unlocked Counties
 
-           if (data.role === 'admin' || data.tier === 'scout' || data.tier === 'local' || data.tier === 'regional' || data.tier === 'statewide' || data.tier === 'enterprise') {
-             setUserTier('paid');
-           } else if (data.tier === 'trial') {
-             setUserTier('trial');
-           } else {
-             setUserTier('demo');
-           }
+           setUserTier(uiTier(data.role, data.tier)); // admin or a paid plan (scout, pro, statewide, enterprise) = paid; everything else = free
 
            // Analytics: Track Login
            import('@/lib/analytics').then(({ trackLogin }) => {

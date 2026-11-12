@@ -11,15 +11,15 @@ const faqs = [
   },
   {
     question: "Can I export the data?",
-    answer: "Yes. Every plan can export your searches to CSV, including owner mailing addresses: free accounts up to 100 rows a month, Scout up to 1,000 rows a month, and Pro and Statewide unlimited."
+    answer: "Yes, on paid plans. Export your searches to CSV, including owner mailing addresses: Scout up to 1,000 rows a month, and Pro and Statewide unlimited. Free accounts cannot export."
   },
   {
     question: "Do you offer skip tracing?",
     answer: "Not yet. Owner names and mailing addresses come from public tax records, so you can mail owners today. Phone and email lookups (skip tracing) are planned but not available yet."
   },
   {
-    question: "Is there a free trial?",
-    answer: "You can create a free account to explore the map in one county. Paid plans start at $79 a month and add more counties, higher export limits, and the AI Analyst. New subscribers get a 7-day money-back guarantee on their first payment (see the Refund Policy). You can change or cancel any time from the billing portal; for billing questions, email support@landoracle.ai."
+    question: "Is there a free plan?",
+    answer: "Yes. A free account lets you explore the map and see parcel details in one county. CSV export and the AI Analyst are included with paid plans, which start at $79 a month and add more counties and higher export limits. New subscribers get a 7-day money-back guarantee on their first payment (see the Refund Policy). You can change or cancel any time from the billing portal; for billing questions, email support@landoracle.ai."
   },
   {
     question: "Is there an AI assistant?",

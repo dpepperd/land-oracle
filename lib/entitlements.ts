@@ -19,7 +19,7 @@ export interface EntitlementStatus {
   cancelAtPeriodEnd: boolean;
 }
 
-export const FREE_EXPORTS_PER_MONTH = 100;
+export const FREE_EXPORTS_PER_MONTH = 0; // free accounts cannot export CSV
 export const FREE_COUNTY_ALLOWANCE = 1;
 
 export const exportLimitFor = (tier: Tier): number | 'unlimited' =>

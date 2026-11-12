@@ -61,7 +61,10 @@ export async function POST(request: Request) {
     const { getEntitlements, trackExport } = await import('@/lib/entitlements');
     const ent = await getEntitlements(userId);
     
-    // 2. Check Export Limit
+    // 2. Check Export Limit (free accounts cannot export at all)
+    if (ent.exports.limit === 0) {
+      return NextResponse.json({ error: 'export_not_included', upgrade: true, upgradeTo: 'scout', message: 'CSV export is included with paid plans. See Pricing to upgrade.' }, { status: 402 });
+    }
     let remaining: number | 'unlimited' = 'unlimited';
     if (ent.exports.limit !== 'unlimited') {
         if (ent.exports.used >= ent.exports.limit) {
