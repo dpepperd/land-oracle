@@ -58,6 +58,8 @@ export const NC_LINKS: Record<number, Entry> = {
   135: { kind: 'direct', label: 'Orange County Property', build: p => (p.parcel_id && /^\d{10}(\.\d{1,4})?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/orange#/property/${p.parcel_id}` : null) },
   // Pitt's card id is the county parcel number WITHOUT leading zeros (alt_key 05533 -> 5533; with the zero the county shows "not found")
   147: { kind: 'direct', label: 'Pitt County Property', build: p => (p.alt_key && /^\d{1,7}$/.test(p.alt_key) && Number(p.alt_key) > 0 ? `https://property.spatialest.com/nc/pitt#/property/${Number(p.alt_key)}` : null) },
+  // Lincoln: Spatialest record card (found by the vendor research; the owner sent the county's ArcGIS viewer, but the direct link is better); alt_key is the card number (3 parcels checked)
+  109: { kind: 'direct', label: 'Lincoln County Property', build: p => (p.alt_key && /^\d{3,7}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/lincoln#/property/${p.alt_key}` : null) },
   89: { kind: 'direct', label: 'Henderson County Property', build: p => (p.alt_key && /^\d{5,10}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/henderson#/property/${p.alt_key}` : null) },
 
   // ---- search: the county's own lookup page (linked from the county website); the parcel ID is copied for pasting ----
