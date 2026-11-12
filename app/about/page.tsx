@@ -41,7 +41,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-theme-primary">Unified Records</h3>
-                    <p className="text-sm text-theme-secondary">Consolidated data from multiple county assessors and recorders.</p>
+                    <p className="text-sm text-theme-secondary">Tax roll data from all 67 Florida property appraisers, joined with parcel maps in one place.</p>
                   </div>
                 </div>
 
@@ -50,8 +50,8 @@ export default function AboutPage() {
                     <MapIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-theme-primary">USGS Topography</h3>
-                    <p className="text-sm text-theme-secondary">Integrated elevation and terrain data for precision scouting.</p>
+                    <h3 className="font-semibold text-theme-primary">Map Layers</h3>
+                    <p className="text-sm text-theme-secondary">Topographic and satellite basemaps, FEMA flood zones, and highway overlays.</p>
                   </div>
                 </div>
 
@@ -60,8 +60,8 @@ export default function AboutPage() {
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-theme-primary">Verified Ownership</h3>
-                    <p className="text-sm text-theme-secondary">Up-to-date mailing addresses and ownership history.</p>
+                    <h3 className="font-semibold text-theme-primary">Owner &amp; Mailing Records</h3>
+                    <p className="text-sm text-theme-secondary">Current owner name and mailing address from each county&apos;s 2026 tax roll, plus recent qualified sales. Always verify with the county before you transact.</p>
                   </div>
                 </div>
               </div>
