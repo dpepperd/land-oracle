@@ -220,6 +220,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Franklin: Avineon viewer (supplied by the owner); click "Accept and close", paste the dashed PIN (our parcel_id) into "Pin Number", press Enter twice (1 parcel checked). After a search the address
   // becomes `?parid=<county parcel number>`, which is a number we do not have, so it cannot be a direct link.
   69: { kind: 'search', label: 'Franklin County GIS (accept, paste into Pin Number, press Enter twice)', url: 'https://www.franklincountymaps.net/maps/', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Edgecombe: Avineon viewer (supplied by the owner); click "Accept and close", paste the 10-digit PIN (our alt_key, undashed) into "Parcel PIN", press Enter twice (1 parcel checked: address matched; owner newer than our file)
+  65: { kind: 'search', label: 'Edgecombe County GIS (accept, paste into Parcel PIN, press Enter twice)', url: 'https://gis.edgecombecountync.gov/maps/default.htm', copy: 'alt_key', pick: p => (/^\d{10}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
