@@ -152,6 +152,9 @@ export const NC_LINKS: Record<number, Entry> = {
   115: { kind: 'search', label: 'Madison County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/Madison/parcel-search', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // McDowell: webgis.net viewer (supplied by the owner); click Accept, paste the 12-digit parcel number (our parcel_id) into "Tax Parcel #", Enter (1 parcel checked)
   111: { kind: 'search', label: 'McDowell County WebGIS (accept, paste into Tax Parcel #, Enter)', url: 'https://www.webgis.net/nc/McDowell/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Lee: iasWorld real property search (found by the vendor research on the county site; the owner's ArcGIS viewer has custom buttons that were not tested); paste the
+  // 12-digit PIN (our parcel_id) into "Parcel ID" and press Enter (1 parcel checked)
+  105: { kind: 'search', label: 'Lee County Property Search (paste into Parcel ID, Enter)', url: 'https://taxaccess.leecountync.gov/pt/search/commonsearch.aspx?mode=realprop', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
