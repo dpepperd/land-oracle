@@ -198,6 +198,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Alexander: county GIS portal (supplied by the owner); click Accept, Search tab, paste the 10-digit PIN (our parcel_id) into "Enter PIN", Enter (1 parcel checked). NOTE: the owner's
   // `?pin=` address only takes the county's 7-digit Parcel ID (not in our data) and does not accept our PIN, so it cannot be a direct link.
   3: { kind: 'search', label: 'Alexander County GIS (accept, Search tab, paste into Enter PIN, Enter)', url: 'https://maps.alexandercountync.gov/maps/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Alleghany: webgis.net viewer (supplied by the owner); click Accept, Search > Form, paste the 10-digit PIN (our parcel_id) into "PIN", Enter (1 parcel checked; our Alleghany data has no site addresses)
+  5: { kind: 'search', label: 'Alleghany County WebGIS (accept, Search > Form, paste into PIN, Enter)', url: 'https://www.webgis.net/nc/alleghany/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
