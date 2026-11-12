@@ -3,10 +3,17 @@
 // In-portal AI analysis assistant (Claude via /api/assistant). Streams NDJSON events; shows parcel citations as chips.
 // Shown only when GET /api/assistant says enabled (admins now; Pro/Statewide once AI_ASSISTANT_ENABLED=true).
 // Events in: window 'landoracle:open-assistant' { prefill?: string }
+// Bigger view: the expand button widens the panel. Pop-out: opens /assistant-window (a standalone copy of this panel, shown with the
+// "standalone" prop) in its own browser window; the chat is handed over through localStorage, and "show on map" is relayed back to the
+// dashboard window through a BroadcastChannel.
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
-import { X, Send, Bot, User, Loader2, Search, MapPin, Sparkles } from 'lucide-react';
+import { X, Send, Bot, User, Loader2, Search, MapPin, Sparkles, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
+
+const HANDOFF_KEY = 'lo:ai-handoff';
+const CHANNEL = 'lo-assistant';
+const EXPANDED_KEY = 'lo:ai-expanded';
 
 interface ToolChip { id: string; name: string; done: boolean; ok?: boolean; summary?: string }
 interface Msg { id: string; role: 'user' | 'assistant'; text: string; tools?: ToolChip[]; error?: boolean; cost?: number | null }
@@ -90,7 +97,7 @@ function Markdown({ text, known, onShow }: { text: string; known: Set<string>; o
   return <div className="space-y-0.5">{blocks}</div>;
 }
 
-export default function AssistantPanel() {
+export default function AssistantPanel({ standalone = false }: { standalone?: boolean }) {
   const { isSignedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '/';
@@ -105,6 +112,56 @@ export default function AssistantPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const ackRef = useRef(false);
+
+  // Remember the bigger/smaller choice
+  useEffect(() => { try { setExpanded(localStorage.getItem(EXPANDED_KEY) === '1'); } catch { /* ignore */ } }, []);
+  const toggleExpanded = () => setExpanded((v) => { const n = !v; try { localStorage.setItem(EXPANDED_KEY, n ? '1' : '0'); } catch { /* ignore */ } return n; });
+
+  // Standalone window: pick up the chat handed over by the dashboard window
+  useEffect(() => {
+    if (!standalone) return;
+    try {
+      const raw = localStorage.getItem(HANDOFF_KEY);
+      if (!raw) return;
+      localStorage.removeItem(HANDOFF_KEY);
+      const h = JSON.parse(raw);
+      if (Date.now() - (h.t || 0) > 120_000) return;
+      if (Array.isArray(h.messages) && h.messages.length) setMessages(h.messages.filter((m: Msg) => !m.error || m.text));
+      if (Array.isArray(h.known)) setKnown(new Set(h.known));
+      if (Array.isArray(h.lastKeys)) lastKeysInit.current = h.lastKeys;
+    } catch { /* ignore */ }
+  }, [standalone]);
+
+  // Cross-window relay: the popup asks the dashboard window to show parcels; the dashboard window answers with an ack
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const ch = new BroadcastChannel(CHANNEL); channelRef.current = ch;
+    ch.onmessage = (ev) => {
+      const d = ev.data || {};
+      if (standalone) { if (d.type === 'ack') ackRef.current = true; return; }
+      if (d.type === 'show' && Array.isArray(d.keys)) { ch.postMessage({ type: 'ack' }); showOnDashboard(d.keys, pathname, router.push, d.select); }
+    };
+    return () => { ch.close(); channelRef.current = null; };
+  }, [standalone, pathname, router]);
+
+  // In the popup, "show on map" is sent to the dashboard window instead of navigating this one
+  const showKeys = (keys: string[], select?: string) => {
+    if (!standalone) { showOnDashboard(keys, pathname, router.push, select); return; }
+    ackRef.current = false;
+    channelRef.current?.postMessage({ type: 'show', keys, select });
+    setTimeout(() => { if (!ackRef.current) setNotice('Open the dashboard window to see these parcels on the map.'); else setNotice(null); }, 700);
+  };
+
+  const popOut = () => {
+    try { localStorage.setItem(HANDOFF_KEY, JSON.stringify({ t: Date.now(), messages: messages.filter((m) => !m.error || m.text), known: [...known], lastKeys: lastKeys.current })); } catch { /* ignore */ }
+    const w = window.open('/assistant-window', 'lo-ai-analyst', 'popup=yes,width=1000,height=900');
+    if (!w) { setNotice('Your browser blocked the pop-up. Allow pop-ups for landoracle.ai and try again.'); return; }
+    setNotice(null); setIsOpen(false); w.focus();
+  };
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [messages, isOpen]);
 
@@ -118,9 +175,11 @@ export default function AssistantPanel() {
     return () => window.removeEventListener('landoracle:open-assistant', open);
   }, []);
 
+  const lastKeysInit = useRef<string[] | null>(null);
   const lastKeys = useRef<string[]>([]);
+  if (lastKeysInit.current) { lastKeys.current = lastKeysInit.current; lastKeysInit.current = null; }
   // Chip click: keep the whole latest result set on the map and highlight the clicked parcel.
-  const onShow = (k: string) => showOnDashboard([k, ...lastKeys.current], pathname, router.push, k);
+  const onShow = (k: string) => showKeys([k, ...lastKeys.current], k);
 
   useEffect(() => {
     if (!isSignedIn) { setEnabled(false); return; }
@@ -161,7 +220,7 @@ export default function AssistantPanel() {
           else if (ev.type === 'tool_result') {
             patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
             if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
-            if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showOnDashboard(ev.keys, pathname, router.push); }
+            if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showKeys(ev.keys); }
           } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
           else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
           else if (ev.type === 'error') patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message }));
@@ -173,22 +232,31 @@ export default function AssistantPanel() {
   };
 
   if (!isSignedIn || !enabled) return null;
+  if (!standalone && pathname.startsWith('/assistant-window')) return null; // the pop-out page renders its own copy
+
+  const boxClass = standalone
+    ? 'fixed inset-0 z-[10000] font-sans'
+    : `fixed bottom-40 right-6 z-[9998] ${expanded ? 'w-[94vw] sm:w-[min(900px,72vw)] h-[calc(100vh-11rem)]' : 'w-[92vw] sm:w-[440px] h-[600px] max-h-[72vh]'} transition-all duration-300 origin-bottom-right font-sans ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-8 pointer-events-none'}`;
 
   return (
     <>
-      <button onClick={() => setIsOpen((o) => !o)} aria-label="Toggle AI analyst"
+      {!standalone && <button onClick={() => setIsOpen((o) => !o)} aria-label="Toggle AI analyst"
         className={`fixed bottom-24 right-6 z-[9999] flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105 text-white text-sm font-medium ${isOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
         {isOpen ? <X size={18} /> : <Sparkles size={18} />}
         {isOpen ? 'Close' : 'AI Analyst'}
-      </button>
-      <div className={`fixed bottom-40 right-6 z-[9998] w-[92vw] sm:w-[440px] h-[600px] max-h-[72vh] transition-all duration-300 origin-bottom-right font-sans ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-8 pointer-events-none'}`}>
-        <div className="flex flex-col h-full w-full bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+      </button>}
+      <div className={boxClass}>
+        <div className={`flex flex-col h-full w-full bg-slate-950/95 backdrop-blur-md border border-slate-800 shadow-2xl overflow-hidden ${standalone ? '' : 'rounded-2xl'}`}>
           <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600/20 rounded-lg"><Bot className="w-5 h-5 text-blue-400" /></div>
               <div><h3 className="text-white font-semibold text-sm">AI Analyst</h3><p className="text-xs text-slate-400">Parcel research assistant</p></div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button>
+            <div className="flex items-center gap-3">
+              {!standalone && <button onClick={toggleExpanded} title={expanded ? 'Make smaller' : 'Make bigger'} aria-label={expanded ? 'Make smaller' : 'Make bigger'} className="text-slate-400 hover:text-white hidden sm:block">{expanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}</button>}
+              {!standalone && <button onClick={popOut} title="Open in its own window" aria-label="Open in its own window" className="text-slate-400 hover:text-white hidden sm:block"><ExternalLink size={18} /></button>}
+              <button onClick={() => (standalone ? window.close() : setIsOpen(false))} title="Close" className="text-slate-400 hover:text-white"><X size={20} /></button>
+            </div>
           </div>
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((m) => (
@@ -209,6 +277,7 @@ export default function AssistantPanel() {
               </div>
             ))}
           </div>
+          {notice && <div className="px-4 py-2 text-xs text-amber-300 bg-amber-950/40 border-t border-amber-900/50">{notice}</div>}
           <form onSubmit={(e) => { e.preventDefault(); void send(); }} className="p-3 border-t border-slate-800 bg-slate-900/50">
             <div className="relative">
               <textarea ref={inputRef} rows={2} value={input} onChange={(e) => setInput(e.target.value)} disabled={busy}
