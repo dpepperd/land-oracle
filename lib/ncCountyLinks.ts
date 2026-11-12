@@ -64,6 +64,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Johnston: Basic Search (supplied by the owner). Its Parcel Number boxes want the county's own parcel number (not our PIN), so the OWNER NAME is
   // copied; the results table shows a "PIN ID#" column that equals our parcel_id, to pick the right row (3 parcels checked).
   101: { kind: 'search', label: 'Johnston County Property (paste the owner name, Submit, match the PIN ID#)', url: 'https://www.bttaxpayerportal.com/itspublicjo', copy: 'parcel_id', pick: p => { const n = (p.owner_name ?? '').trim(); return n.length >= 3 ? n : null; } },
+  // Burke: county GIS viewer (supplied by the owner); click Accept on the disclaimer, paste the 10-digit PIN into "Enter PIN", press Enter (1 parcel checked)
+  23: { kind: 'search', label: 'Burke County GIS (accept the disclaimer, paste into Enter PIN)', url: 'https://gis.burkenc.org/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

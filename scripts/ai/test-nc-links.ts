@@ -42,6 +42,8 @@ eq('Craven copies the owner name (its portal has no parcel search)', ncCountyLin
 eq('Craven without an owner name -> null', ncCountyLink(49, { parcel_id: '7-015 -078', owner_name: null }), null);
 eq('Johnston copies the owner name', ncCountyLink(101, { parcel_id: '165915-63-1164', owner_name: 'KS BANK INC' })?.copy, 'KS BANK INC');
 eq('Johnston without an owner name -> null', ncCountyLink(101, { parcel_id: '165915-63-1164' }), null);
+eq('Burke copies the 10-digit PIN', ncCountyLink(23, { parcel_id: '2723822620', alt_key: '12406' })?.copy, '2723822620');
+eq('Burke odd id -> null', ncCountyLink(23, { parcel_id: 'OID9' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
