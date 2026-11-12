@@ -208,6 +208,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Warren (NC): ROKMAPS viewer (supplied by the owner; an earlier link was Warren County, Illinois). Menu > Search > "Parcels" tab, paste the 10-digit PIN (our parcel_id) into "PIN",
   // click Search; the result shows NEWPIN and owner with a Property Report link (1 parcel checked). The Basic tab's "Record #" does NOT take our PIN.
   185: { kind: 'search', label: 'Warren County Maps (Search > Parcels tab, paste into PIN, Search)', url: 'https://maps.roktech.net/ROKMAPS_Warren/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Greene: AGD ArcGIS viewer (supplied by the owner); paste the 7-digit county Parcel ID (our alt_key, NOT the PIN, which finds nothing) into "Search All or Choose Left", Enter (1 parcel checked)
+  79: { kind: 'search', label: 'Greene County GIS (paste the Parcel ID in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=336dd11e889546b7806dded487e3fc57', copy: 'alt_key', pick: p => (/^\d{7}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
