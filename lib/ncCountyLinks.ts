@@ -5,7 +5,7 @@
 //   direct: opens that parcel's record. `build` returns null when the ID is missing or in a shape the county site cannot use.
 //   search: opens the county's search page and the app copies the parcel ID for the user to paste (like Florida's "manual search" counties).
 
-export interface NcLinkInput { parcel_id?: string | null; alt_key?: string | null }
+export interface NcLinkInput { parcel_id?: string | null; alt_key?: string | null; /** Only used by counties whose lookup cannot search by parcel number (Craven). */ owner_name?: string | null }
 export interface NcLink {
   url: string;
   kind: 'direct' | 'search';
@@ -58,6 +58,9 @@ export const NC_LINKS: Record<number, Entry> = {
   51: { kind: 'search', label: 'Cumberland County Bills (Search By "Parcel Number", paste)', url: 'https://taxpwa.co.cumberland.nc.us/publicwebaccess/', copy: 'parcel_id' },
   // Moore: county ArcGIS viewer (supplied by the owner); tick "I Agree" + OK, open "Parcel ID Query", paste into "PIN is", click Apply (1 parcel checked)
   125: { kind: 'search', label: 'Moore County GIS (agree to disclaimer, Parcel ID Query, paste into PIN)', url: 'https://experience.arcgis.com/experience/372f89e6fdcb4bd5af38256a9744ed14/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Craven: the real-property portal (supplied by the owner) has NO parcel-number search, only owner name or address (address is split into
+  // house number + street boxes). So the OWNER NAME is copied; type it in the "Property Owner Name" box (3 parcels checked: 2 companies, 1 person).
+  49: { kind: 'search', label: 'Craven County Property (paste the owner name, click Submit)', url: 'https://www.bttaxpayerportal.com/ITSPublicCRRP', copy: 'parcel_id', pick: p => { const n = (p.owner_name ?? '').trim(); return n.length >= 3 ? n : null; } },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
