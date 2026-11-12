@@ -80,6 +80,8 @@ eq('Richmond copies the 12-digit PIN', ncCountyLink(153, { parcel_id: '747002971
 eq('Richmond placeholder ids -> null', ncCountyLink(153, { parcel_id: 'OID123' }), null);
 eq('Polk copies the parcel id as stored', [ncCountyLink(149, { parcel_id: 'P48-125' })?.copy, ncCountyLink(149, { parcel_id: 'P125-45' })?.copy], ['P48-125', 'P125-45']);
 eq('Polk placeholder ids -> null', ncCountyLink(149, { parcel_id: 'OID123' }), null);
+eq('Person copies the short county parcel number (alt_key)', [ncCountyLink(145, { parcel_id: '0928-00-02-7236.000', alt_key: 'A58 62' })?.copy, ncCountyLink(145, { alt_key: '10 1' })?.copy], ['A58 62', '10 1']);
+eq('Person without a short alt_key -> null', ncCountyLink(145, { parcel_id: '0928-00-02-7236.000', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
