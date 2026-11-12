@@ -29,5 +29,14 @@ County, drawn area (polygon or circle), bounding box, acreage, value, owner in/o
 ## Tests (real handlers, stubbed sign-in, dev database)
 `scripts/ai/test-nc-search.ts` (29 checks: NC path, admin gate, Florida regressions for Clay/Washington/Jefferson, absentee state-awareness, owner-state parsing, drawn areas, text search, export guard). Also re-run test-area-flow, test-tier-export and test-ai-export after any change to the search or export routes.
 
+## Screens (branch feat/nc-screens, admin-only)
+- State picker (Florida | North Carolina) at the top of the sidebar, shown only when the signed-in user is an admin. Switching state clears filters, the drawn area and its outline, results and popups, and flies the map to the state.
+- In NC: the 100 NC counties (never locked), "Likely vacant land" checkbox instead of the Florida land-use list, no homestead and no highway-distance filters, preset becomes absentee + out-of-state + likely vacant. A blue banner and the sidebar notes state the pilot and its data limits; the NC OneMap credit shows on the banner and in each popup.
+- Cards show "<County> County, NC", a Likely vacant badge, and no "No sale on record" badge (NC has a sale date on only 38% of parcels). Popup shows land-use description, acreage "(from map shape)" when derived, last sale DATE (no price), N/A for missing values.
+- The Florida county-appraiser link is never used for NC parcels (Clay, Washington, ... exist in both states).
+- CSV export in NC shows "not available yet" (and the server refuses it).
+- Request building lives in lib/searchState.ts; Florida requests are byte-for-byte what they were (no state field).
+- Tests: scripts/ai/test-search-state.ts (12 pure checks), scripts/ai/test-ui-smoke.tsx (19 server-render checks of the sidebar, cards and list in NC and FL), plus the API suites. The map popup cannot be rendered outside a browser; it is covered by type checks and diff review only.
+
 ## Still to build (each as its own small, tested step)
-State picker in the sidebar (admin only), NC county list endpoint, hiding unsupported filters, NC popup/card wording and credit line, NC CSV export, flood tag for NC cards (live FEMA lookup works anywhere), AI Analyst awareness, then an admin-only preview test with Tat; plans and pricing across states come after that.
+NC county property-record links (feat/nc-county-links), NC CSV export, AI Analyst awareness, then an admin-only preview test with Tat; plans and pricing across states come after that. Flood tags already work for NC cards (live FEMA lookup works anywhere).
