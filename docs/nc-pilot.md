@@ -45,8 +45,8 @@ NC county property-record links (feat/nc-county-links), NC CSV export, AI Analys
 
 `lib/ncCountyLinks.ts`, keyed by NC FIPS (`co_no`). Counties without an entry show the parcel ID as plain text.
 
-- **Direct (6):** Alamance 1 (Spatialest; alt_key = "Parcel ID No."; fragment link checked in a real browser on 3 parcels), Wake 183 (alt_key = REID), Buncombe 21 (parcel_id), Durham 63 and Randolph 151 (alt_key = REID), Gaston 71 (alt_key; year segment 2026). Each was fetched against 3 real parcels and the owner and address matched our data. Builders return null on an unusable ID.
-- **Search page + copied ID (9):** Anson (added at the owner's request), Mecklenburg, Cabarrus, Catawba, Orange, Pitt, Robeson, Carteret, Harnett. The county's official lookup opens and the app copies the ID. These sites are JS or form-based, so a deep link was not verified.
-- **Not listed (need a browser check):** Guilford, Forsyth, Johnston, Davidson, Cleveland, Moore, Iredell, Cumberland, Rowan, Union, New Hanover, Brunswick, Craven, Henderson. Not used: Wayne (source unconfirmed as official) and Onslow (expired TLS certificate).
+- **Direct (9):** Spatialest record cards, each checked in a real browser on 3 parcels (owner and street matched): Alamance 1 (alt_key), Orange 135 (parcel_id, decimal suffixes work), Pitt 147 (alt_key WITHOUT leading zeros, otherwise "not found"), Henderson 89 (alt_key); plus Wake 183 (alt_key = REID), Buncombe 21 (parcel_id), Durham 63 and Randolph 151 (alt_key = REID), Gaston 71 (alt_key; year segment 2026). Each was fetched against 3 real parcels and the owner and address matched our data. Builders return null on an unusable ID.
+- **Search page + copied ID (7):** Anson (added at the owner's request), Mecklenburg, Cabarrus, Catawba, Robeson, Carteret, Harnett. The county's official lookup opens and the app copies the ID. These sites are JS or form-based, so a deep link was not verified.
+- **Not listed (need a browser check):** Guilford, Forsyth, Johnston, Davidson, Cleveland, Moore, Iredell, Cumberland, Rowan, Union, New Hanover, Brunswick, Craven. Not used: Wayne (source unconfirmed as official) and Onslow (expired TLS certificate).
 - Wake's link uses the legacy `services.wake.gov/realestate` path because the newer TaxPortal was down during testing. Re-test it periodically.
 - Tests: `npx tsx scripts/ai/test-nc-links.ts`.

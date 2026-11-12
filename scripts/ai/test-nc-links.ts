@@ -15,6 +15,13 @@ eq('Randolph direct', ncCountyLink(151, { alt_key: '13405' })?.url, 'https://txp
 eq('Gaston direct', ncCountyLink(71, { alt_key: '203529' })?.url, 'https://gastonnc.devnetwedge.com/parcel/view/203529/2026');
 eq('Alamance direct (alt_key = Parcel ID No. on the county page)', ncCountyLink(1, { parcel_id: '8863806901', alt_key: '120399' })?.url, 'https://property.spatialest.com/nc/alamance#/property/120399');
 eq('Alamance non-numeric alt_key -> null', ncCountyLink(1, { parcel_id: '8863806901', alt_key: 'A-12' }), null);
+eq('Orange direct (parcel_id)', ncCountyLink(135, { parcel_id: '9778568572', alt_key: null })?.url, 'https://property.spatialest.com/nc/orange#/property/9778568572');
+eq('Orange direct keeps a decimal suffix', ncCountyLink(135, { parcel_id: '9778540436.103' })?.url, 'https://property.spatialest.com/nc/orange#/property/9778540436.103');
+eq('Orange rejects junk', ncCountyLink(135, { parcel_id: '97785/../x' }), null);
+eq('Pitt direct drops leading zeros', ncCountyLink(147, { parcel_id: '4672073353', alt_key: '05533' })?.url, 'https://property.spatialest.com/nc/pitt#/property/5533');
+eq('Pitt direct (no zero)', ncCountyLink(147, { alt_key: '29423' })?.url, 'https://property.spatialest.com/nc/pitt#/property/29423');
+eq('Pitt zero/blank -> null', [ncCountyLink(147, { alt_key: '00000' }), ncCountyLink(147, { alt_key: '' })], [null, null]);
+eq('Henderson direct', ncCountyLink(89, { parcel_id: '9653139532', alt_key: '10009631' })?.url, 'https://property.spatialest.com/nc/henderson#/property/10009631');
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
