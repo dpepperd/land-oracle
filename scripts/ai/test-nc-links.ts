@@ -90,6 +90,8 @@ eq('Pamlico copies the 13-digit PIN', ncCountyLink(137, { parcel_id: '6467748349
 eq('Pamlico untested shapes -> null', [ncCountyLink(137, { parcel_id: '646774834900' }), ncCountyLink(137, { parcel_id: 'OID123' })], [null, null]);
 eq('Northampton copies the dashed PIN', ncCountyLink(131, { parcel_id: '4000-29-9911' })?.copy, '4000-29-9911');
 eq('Northampton placeholder ids -> null', ncCountyLink(131, { parcel_id: 'OID123' }), null);
+eq('Nash copies the 6-digit parcel id', ncCountyLink(127, { parcel_id: '019794', alt_key: '386217106898' })?.copy, '019794');
+eq('Nash placeholder ids -> null', ncCountyLink(127, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
