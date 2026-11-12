@@ -218,6 +218,7 @@ export async function POST(request: Request) {
         p.acreage, p.dor_uc as land_use, COALESCE(p.phy_addr1, p.own_addr1) as property_address, p.jv as market_value,
         p.sale_prc1, p.sale1_date, p.sale_prc2, p.sale2_date, p.sale_prc3, p.sale3_date, p.living_area_sqft, p.year_built,
         (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
+        (p.has_geom IS TRUE) as has_outline,
         ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
         ST_Y(ST_PointOnSurface(p.geom)) as flood_lat, ST_X(ST_PointOnSurface(p.geom)) as flood_lon,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,

@@ -36,6 +36,11 @@ export default function ResultsList({
           <p className="text-sm text-theme-secondary">
             {isLoading ? 'Searching...' : `${totalCount} parcels found`}
           </p>
+          {!isLoading && parcels.some((p) => p.has_outline === false) && (
+            <p className="text-xs text-theme-secondary mt-0.5">
+              {parcels.filter((p) => p.has_outline !== false).length} of {parcels.length} shown on the map; the rest have no map outline yet
+            </p>
+          )}
         </div>
         {userTier === 'demo' ? (
            <>

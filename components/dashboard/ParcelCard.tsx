@@ -21,6 +21,7 @@ interface Parcel {
   is_absentee?: boolean;
   out_of_state?: boolean;
   sale1_date?: string | null;
+  has_outline?: boolean;
 }
 
 interface ParcelCardProps {
@@ -90,6 +91,12 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
           {parcel.is_absentee && !parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Absentee</span>}
           {parcel.sale1_date === null && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">No sale on record</span>}
         </div>
+      )}
+
+      {parcel.has_outline === false && (
+        <span className="mt-2 inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium" title="The county map file has no outline for this parcel yet. It is still in your results and exports.">
+          No map outline
+        </span>
       )}
 
       <div className="mt-3 flex items-center justify-between">
