@@ -78,6 +78,8 @@ eq('Rockingham copies the 12-digit PIN', ncCountyLink(157, { parcel_id: '7081005
 eq('Rockingham placeholder ids -> null', ncCountyLink(157, { parcel_id: 'OID123' }), null);
 eq('Richmond copies the 12-digit PIN', ncCountyLink(153, { parcel_id: '747002971692' })?.copy, '747002971692');
 eq('Richmond placeholder ids -> null', ncCountyLink(153, { parcel_id: 'OID123' }), null);
+eq('Polk copies the parcel id as stored', [ncCountyLink(149, { parcel_id: 'P48-125' })?.copy, ncCountyLink(149, { parcel_id: 'P125-45' })?.copy], ['P48-125', 'P125-45']);
+eq('Polk placeholder ids -> null', ncCountyLink(149, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

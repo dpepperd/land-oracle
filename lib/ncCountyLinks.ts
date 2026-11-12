@@ -119,6 +119,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Richmond: county GIS viewer (supplied by the owner); click "Accept and close", paste the 12-digit PIN into "Parcel Number", press Enter twice (once to
   // list the suggestion, once to run it) (1 parcel checked)
   153: { kind: 'search', label: 'Richmond County GIS (accept, paste into Parcel Number, press Enter twice)', url: 'https://gis.richmondnc.com/maps/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Polk: county Tax Search page (supplied by the owner; the form is embedded from cms.revize.com): set "Search By" to "Parcel #", pick a tax year, paste our
+  // parcel id as is (e.g. P48-125) and search (1 parcel checked). It is a tax-bill search (bills, not a record card).
+  149: { kind: 'search', label: 'Polk County Tax Search (Search By "Parcel #", pick a tax year, paste)', url: 'https://www.polknc.gov/tax_search/', copy: 'parcel_id', pick: p => (/^[A-Z]\d{2,3}-\d{2,3}[A-Z]?$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
