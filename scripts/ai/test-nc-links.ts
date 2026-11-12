@@ -1,5 +1,5 @@
 // Unit checks for lib/ncCountyLinks.ts (pure, no network). Run: npx tsx scripts/ai/test-nc-links.ts
-import { ncCountyLink, NC_LINKS } from '../../lib/ncCountyLinks';
+import { ncCountyLink, ncLinkNotice, NC_LINKS } from '../../lib/ncCountyLinks';
 
 let fail = 0;
 const eq = (name: string, got: unknown, want: unknown) => {
@@ -174,6 +174,9 @@ eq('Avery copies the 12-digit PIN', ncCountyLink(11, { parcel_id: '184512852445'
 eq('Avery placeholder ids -> null', ncCountyLink(11, { parcel_id: 'OID123' }), null);
 eq('Ashe copies the 12-digit parcel number', ncCountyLink(9, { parcel_id: '022060307019', alt_key: '02219120' })?.copy, '022060307019');
 eq('Ashe placeholder ids -> null', ncCountyLink(9, { parcel_id: 'OID123' }), null);
+const jo = ncCountyLink(101, { parcel_id: '165915-63-1164', owner_name: 'KS BANK INC' })!;
+eq('notice for a paste-in county says what was copied and what to do', [/KS BANK INC/.test(ncLinkNotice(jo)), /clipboard/.test(ncLinkNotice(jo)), /Submit/.test(ncLinkNotice(jo)), /Paste/.test(ncLinkNotice(jo))], [true, true, true, true]);
+eq('notice for a direct county says it opens the record', /opens that parcel's record/.test(ncLinkNotice(ncCountyLink(183, { alt_key: '0295458' })!)), true);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

@@ -253,4 +253,12 @@ export function ncCountyLink(coNo: number | null | undefined, p: NcLinkInput): N
   return copy ? { url: e.url, kind: 'search', copy, label: e.label } : null;
 }
 
+/** The text shown in the "Leaving Land Oracle" box for an NC parcel: what was copied and what to do on the county's site. */
+export function ncLinkNotice(link: NcLink): string {
+  if (link.kind === 'search' && link.copy) {
+    return `We copied "${link.copy}" to your clipboard. This county's site has no direct link, so on the next page: ${link.label}.\n\nPaste (Ctrl+V) what we copied where the label says, then search.`;
+  }
+  return `This opens that parcel's record on the ${link.label}.`;
+}
+
 export { digits as _digits };

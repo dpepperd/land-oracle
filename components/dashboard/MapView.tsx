@@ -24,7 +24,7 @@ import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { STATE_VIEW, type SearchState } from '@/lib/searchState';
 import { NC_CREDIT } from '@/lib/ncStates';
-import { ncCountyLink } from '@/lib/ncCountyLinks';
+import { ncCountyLink, ncLinkNotice } from '@/lib/ncCountyLinks';
 
 // Traffic Styles
 const trafficLayer: any = {
@@ -365,7 +365,7 @@ export default function MapView({
       })),
   }), [geojson]);
 
-  const [externalLink, setExternalLink] = useState<{ url: string; county: string; id?: string; landUse?: string } | null>(null);
+  const [externalLink, setExternalLink] = useState<{ url: string; county: string; id?: string; landUse?: string; ncNote?: string } | null>(null);
 
   // Auto-zoom to Results
   useEffect(() => {
@@ -768,7 +768,13 @@ export default function MapView({
                                navigator.clipboard.writeText(val).catch(() => {});
                                
                                const url = appraiserUrl(popupInfo.properties);
-                               if (url) setExternalLink({ url, county: popupInfo.properties.county, id: val, landUse: popupInfo.properties.land_use });
+                               // North Carolina: tell the user what was copied and what to do on the county's site (the link's label holds the steps)
+                               let ncNote: string | undefined;
+                               if (popupInfo.properties.state === 'NC') {
+                                 const nl = ncCountyLink(popupInfo.properties.co_no, popupInfo.properties);
+                                 if (nl) ncNote = ncLinkNotice(nl);
+                               }
+                               if (url) setExternalLink({ url, county: popupInfo.properties.county, id: val, landUse: popupInfo.properties.land_use, ncNote });
                             }
                      }}
                      className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 focus:outline-none"
@@ -1239,7 +1245,9 @@ export default function MapView({
         }}
         title="Leaving Land Oracle"
         message={
-            (externalLink?.county?.toLowerCase() === 'citrus')
+            externalLink?.ncNote
+            ? externalLink.ncNote
+            : (externalLink?.county?.toLowerCase() === 'citrus')
             ? (() => {
                 // Determine Search Group based on Land Use
                 let group = "Residential";
