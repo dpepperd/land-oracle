@@ -104,6 +104,8 @@ eq('McDowell copies the 12-digit parcel number', ncCountyLink(111, { parcel_id: 
 eq('McDowell odd ids -> null', [ncCountyLink(111, { parcel_id: 'OID123' }), ncCountyLink(111, { parcel_id: 'ABCDEFGH' })], [null, null]);
 eq('Lincoln direct Spatialest card (alt_key)', ncCountyLink(109, { parcel_id: '2676713120', alt_key: '102655' })?.url, 'https://property.spatialest.com/nc/lincoln#/property/102655');
 eq('Lincoln without alt_key -> null', ncCountyLink(109, { parcel_id: '2676713120', alt_key: null }), null);
+eq('Lenoir direct Spatialest card (alt_key)', ncCountyLink(107, { parcel_id: '4514-85-7993', alt_key: '18105' })?.url, 'https://property.spatialest.com/nc/lenoir#/property/18105');
+eq('Lenoir without alt_key -> null', ncCountyLink(107, { parcel_id: '4514-85-7993', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
