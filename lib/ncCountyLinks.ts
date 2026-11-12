@@ -93,6 +93,12 @@ export const NC_LINKS: Record<number, Entry> = {
   181: { kind: 'search', label: 'Vance County Parcel Viewer (click I agree, paste in the search box, pick Tax Parcels)', url: 'https://www.arcgis.com/apps/instant/sidebar/index.html?appid=b784ca1b2bd1462bbd4d7d0b01c4fcc9', copy: 'parcel_id', pick: p => (/^\d{4}[A-Z ]\d{5}[A-Z]?$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Tyrrell: county ArcGIS parcel viewer (supplied by the owner); tick the agreement + OK, paste the 10-digit PIN into the search box, press Enter (1 parcel checked)
   177: { kind: 'search', label: 'Tyrrell County Parcel Viewer (agree, paste the PIN in the search box, Enter)', url: 'https://www.arcgis.com/apps/webappviewer/index.html?id=1c2493cb8eb1484eb1ecc571131f5ee6', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Transylvania: ITS Basic Search (supplied by the owner). Choose "Parcel Number", Next, click the FIRST box and type the 13 digits (the 8 boxes
+  // 4-2-4-3-1-1-1-1 auto-advance; typing works, a paste into the first box may not). Our PIN without dashes fills them correctly (2 parcels checked).
+  175: { kind: 'search', label: 'Transylvania County Property (choose Parcel Number, type the digits into the first box)', url: 'https://tax.transylvaniacounty.org/', copy: 'parcel_id', pick: p => { const m = /^(\d{4})-(\d{2})-(\d{4})-(\d{3})$/.exec(p.parcel_id ?? ''); return m ? m.slice(1).join('') : null; } },
+  // Swain: county GIS viewer (supplied by the owner); click Accept, paste the 12-digit PIN (our alt_key; our parcel_id is a placeholder here) into
+  // "Enter Parcel Number" and press Enter (1 parcel checked). NOTE: the county's TAX page warns its parcel ids/amounts do not align with names; the GIS map did match.
+  173: { kind: 'search', label: 'Swain County GIS (accept, paste into Parcel Number, Enter; verify the owner)', url: 'https://maps.swaincountync.gov/gis/', copy: 'alt_key', pick: p => (/^\d{12}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
