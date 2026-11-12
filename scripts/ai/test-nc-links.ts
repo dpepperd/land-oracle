@@ -46,6 +46,10 @@ eq('Burke copies the 10-digit PIN', ncCountyLink(23, { parcel_id: '2723822620', 
 eq('Burke odd id -> null', ncCountyLink(23, { parcel_id: 'OID9' }), null);
 eq('Wilson quick-search link', ncCountyLink(195, { parcel_id: '3700-53-3238.000' })?.url, 'https://wilsonnc.devnetwedge.com/search/quick?q=3700-53-3238.000');
 eq('Wilson odd id -> null', [ncCountyLink(195, { parcel_id: 'ABC12345678' }), ncCountyLink(195, { parcel_id: '3700-53-3238.000&x=1' })], [null, null]);
+eq('Wilkes copies LAST, FIRST only', ncCountyLink(193, { parcel_id: '3855-70-6047', owner_name: 'HUFFMAN, LUKE GARRISON ETAL' })?.copy, 'HUFFMAN, LUKE');
+eq('Wilkes: a name with no comma keeps its first 3 words', ncCountyLink(193, { parcel_id: 'x', owner_name: 'GRACE BAPTIST CHURCH OF WILKESBORO' })?.copy, 'GRACE BAPTIST CHURCH');
+eq('Wilkes: "&" joint owners still use the first person', ncCountyLink(193, { parcel_id: 'x', owner_name: 'MATTESON, KAREN S & JOHN' })?.copy, 'MATTESON, KAREN');
+eq('Wilkes without owner -> null', ncCountyLink(193, { parcel_id: 'x', owner_name: '' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

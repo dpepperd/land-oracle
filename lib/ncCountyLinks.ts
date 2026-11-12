@@ -21,6 +21,14 @@ type Entry =
 
 const digits = (s: string | null | undefined) => (s ?? '').replace(/[^0-9A-Za-z]/g, '');
 
+/** For "starts with" owner searches (iasWorld): "HUFFMAN, LUKE GARRISON ETAL" -> "HUFFMAN, LUKE"; a name with no comma keeps its first 3 words. */
+export function ownerPrefix(name: string | null | undefined): string | null {
+  const n = (name ?? '').replace(/\s+/g, ' ').trim();
+  if (n.length < 3) return null;
+  const m = /^([^,]+),\s*([^\s,&;]+)/.exec(n);
+  return m ? `${m[1].trim()}, ${m[2]}` : n.split(' ').slice(0, 3).join(' ');
+}
+
 // Keyed by NC FIPS county code (co_no). Filled from tested research; see docs/nc-county-links.md.
 export const NC_LINKS: Record<number, Entry> = {
   // ---- direct: fetched against 3 real parcels each; owner and address matched our data ----
@@ -69,6 +77,9 @@ export const NC_LINKS: Record<number, Entry> = {
   101: { kind: 'search', label: 'Johnston County Property (paste the owner name, Submit, match the PIN ID#)', url: 'https://www.bttaxpayerportal.com/itspublicjo', copy: 'parcel_id', pick: p => { const n = (p.owner_name ?? '').trim(); return n.length >= 3 ? n : null; } },
   // Burke: county GIS viewer (supplied by the owner); click Accept on the disclaimer, paste the 10-digit PIN into "Enter PIN", press Enter (1 parcel checked)
   23: { kind: 'search', label: 'Burke County GIS (accept the disclaimer, paste into Enter PIN)', url: 'https://gis.burkenc.org/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Wilkes: iasWorld search (supplied by the owner). It has no PIN box and the PINs in our file differ from the county's for some parcels, so the OWNER's
+  // "LAST, FIRST" is copied (the site matches the start of the name); paste into "Owner Name", press Enter, pick the row with your address (3 parcels checked).
+  193: { kind: 'search', label: 'Wilkes County Property (paste the owner name, press Enter, match the address)', url: 'https://parcelinfo.wilkescounty.net/search/commonsearch.aspx?mode=realprop', copy: 'parcel_id', pick: p => ownerPrefix(p.owner_name) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
