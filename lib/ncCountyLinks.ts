@@ -224,6 +224,8 @@ export const NC_LINKS: Record<number, Entry> = {
   65: { kind: 'search', label: 'Edgecombe County GIS (accept, paste into Parcel PIN, press Enter twice)', url: 'https://gis.edgecombecountync.gov/maps/default.htm', copy: 'alt_key', pick: p => (/^\d{10}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   // Duplin: county GIS (supplied by the owner); click Accept, paste the 12-digit PIN (our parcel_id) into the first "Enter Search String" box, Enter (1 parcel checked: owner and address matched; Parcel # 01-2089 shown)
   61: { kind: 'search', label: 'Duplin County GIS (accept, paste the PIN into Enter Search String, Enter)', url: 'https://gis.duplinnc.gov/maps/default.htm', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Davie: Avineon viewer (supplied by the owner); click "Accept and close", paste the 10-digit PIN (our parcel_id) into "Parcel Number", press Enter twice (1 parcel checked; County ID shown = our alt_key)
+  59: { kind: 'search', label: 'Davie County GIS (accept, paste into Parcel Number, press Enter twice)', url: 'https://gis.daviecountync.gov/daviegis/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

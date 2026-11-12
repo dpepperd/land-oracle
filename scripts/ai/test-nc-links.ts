@@ -168,6 +168,8 @@ eq('Edgecombe copies the undashed 10-digit PIN (alt_key)', ncCountyLink(65, { pa
 eq('Edgecombe without that alt_key -> null', ncCountyLink(65, { parcel_id: '4747-28-4042', alt_key: null }), null);
 eq('Duplin copies the 12-digit PIN', ncCountyLink(61, { parcel_id: '246516749857' })?.copy, '246516749857');
 eq('Duplin placeholder ids -> null', ncCountyLink(61, { parcel_id: 'OID123' }), null);
+eq('Davie copies the 10-digit PIN', ncCountyLink(59, { parcel_id: '5852505229', alt_key: 'D60000002302' })?.copy, '5852505229');
+eq('Davie dashed/odd ids -> null', [ncCountyLink(59, { parcel_id: '5852-50-5229' }), ncCountyLink(59, { parcel_id: 'OID123' })], [null, null]);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
