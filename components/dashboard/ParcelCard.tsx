@@ -22,6 +22,8 @@ interface Parcel {
   out_of_state?: boolean;
   sale1_date?: string | null;
   has_outline?: boolean;
+  state?: string;
+  likely_vacant?: boolean;
 }
 
 interface ParcelCardProps {
@@ -61,7 +63,7 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
           </h3>
           <p className="text-xs text-theme-secondary flex items-center gap-1 mt-1">
             <MapPin className="w-3 h-3" />
-            {parcel.county} County
+            {parcel.county} County{parcel.state === 'NC' ? ', NC' : ''}
           </p>
           {parcel.property_address && (
             <p className="text-xs text-theme-secondary flex items-center gap-1 mt-1 font-medium pb-1">
@@ -85,11 +87,12 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
           </span>
         ) : null;
       })()}
-      {(parcel.is_absentee || parcel.out_of_state || parcel.sale1_date === null) && (
+      {(parcel.is_absentee || parcel.out_of_state || parcel.likely_vacant || (parcel.state !== 'NC' && parcel.sale1_date === null)) && (
         <div className="mt-2 flex flex-wrap gap-1">
           {parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Out of state</span>}
           {parcel.is_absentee && !parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Absentee</span>}
-          {parcel.sale1_date === null && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">No sale on record</span>}
+          {parcel.likely_vacant && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium">Likely vacant</span>}
+          {parcel.state !== 'NC' && parcel.sale1_date === null && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">No sale on record</span>}
         </div>
       )}
 

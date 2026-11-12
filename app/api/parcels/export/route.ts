@@ -36,6 +36,11 @@ export async function POST(request: Request) {
     const rawBody = await request.json();
     const body = exportSchema.parse(rawBody);
 
+    // CSV export for other states is not built yet: refuse clearly instead of exporting Florida data for a North Carolina search.
+    if (body.state && body.state !== 'FL') {
+      return NextResponse.json({ error: 'state_export_not_available', message: 'CSV export for this state is not available yet.' }, { status: 400 });
+    }
+
     const { 
       counties, 
       landUse,

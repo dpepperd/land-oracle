@@ -1,0 +1,57 @@
+// North Carolina county property-record links (admin pilot). Client-safe, no database.
+// Rule: a county is listed here ONLY if its link was tested against real parcels (or, for search pages, the page was confirmed
+// to be the county's official lookup). No guessed URLs. A county with no entry shows plain text for the parcel ID.
+//
+//   direct: opens that parcel's record. `build` returns null when the ID is missing or in a shape the county site cannot use.
+//   search: opens the county's search page and the app copies the parcel ID for the user to paste (like Florida's "manual search" counties).
+
+export interface NcLinkInput { parcel_id?: string | null; alt_key?: string | null }
+export interface NcLink {
+  url: string;
+  kind: 'direct' | 'search';
+  /** Value the app copies to the clipboard (search pages only). */
+  copy?: string;
+  /** Short label for the tooltip, e.g. "Wake County Real Estate". */
+  label: string;
+}
+
+type Entry =
+  | { kind: 'direct'; label: string; build: (p: NcLinkInput) => string | null }
+  | { kind: 'search'; label: string; url: string; copy: 'parcel_id' | 'alt_key' };
+
+const digits = (s: string | null | undefined) => (s ?? '').replace(/[^0-9A-Za-z]/g, '');
+
+// Keyed by NC FIPS county code (co_no). Filled from tested research; see docs/nc-county-links.md.
+export const NC_LINKS: Record<number, Entry> = {
+  // ---- direct: fetched against 3 real parcels each; owner and address matched our data ----
+  183: { kind: 'direct', label: 'Wake County Real Estate', build: p => (p.alt_key && /^\d{4,8}$/.test(p.alt_key) ? `https://services.wake.gov/realestate/Account.asp?id=${p.alt_key}` : null) },
+  21: { kind: 'direct', label: 'Buncombe County Tax', build: p => (p.parcel_id && /^\d{10,15}$/.test(p.parcel_id) ? `https://tax.buncombenc.gov/Parcel/Details/${p.parcel_id}` : null) },
+  63: { kind: 'direct', label: 'Durham County Property', build: p => (p.alt_key && /^\d{3,8}$/.test(p.alt_key) ? `https://taxcama.dconc.gov/camapwa/PropertySummary.aspx?REID=${p.alt_key}` : null) },
+  151: { kind: 'direct', label: 'Randolph County Property', build: p => (p.alt_key && /^\d{3,8}$/.test(p.alt_key) ? `https://txpwa.randolphcountync.gov/camapwa/PropertySummary.aspx?REID=${p.alt_key}` : null) },
+  71: { kind: 'direct', label: 'Gaston County Tax', build: p => (p.alt_key && /^\d{3,8}$/.test(p.alt_key) ? `https://gastonnc.devnetwedge.com/parcel/view/${p.alt_key}/2026` : null) },
+
+  // ---- search: the county's own lookup page (linked from the county website); the parcel ID is copied for pasting ----
+  119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
+  25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
+  35: { kind: 'search', label: 'Catawba County Parcels', url: 'https://gis.catawbacountync.gov/parcel/', copy: 'parcel_id' },
+  135: { kind: 'search', label: 'Orange County Property', url: 'https://property.spatialest.com/nc/orange/', copy: 'parcel_id' },
+  147: { kind: 'search', label: 'Pitt County Property', url: 'https://property.spatialest.com/nc/pitt', copy: 'parcel_id' },
+  155: { kind: 'search', label: 'Robeson County Tax', url: 'https://www.ustaxdata.com/nc/robeson/robesonSearch.cfm', copy: 'parcel_id' },
+  31: { kind: 'search', label: 'Carteret County Tax', url: 'https://bttaxpayerportal.com/ITSPublicCE', copy: 'parcel_id' },
+  85: { kind: 'search', label: 'Harnett County GIS', url: 'https://gis.harnett.org/gisviewer/', copy: 'parcel_id' },
+};
+
+/** Link for a North Carolina parcel, or null when the county has no verified link or the ID is unusable. */
+export function ncCountyLink(coNo: number | null | undefined, p: NcLinkInput): NcLink | null {
+  if (!coNo) return null;
+  const e = NC_LINKS[coNo];
+  if (!e) return null;
+  if (e.kind === 'direct') {
+    const url = e.build(p);
+    return url ? { url, kind: 'direct', label: e.label } : null;
+  }
+  const copy = (e.copy === 'alt_key' ? p.alt_key : p.parcel_id) ?? '';
+  return copy ? { url: e.url, kind: 'search', copy, label: e.label } : null;
+}
+
+export { digits as _digits };

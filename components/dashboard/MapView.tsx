@@ -22,6 +22,9 @@ import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
 import { useFlood, requestFlood } from '@/lib/floodClient';
 import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { STATE_VIEW, type SearchState } from '@/lib/searchState';
+import { NC_CREDIT } from '@/lib/ncStates';
+import { ncCountyLink } from '@/lib/ncCountyLinks';
 
 // Traffic Styles
 const trafficLayer: any = {
@@ -87,6 +90,8 @@ interface MapViewProps {
   onSearchArea?: (bounds: number[], shape?: any) => void;
   /** Increments when the sidebar's Clear All / Reset cleared the search area: drop the drawn outline too. */
   clearShapeSignal?: number;
+  /** Which state the dashboard is searching; the map flies there when it changes and hides Florida-only county lines in NC. */
+  focusState?: SearchState;
 }
 
 // Layer Styles
@@ -217,7 +222,8 @@ export default function MapView({
   userTier = 'demo',
   onUpsell,
   onSearchArea,
-  clearShapeSignal = 0
+  clearShapeSignal = 0,
+  focusState = 'FL'
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const { theme } = useTheme();
@@ -331,6 +337,15 @@ export default function MapView({
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPoints, setDrawPoints] = useState<any[]>([]);
   useEffect(() => { if (clearShapeSignal > 0) { setDrawPoints([]); setIsDrawing(false); } }, [clearShapeSignal]);
+  // Fly to the chosen state when it changes (not on first load, which keeps the existing Florida start)
+  // County appraiser link: Florida only for now (never reuse a Florida county's link for a North Carolina parcel with the same county name)
+  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : getPropertyAppraiserUrl(p.county, p.parcel_id));
+  const firstFocus = useRef(true);
+  useEffect(() => {
+    if (firstFocus.current) { firstFocus.current = false; return; }
+    const [lng, lat, zoom] = STATE_VIEW[focusState];
+    mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 });
+  }, [focusState]);
   const [isShapeVisible, setIsShapeVisible] = useState(true);
 
   // Admin Edit State
@@ -634,7 +649,7 @@ export default function MapView({
           <Layer {...parcelDotLayer} />
         </Source>
 
-        {showBoundaries && (
+        {showBoundaries && focusState === 'FL' && (
             <Source
                 id="fl-counties"
                 type="geojson"
@@ -722,7 +737,7 @@ export default function MapView({
 
                <span className="font-bold text-gray-900">Parcel ID:</span>
                <span>
-                 {getPropertyAppraiserUrl(popupInfo.properties.county, popupInfo.properties.parcel_id) ? (
+                 {appraiserUrl(popupInfo.properties) ? (
                    <button 
                      onClick={(e) => {
                          e.preventDefault();
@@ -731,6 +746,8 @@ export default function MapView({
                             // Auto-copy ID
                             if (popupInfo.properties.parcel_id) {
                                let val = popupInfo.properties.parcel_id;
+                               // North Carolina search-page counties: copy the ID that county's site expects
+                               if (popupInfo.properties.state === 'NC') { const nl = ncCountyLink(popupInfo.properties.co_no, popupInfo.properties); if (nl?.copy) val = nl.copy; }
                                // Pinellas Search requires 01-30-14... (S-T-R) not 14-30-01... (R-T-S)
                                if (popupInfo.properties.county === 'Pinellas') {
                                    const p = val.trim().replace(/\s+/g, '-').split('-');
@@ -748,7 +765,7 @@ export default function MapView({
                                console.log(`[Debug] ${popupInfo.properties.county} ID:`, val);
                                navigator.clipboard.writeText(val).catch(() => {});
                                
-                               const url = getPropertyAppraiserUrl(popupInfo.properties.county, popupInfo.properties.parcel_id);
+                               const url = appraiserUrl(popupInfo.properties);
                                if (url) setExternalLink({ url, county: popupInfo.properties.county, id: val, landUse: popupInfo.properties.land_use });
                             }
                      }}
@@ -772,13 +789,13 @@ export default function MapView({
                </span>
                
                <span className="font-bold text-gray-900">Acres:</span>
-               <span>{Number(popupInfo.properties.acreage).toFixed(2)}</span>
+               <span>{Number(popupInfo.properties.acreage).toFixed(2)}{popupInfo.properties.acreage_source === 'shape' && <span className="text-gray-400"> (from map shape)</span>}</span>
                
                <span className="font-bold text-gray-900">Land Use:</span>
                <span>{popupInfo.properties.land_use || 'N/A'}</span>
                
                <span className="font-bold text-gray-900">Property Value:</span>
-               <span>${Number(popupInfo.properties.market_value).toLocaleString()}</span>
+               <span>{popupInfo.properties.state === 'NC' && !popupInfo.properties.market_value ? 'N/A' : `$${Number(popupInfo.properties.market_value).toLocaleString()}`}</span>
              </div>
 
              {(() => {
@@ -810,8 +827,14 @@ export default function MapView({
                    </div>
                  );
                })}
-               {!popupInfo.properties.sale_prc1 && <div className="text-gray-400 text-xs">No qualified sale on record</div>}
+               {popupInfo.properties.state === 'NC'
+                 ? (popupInfo.properties.sale1_date
+                     ? <div className="text-gray-600 text-xs">Last sale date: {new Date(popupInfo.properties.sale1_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })} <span className="text-gray-400">(price not in NC data)</span></div>
+                     : <div className="text-gray-400 text-xs">No sale date on record</div>)
+                 : (!popupInfo.properties.sale_prc1 && <div className="text-gray-400 text-xs">No qualified sale on record</div>)}
              </div>
+
+             {popupInfo.properties.state === 'NC' && <div className="mt-2 text-[10px] text-gray-400 leading-snug">{NC_CREDIT}</div>}
 
              <div className="mt-3">
                <div className="font-bold text-gray-900 text-xs mb-0.5 max-w-[250px] truncate">Owner: <span className="font-normal uppercase">{popupInfo.properties.owner_name}</span></div>

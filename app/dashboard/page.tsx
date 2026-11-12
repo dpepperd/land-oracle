@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { uiTier } from '@/lib/tierAccess';
 import { withArea, stripArea, type SearchArea } from '@/lib/searchArea';
+import { buildSearchBody, freshFilters, type SearchState } from '@/lib/searchState';
+import { NC_CREDIT } from '@/lib/ncStates';
 import { useAuth } from "@clerk/nextjs";
 import Header from "@/components/dashboard/Header";
 import FilterSidebar from "@/components/dashboard/FilterSidebar";
@@ -27,6 +29,8 @@ export default function Dashboard() {
 
   // The drawn search area lives in its own state so changing/applying sidebar filters can never drop it.
   const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
+  // Florida is the live product; North Carolina is an admin-only pilot (the state picker only shows for admins).
+  const [searchState, setSearchState] = useState<SearchState>('FL');
   const [clearShapeSignal, setClearShapeSignal] = useState(0);
   const areaFilters = useMemo(() => withArea(filters, searchArea), [filters, searchArea]);
 
@@ -90,7 +94,7 @@ export default function Dashboard() {
       const res = await fetch('/api/parcels/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(withArea(filters, searchArea)),
+        body: JSON.stringify(buildSearchBody(filters, searchArea, searchState)),
         signal: controller.signal
       });
       const data = await res.json();
@@ -98,7 +102,7 @@ export default function Dashboard() {
       
       if (data.error) {
         console.error('Search error:', data.error);
-        setSearchError(data.error || 'Search failed. Please try again.');
+        setSearchError(data.message || data.error || 'Search failed. Please try again.');
         setParcels([]);
         setGeojson({ type: 'FeatureCollection', features: [] });
         setTotalCount(0);
@@ -138,7 +142,7 @@ export default function Dashboard() {
         abortControllerRef.current = null;
       }
     }
-  }, [filters, searchArea]);
+  }, [filters, searchArea, searchState]);
 
   // Debounce effect? Or simple effect.
   useEffect(() => {
@@ -180,7 +184,23 @@ export default function Dashboard() {
     return () => window.removeEventListener('landoracle:show-parcels', onShow);
   }, [isLoaded, showAiParcels]);
 
+  // Switching state starts clean: filters, drawn area, outline on the map, results and popups are all cleared.
+  const handleStateChange = (next: SearchState) => {
+    abortControllerRef.current?.abort();
+    setSearchState(next);
+    setFilters(freshFilters() as any);
+    setSearchArea(null);
+    setClearShapeSignal((n) => n + 1);
+    setAiResults(null);
+    setPopupInfo(null);
+    setParcels([]);
+    setGeojson({ type: 'FeatureCollection', features: [] });
+    setTotalCount(0);
+    setSearchError(null);
+  };
+
   const handleExport = async () => {
+    if (searchState === 'NC') { alert('CSV export for North Carolina is not available yet.'); return; }
     // While the AI Analyst's parcels are on screen, export exactly those parcels (not the last filter search).
     const exportingAi = !!aiResults;
     try {
@@ -282,6 +302,10 @@ export default function Dashboard() {
         </div>
       )}
       
+      {searchState === 'NC' && (
+        <div className="bg-blue-900 text-blue-50 px-6 py-1.5 text-xs">North Carolina pilot (admins only). {NC_CREDIT}</div>
+      )}
+
       {!aiResults && totalCount > 0 && !(filters as any).counties?.length && !searchArea && !(filters as any).parcelId && !(filters as any).address && (
         <div className="bg-amber-100 text-amber-900 px-6 py-2 shadow text-sm">
           No county or drawn area is selected, so this shows the first {totalCount.toLocaleString()} matches across the whole state. Pick a county or draw an area to narrow it down.
@@ -311,6 +335,9 @@ export default function Dashboard() {
         `}>
           <FilterSidebar 
             initialFilters={areaFilters}
+            searchState={searchState}
+            onStateChange={handleStateChange}
+            isAdmin={userRole === 'admin'}
             onFilterChange={(f: any) => setFilters(stripArea(f))}
             onClearArea={() => { setSearchArea(null); setClearShapeSignal((n) => n + 1); }}
             userTier={userTier}
@@ -341,6 +368,7 @@ export default function Dashboard() {
               userTier={userTier}
               onUpsell={() => setShowUpsell(true)}
               clearShapeSignal={clearShapeSignal}
+              focusState={searchState}
               onSearchArea={(bounds, shape) => {
                   if (shape) setSearchArea({ shape, bounds: [bounds[0], bounds[1], bounds[2], bounds[3]] });
                   else setSearchArea(null); // Clear Shape
