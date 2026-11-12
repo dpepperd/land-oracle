@@ -47,6 +47,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Wilson: DEVNET wEdge (same vendor as Gaston) but its record address needs an internal id; the site's quick-search address takes our PIN
   // as is and shows a one-row result (3 parcels checked). Click the number in the row for the record.
   195: { kind: 'direct', label: 'Wilson County Property Tax Inquiry (search result for this PIN)', build: p => (p.parcel_id && /^\d{4}-\d{2}-\d{4}\.\d{3}$/.test(p.parcel_id) ? `https://wilsonnc.devnetwedge.com/search/quick?q=${p.parcel_id}` : null) },
+  // Wayne: ITSNet "Basic Search" (supplied by the owner); its results page takes the parcel in the address, like Iredell (3 parcels checked)
+  191: { kind: 'direct', label: 'Wayne County Property (results for this parcel)', build: p => (p.parcel_id && /^\d{10}$/.test(p.parcel_id) ? `https://realestate.waynegov.com/ITSNet/SearchResults.aspx?field=parcel&parcel=${p.parcel_id}&order=Owner%20Name` : null) },
   // Spatialest record cards (same site as Alamance); which of our IDs the card uses differs by county
   135: { kind: 'direct', label: 'Orange County Property', build: p => (p.parcel_id && /^\d{10}(\.\d{1,4})?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/orange#/property/${p.parcel_id}` : null) },
   // Pitt's card id is the county parcel number WITHOUT leading zeros (alt_key 05533 -> 5533; with the zero the county shows "not found")

@@ -50,6 +50,8 @@ eq('Wilkes copies LAST, FIRST only', ncCountyLink(193, { parcel_id: '3855-70-604
 eq('Wilkes: a name with no comma keeps its first 3 words', ncCountyLink(193, { parcel_id: 'x', owner_name: 'GRACE BAPTIST CHURCH OF WILKESBORO' })?.copy, 'GRACE BAPTIST CHURCH');
 eq('Wilkes: "&" joint owners still use the first person', ncCountyLink(193, { parcel_id: 'x', owner_name: 'MATTESON, KAREN S & JOHN' })?.copy, 'MATTESON, KAREN');
 eq('Wilkes without owner -> null', ncCountyLink(193, { parcel_id: 'x', owner_name: '' }), null);
+eq('Wayne results link', ncCountyLink(191, { parcel_id: '3632437226' })?.url, 'https://realestate.waynegov.com/ITSNet/SearchResults.aspx?field=parcel&parcel=3632437226&order=Owner%20Name');
+eq('Wayne junk id -> null', ncCountyLink(191, { parcel_id: '36324372xx' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
