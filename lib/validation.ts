@@ -24,6 +24,10 @@ const geoJsonFeatureSchema = z.object({
 }).passthrough(); // Allow additional properties like 'coordinates' at top level
 
 export const searchSchema = z.object({
+  /** State of the search. Missing means Florida (the live product). 'NC' is an admin-only pilot. */
+  state: z.enum(['FL', 'NC']).optional(),
+  /** North Carolina pilot: only parcels that look like vacant land (no building value or year). */
+  vacantOnly: z.boolean().optional(),
   counties: z.array(z.string()).optional(), 
   landUse: z.array(z.string()).optional(),
   ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),
@@ -53,6 +57,8 @@ export const searchSchema = z.object({
 });
 
 export const exportSchema = z.object({
+  /** Accepted only so a North Carolina request is refused clearly instead of silently exporting Florida data. */
+  state: z.enum(['FL', 'NC']).optional(),
   counties: z.array(z.string()).optional(),
   landUse: z.array(z.string()).optional(),
   ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),

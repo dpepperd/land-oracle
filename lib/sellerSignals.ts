@@ -8,14 +8,21 @@
  * A plain "address strings differ" test flags about 41% of Clay parcels (mostly formatting: "RD E" vs "E ... Rd");
  * this test flags about 33%. Needs both addresses on the roll, so parcels with no site address are never flagged.
  */
-export const ABSENTEE_SQL = `(
+/** Absentee test for a given "home" state (the owner is out of state when own_state differs from it). */
+export function absenteeSqlFor(homeState: string): string {
+  const home = homeState.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2); // letters only: this text goes into SQL
+  return `(
   nullif(btrim(p.own_addr1), '') IS NOT NULL AND nullif(btrim(p.phy_addr1), '') IS NOT NULL AND (
-    (p.own_state IS NOT NULL AND p.own_state <> 'FL')
+    (p.own_state IS NOT NULL AND p.own_state <> '${home}')
     OR left(btrim(p.own_zipcd::text), 5) <> left(btrim(p.phy_zipcd::text), 5)
     OR (substring(btrim(p.own_addr1) from '^[0-9]+') IS NOT NULL AND substring(btrim(p.phy_addr1) from '^[0-9]+') IS NOT NULL
         AND substring(btrim(p.own_addr1) from '^[0-9]+') <> substring(btrim(p.phy_addr1) from '^[0-9]+'))
   )
 )`;
+}
+
+/** Florida (the default state). Byte-for-byte the same text as before the helper existed. */
+export const ABSENTEE_SQL = absenteeSqlFor('FL');
 
 export interface SellerSignalFilters {
   absentee?: boolean;

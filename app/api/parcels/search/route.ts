@@ -7,6 +7,7 @@ import { getEntitlements } from '@/lib/entitlements';
 import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
 import { countyCode, countyName } from '@/lib/parcels/key';
 import { ABSENTEE_SQL, addSellerSignalConditions } from '@/lib/sellerSignals';
+import { searchNc } from '@/lib/ncSearch';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -41,6 +42,9 @@ export async function POST(request: Request) {
     console.log('[SPATIAL] Request received at:', new Date().toISOString());
     
     const body = searchSchema.parse(rawBody);
+
+    // North Carolina pilot (admin-only) has its own code path; everything below is Florida and is unchanged.
+    if (body.state === 'NC') return await searchNc(body, userId);
     
     // Deconstruct body
     const { 
