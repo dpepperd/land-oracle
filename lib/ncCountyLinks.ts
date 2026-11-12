@@ -65,6 +65,8 @@ export const NC_LINKS: Record<number, Entry> = {
   109: { kind: 'direct', label: 'Lincoln County Property', build: p => (p.alt_key && /^\d{3,7}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/lincoln#/property/${p.alt_key}` : null) },
   // Lenoir: Spatialest record card (found by the vendor research; the owner sent the county's ArcGIS viewer, the direct link is better); alt_key is the card number (3 parcels checked)
   107: { kind: 'direct', label: 'Lenoir County Property', build: p => (p.alt_key && /^\d{3,7}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/lenoir#/property/${p.alt_key}` : null) },
+  // Dare: Spatialest record card (found by the vendor research; the owner also sent the county map site); alt_key is the card number (3 parcels checked)
+  55: { kind: 'direct', label: 'Dare County Property', build: p => (p.alt_key && /^\d{6,10}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/dare#/property/${p.alt_key}` : null) },
   89: { kind: 'direct', label: 'Henderson County Property', build: p => (p.alt_key && /^\d{5,10}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/henderson#/property/${p.alt_key}` : null) },
 
   // ---- search: the county's own lookup page (linked from the county website); the parcel ID is copied for pasting ----
