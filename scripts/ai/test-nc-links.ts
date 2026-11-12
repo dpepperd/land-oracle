@@ -74,6 +74,8 @@ eq('Scotland copies the parcel id as stored (space included)', [ncCountyLink(165
 eq('Scotland placeholder ids -> null', ncCountyLink(165, { parcel_id: 'OID123' }), null);
 eq('Rutherford copies the 6-7 digit parcel number', [ncCountyLink(161, { parcel_id: '1612285' })?.copy, ncCountyLink(161, { parcel_id: '161228' })?.copy], ['1612285', '161228']);
 eq('Rutherford placeholder ids -> null', ncCountyLink(161, { parcel_id: 'OID123' }), null);
+eq('Rockingham copies the 12-digit PIN', ncCountyLink(157, { parcel_id: '708100549880', alt_key: '183950' })?.copy, '708100549880');
+eq('Rockingham placeholder ids -> null', ncCountyLink(157, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
