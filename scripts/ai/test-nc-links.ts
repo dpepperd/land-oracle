@@ -116,6 +116,8 @@ eq('Jackson copies the dashed PIN', ncCountyLink(99, { parcel_id: '7641-75-9157'
 eq('Jackson odd ids -> null', [ncCountyLink(99, { parcel_id: 'RIDGE CREST' }), ncCountyLink(99, { parcel_id: 'OID123' })], [null, null]);
 eq('Hyde copies the 10-digit PIN', ncCountyLink(95, { parcel_id: '7654911163', alt_key: '3623' })?.copy, '7654911163');
 eq('Hyde placeholder ids -> null', ncCountyLink(95, { parcel_id: '9' }), null);
+eq('Hertford copies the dashed PIN from alt_key', ncCountyLink(91, { parcel_id: '6906762650000', alt_key: '6906-76-2650' })?.copy, '6906-76-2650');
+eq('Hertford without that alt_key -> null', ncCountyLink(91, { parcel_id: '6906762650000', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
