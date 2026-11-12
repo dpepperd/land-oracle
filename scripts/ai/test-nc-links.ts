@@ -98,6 +98,8 @@ eq('Martin copies the 7-digit parcel id', ncCountyLink(117, { parcel_id: '050381
 eq('Martin placeholder ids -> null', ncCountyLink(117, { parcel_id: 'OID123' }), null);
 eq('Madison copies the 10-digit PIN', ncCountyLink(115, { parcel_id: '9728655481' })?.copy, '9728655481');
 eq('Madison placeholder ids -> null', ncCountyLink(115, { parcel_id: 'OID123' }), null);
+eq('Macon direct property details', ncCountyLink(113, { parcel_id: '6517820346' })?.url, 'https://gis2.maconnc.org/lightmap/Property/propertydetails.aspx?pid=6517820346');
+eq('Macon junk id -> null', [ncCountyLink(113, { parcel_id: '65178203xx' }), ncCountyLink(113, { parcel_id: 'OID123' })], [null, null]);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

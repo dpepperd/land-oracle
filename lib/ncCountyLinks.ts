@@ -52,6 +52,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Washington: the county tax site (supplied by the owner) opens a parcel's details from the PIN in the address; its PIN format is our alt_key
   // (3 parcels checked). The site is http only (no https).
   187: { kind: 'direct', label: 'Washington County Property & Building Records', build: p => (p.alt_key && /^\d{4}\.\d{2}-\d{2}-\d{4}$/.test(p.alt_key) ? `http://taxweb.washconc.org/Details.aspx?pin=${p.alt_key}` : null) },
+  // Macon: county tax information site (supplied by the owner); its property details address takes the PIN directly (3 parcels checked)
+  113: { kind: 'direct', label: 'Macon County Property Information', build: p => (p.parcel_id && /^\d{10}$/.test(p.parcel_id) ? `https://gis2.maconnc.org/lightmap/Property/propertydetails.aspx?pid=${p.parcel_id}` : null) },
   // Spatialest record cards (same site as Alamance); which of our IDs the card uses differs by county
   135: { kind: 'direct', label: 'Orange County Property', build: p => (p.parcel_id && /^\d{10}(\.\d{1,4})?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/orange#/property/${p.parcel_id}` : null) },
   // Pitt's card id is the county parcel number WITHOUT leading zeros (alt_key 05533 -> 5533; with the zero the county shows "not found")
