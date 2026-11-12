@@ -44,6 +44,15 @@ const truckLayer: any = {
   }
 };
 
+// One list drives both the map colors and the legend, so they can never disagree.
+const FLOOD_LEGEND: { label: string; detail: string; zones: string[]; color: string }[] = [
+  { label: 'High risk', detail: 'Zones A, AE, AH, AO', zones: ['A', 'AE', 'AH', 'AO', 'AR', 'A99'], color: '#60a5fa' },
+  { label: 'High risk, coastal waves', detail: 'Zone VE', zones: ['VE', 'V'], color: '#1e40af' },
+  { label: 'Lower risk', detail: 'Zone X (0.2% or minimal)', zones: ['X', 'x', '0.2 PCT ANNUAL CHANCE FLOOD HAZARD'], color: '#9ca3af' },
+  { label: 'Undetermined', detail: 'Zone D', zones: ['D'], color: '#f59e0b' },
+  { label: 'Open water', detail: 'No flood zone assigned', zones: ['OPEN WATER'], color: '#cbd5e1' },
+];
+
 const floodLayer: any = {
   id: 'flood-zones',
   type: 'fill',
@@ -51,10 +60,8 @@ const floodLayer: any = {
     'fill-color': [
       'match',
       ['get', 'fld_zone'],
-      ['X', 'x', '0.2 PCT ANNUAL CHANCE FLOOD HAZARD'], '#9ca3af',
-      ['A', 'AE', 'AH', 'AO'], '#60a5fa', // Light Blue
-      ['VE', 'V'], '#1e40af', // Dark Blue
-      '#60a5fa' // Default
+      ...FLOOD_LEGEND.flatMap((l) => [l.zones, l.color]),
+      '#cbd5e1' // any zone we do not recognize: neutral, never "high risk"
     ],
     'fill-opacity': 0.4
   }
@@ -874,6 +881,24 @@ export default function MapView({
             </Source>
         )}
       </Map>
+
+      {/* Flood layer legend (only while the FEMA layer is on) */}
+      {showFlood && (
+        <div className="absolute bottom-24 md:bottom-8 left-4 z-10 max-w-[230px] rounded-lg bg-white/95 dark:bg-slate-800/95 border border-gray-200 dark:border-gray-700 shadow-lg p-3 text-xs text-gray-700 dark:text-gray-200">
+          <div className="font-bold mb-1.5 flex items-center gap-1.5"><Droplets size={13} className="text-blue-500" />FEMA flood zones</div>
+          <ul className="space-y-1">
+            {FLOOD_LEGEND.map((l) => (
+              <li key={l.label} className="flex items-start gap-2">
+                <span className="mt-0.5 inline-block w-4 h-3 rounded-sm flex-shrink-0 border border-black/10" style={{ backgroundColor: l.color, opacity: 0.75 }} />
+                <span><span className="font-medium">{l.label}</span><span className="block text-[10px] text-gray-500 dark:text-gray-400">{l.detail}</span></span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 leading-snug">
+            {floodZoomIn ? 'Zoom in to a county to see zones. ' : ''}Research aid only, not a flood determination. Confirm with FEMA and your county.
+          </p>
+        </div>
+      )}
 
       {/* Style Switcher & Layers */}
       <div className="absolute top-16 sm:top-20 left-4 z-10 flex flex-col gap-2">
