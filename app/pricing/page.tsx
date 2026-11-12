@@ -1,6 +1,7 @@
 import PricingClient from './PricingClient';
 import { getFoundingStatus } from '@/lib/founding';
 import { aiEnabled } from '@/lib/plans';
+import { capFor } from '@/lib/ai/usage';
 
 export const dynamic = 'force-dynamic';   // founding status + AI flag are read at request time (Stripe lookup is cached 10 min)
 
@@ -11,5 +12,7 @@ export const metadata = {
 
 export default async function PricingPage() {
   const founding = await getFoundingStatus();
-  return <PricingClient aiEnabled={aiEnabled()} founding={founding.available} />;
+  // Monthly AI question allowance per plan, read from the same setting the assistant enforces (so the page can never disagree with it)
+  const aiQuestions = { pro: capFor('pro'), statewide: capFor('statewide') };
+  return <PricingClient aiEnabled={aiEnabled()} founding={founding.available} aiQuestions={aiQuestions} />;
 }
