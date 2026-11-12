@@ -108,6 +108,8 @@ eq('Lenoir direct Spatialest card (alt_key)', ncCountyLink(107, { parcel_id: '45
 eq('Lenoir without alt_key -> null', ncCountyLink(107, { parcel_id: '4514-85-7993', alt_key: null }), null);
 eq('Lee copies the 12-digit PIN', ncCountyLink(105, { parcel_id: '963288537600' })?.copy, '963288537600');
 eq('Lee placeholder ids -> null', ncCountyLink(105, { parcel_id: 'OID123' }), null);
+eq('Haywood copies the dashed PIN', ncCountyLink(87, { parcel_id: '7697-80-8089', alt_key: '292414' })?.copy, '7697-80-8089');
+eq('Haywood placeholder ids -> null', ncCountyLink(87, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
