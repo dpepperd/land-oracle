@@ -1,7 +1,7 @@
 "use client";
 
 import Header from "@/components/dashboard/Header";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, Phone, Send } from "lucide-react";
 import { useState } from "react";
 
 export default function ContactPage() {
@@ -52,18 +52,6 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-theme-primary">Phone</h3>
                     <p className="text-sm text-theme-secondary">(904) 210-7697</p>
-                  </div>
-                </div>
-              </div>
-
-               <div className="bg-theme-card p-6 rounded-xl border border-theme shadow-sm">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-theme-primary">Office</h3>
-                    <p className="text-sm text-theme-secondary">Jacksonville, FL</p>
                   </div>
                 </div>
               </div>
