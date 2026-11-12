@@ -228,6 +228,9 @@ export const NC_LINKS: Record<number, Entry> = {
   59: { kind: 'search', label: 'Davie County GIS (accept, paste into Parcel Number, press Enter twice)', url: 'https://gis.daviecountync.gov/daviegis/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Avery: AGD ArcGIS viewer (supplied by the owner); tick the agreement + OK, paste the 12-digit PIN (our parcel_id) into "Choose left or search all", Enter (1 parcel checked; our Avery data has no site addresses)
   11: { kind: 'search', label: 'Avery County Public Viewer (agree, OK, paste the PIN in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=7c399996997242bdbf2a0bf5c18e3a2a', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Ashe: county GIS (Avineon viewer at gis.ashecountygov.com/maptemplate, reached from the county tax site's "GIS Website" tab; the Hub dataset page the owner sent is only a data listing);
+  // click "Accept and close", paste the 12-digit parcel number (our parcel_id) into "Enter Parcel Number", press Enter twice (1 parcel checked: address matched, owner RICHARDSON)
+  9: { kind: 'search', label: 'Ashe County GIS (accept, paste into Enter Parcel Number, press Enter twice)', url: 'https://gis.ashecountygov.com/maptemplate/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
