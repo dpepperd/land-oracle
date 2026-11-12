@@ -57,6 +57,21 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
     await pool.query('insert into export_usage (user_id, month, rows) values ($1,$2,$3) on conflict (user_id, month) do update set rows=$3', [user.id, month, ent.exports.limit]);
     const r = await callExport(Array.isArray(ent.counties) ? ent.counties[0] : 'Clay');
     check('scout at 1,000 rows: refused with export_cap_reached', r.status === 402 && r.text.includes('export_cap_reached'), `status ${r.status} ${r.text.slice(0, 80)}`);
+
+    // AI-results CSV route: same free/paid rules
+    const aiRoute = await import('../../app/api/assistant/export/route');
+    const aiKey = (await pool.query("select parcel_key from parcels_current_all where county='Clay' and has_geom limit 1")).rows[0].parcel_key;
+    const callAi = async () => { const res = await aiRoute.POST(new Request('http://localhost/api/assistant/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ keys: [aiKey] }) })); return { status: res.status, text: await res.text() }; };
+    for (const tier of ['free', 'demo', 'trial']) {
+      await setTier(tier);
+      const ar = await callAi();
+      check(`AI export, ${tier}: refused (402 export_not_included)`, ar.status === 402 && ar.text.includes('export_not_included'), `status ${ar.status}`);
+    }
+    for (const tier of ['scout', 'pro', 'statewide']) {
+      await setTier(tier);
+      const ar = await callAi();
+      check(`AI export, ${tier}: allowed (200, 1 row)`, ar.status === 200 && ar.text.split('\n').length === 2, `status ${ar.status}, lines ${ar.text.split('\n').length}`);
+    }
   } finally {
     await pool.query('update users set subscription_tier=$2, subscription_status=$3, county_allowance=$4 where id=$1', [user.id, orig.tier, orig.status, orig.allowance]);
     if (usage0 === null) await pool.query('delete from export_usage where user_id=$1 and month=$2', [user.id, month]);

@@ -42,6 +42,10 @@ export async function POST(req: Request) {
   // Export limit (same rule and message as the filter export)
   let ent;
   try { ent = await getEntitlements(userId); } catch { return NextResponse.json({ error: 'Account not found' }, { status: 403 }); }
+  // Free accounts cannot export at all (same rule and message as /api/parcels/export)
+  if (ent.exports.limit === 0) {
+    return NextResponse.json({ error: 'export_not_included', upgrade: true, upgradeTo: 'scout', message: 'CSV export is included with paid plans. See Pricing to upgrade.' }, { status: 402 });
+  }
   let remaining: number | 'unlimited' = 'unlimited';
   if (ent.exports.limit !== 'unlimited') {
     if (ent.exports.used >= ent.exports.limit) {

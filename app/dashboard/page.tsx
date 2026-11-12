@@ -187,7 +187,7 @@ export default function Dashboard() {
       const res = await fetch(exportingAi ? '/api/assistant/export' : '/api/parcels/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(exportingAi ? { keys: parcels.map((p: any) => p.parcel_key).filter(Boolean).slice(0, 60) } : filters)
+        body: JSON.stringify(exportingAi ? { keys: parcels.map((p: any) => p.parcel_key).filter(Boolean).slice(0, 60) } : withArea(filters, searchArea))
       });
       
       if (!res.ok) {

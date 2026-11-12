@@ -57,6 +57,27 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await send(withArea({ ...filters }, { shape: circle, bounds: [30.2, 30.28, -81.4, -81.32] }));
   check('5. circle area works', r.status === 200 && r.count > 0 && !('Miami-Dade' in r.by), `${r.count} results ${JSON.stringify(r.by)}`);
 
+  // 6. the CSV export built the way the dashboard now builds it (withArea) stays inside the drawn area
+  {
+    const exportRoute = await import('../../app/api/parcels/export/route');
+    const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
+    const adminRow = (await pool.query("select id from users where role='admin' and clerk_id=$1", [admin.clerk_id])).rows[0];
+    const usage0 = (await pool.query('select rows from export_usage where user_id=$1 and month=$2', [adminRow.id, month])).rows[0]?.rows ?? null;
+    const exportBody = withArea({ counties: [], landUse: ['001'], marketValueMin: 500000, marketValueMax: 1200000, limit: 1000 }, { shape, bounds: [30.208, 30.275, -81.395, -81.312] });
+    const er = await exportRoute.POST(new Request('http://localhost/api/parcels/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(exportBody) }));
+    const csv = await er.text();
+    const lines = csv.split('\n').filter(Boolean); const hdr = lines[0].split(',');
+    const ci = hdr.indexOf('county'); const counties = new Set(lines.slice(1).map((l) => l.split(',')[ci]));
+    check('6. CSV export with drawn area stays in area', er.status === 200 && lines.length > 100 && [...counties].every((c) => ['Saint Johns', 'Duval'].includes(c)), `status ${er.status}, ${lines.length - 1} rows, counties ${[...counties].join('/')}`);
+    // and the old way (filters only, no area) would have gone statewide: proves the guard matters
+    const bad = await exportRoute.POST(new Request('http://localhost/api/parcels/export', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ counties: [], landUse: ['001'], marketValueMin: 500000, marketValueMax: 1200000, limit: 1000 }) }));
+    const badCsv = (await bad.text()).split('\n').filter(Boolean);
+    const badCounties = new Set(badCsv.slice(1).map((l) => l.split(',')[ci]));
+    check('6b. (control) export without area returns many more rows than the area does', badCsv.length - 1 > (lines.length - 1) * 3, `without area ${badCsv.length - 1} rows (capped) vs inside the area ${lines.length - 1} rows; counties ${[...badCounties].slice(0, 3).join('/')}`);
+    if (usage0 === null) await pool.query('delete from export_usage where user_id=$1 and month=$2', [adminRow.id, month]);
+    else await pool.query('update export_usage set rows=$3 where user_id=$1 and month=$2', [adminRow.id, month, usage0]);
+  }
+
   console.log(results.join('\n'));
   await pool.end();
   process.exit(results.some((x) => x.startsWith('FAIL')) ? 1 : 0);
