@@ -61,6 +61,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Craven: the real-property portal (supplied by the owner) has NO parcel-number search, only owner name or address (address is split into
   // house number + street boxes). So the OWNER NAME is copied; type it in the "Property Owner Name" box (3 parcels checked: 2 companies, 1 person).
   49: { kind: 'search', label: 'Craven County Property (paste the owner name, click Submit)', url: 'https://www.bttaxpayerportal.com/ITSPublicCRRP', copy: 'parcel_id', pick: p => { const n = (p.owner_name ?? '').trim(); return n.length >= 3 ? n : null; } },
+  // Johnston: Basic Search (supplied by the owner). Its Parcel Number boxes want the county's own parcel number (not our PIN), so the OWNER NAME is
+  // copied; the results table shows a "PIN ID#" column that equals our parcel_id, to pick the right row (3 parcels checked).
+  101: { kind: 'search', label: 'Johnston County Property (paste the owner name, Submit, match the PIN ID#)', url: 'https://www.bttaxpayerportal.com/itspublicjo', copy: 'parcel_id', pick: p => { const n = (p.owner_name ?? '').trim(); return n.length >= 3 ? n : null; } },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
