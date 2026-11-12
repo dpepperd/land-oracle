@@ -20,6 +20,8 @@ t('NC body drops Florida-only filters', () => { const b = buildSearchBody(filter
 t('NC body keeps counties, acreage, owner type, absentee, no-sale years, limit', () => { const b = buildSearchBody(filters, null, 'NC'); assert.deepStrictEqual([b.counties, b.acreageMin, b.ownerType, b.absentee, b.noSaleYears, b.limit], [['Clay'], 5, 'out_of_state', true, 5, 1000]); });
 t('NC body carries the drawn area', () => { const b = buildSearchBody(filters, area, 'NC'); assert.deepStrictEqual([b.spatialShape, b.minLat, b.maxLon], [shape, 30.2, -81.3]); });
 t('NC body carries vacantOnly', () => assert.strictEqual(buildSearchBody({ ...filters, vacantOnly: true }, null, 'NC').vacantOnly, true));
+t('TX body sets state TX and drops Florida-only filters', () => { const b = buildSearchBody(filters, null, 'TX'); assert.ok(b.state === 'TX' && !('landUse' in b) && !('nonHomestead' in b) && !('maxDistance' in b)); });
+t('TX map view is inside Texas', () => { assert.ok(STATE_VIEW.TX[0] < -93 && STATE_VIEW.TX[0] > -107 && STATE_VIEW.TX[1] > 26 && STATE_VIEW.TX[1] < 36); });
 t('building a body never changes the filters object', () => { const copy = JSON.parse(JSON.stringify(filters)); buildSearchBody(filters, area, 'NC'); assert.deepStrictEqual(filters, copy); });
 t('freshFilters is empty and keeps the limit', () => { const f = freshFilters(500); assert.deepStrictEqual([f.counties, f.landUse, f.limit, f.vacantOnly], [[], [], 500, undefined]); });
 t('map views are inside each state', () => { assert.ok(STATE_VIEW.FL[0] < -80 && STATE_VIEW.FL[1] < 31); assert.ok(STATE_VIEW.NC[0] < -75 && STATE_VIEW.NC[1] > 33 && STATE_VIEW.NC[1] < 37); });

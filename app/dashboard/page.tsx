@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { uiTier } from '@/lib/tierAccess';
 import { withArea, stripArea, type SearchArea } from '@/lib/searchArea';
-import { buildSearchBody, freshFilters, type SearchState } from '@/lib/searchState';
+import { buildSearchBody, freshFilters, isPilotState, type SearchState } from '@/lib/searchState';
 import { NC_CREDIT } from '@/lib/ncStates';
+import { TX_CREDIT } from '@/lib/txStates';
 import { useAuth } from "@clerk/nextjs";
 import Header from "@/components/dashboard/Header";
 import FilterSidebar from "@/components/dashboard/FilterSidebar";
@@ -200,7 +201,7 @@ export default function Dashboard() {
   };
 
   const handleExport = async () => {
-    if (searchState === 'NC') { alert('CSV export for North Carolina is not available yet.'); return; }
+    if (isPilotState(searchState)) { alert(`CSV export for ${searchState === 'TX' ? 'Texas' : 'North Carolina'} is not available yet.`); return; }
     // While the AI Analyst's parcels are on screen, export exactly those parcels (not the last filter search).
     const exportingAi = !!aiResults;
     try {
@@ -302,8 +303,8 @@ export default function Dashboard() {
         </div>
       )}
       
-      {searchState === 'NC' && (
-        <div className="bg-blue-900 text-blue-50 px-6 py-1.5 text-xs">North Carolina pilot (admins only). {NC_CREDIT}</div>
+      {isPilotState(searchState) && (
+        <div className="bg-blue-900 text-blue-50 px-6 py-1.5 text-xs">{searchState === 'TX' ? 'Texas' : 'North Carolina'} pilot (admins only). {searchState === 'TX' ? TX_CREDIT : NC_CREDIT}</div>
       )}
 
       {!aiResults && totalCount > 0 && !(filters as any).counties?.length && !searchArea && !(filters as any).parcelId && !(filters as any).address && (

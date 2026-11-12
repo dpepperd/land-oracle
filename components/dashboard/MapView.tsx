@@ -24,6 +24,7 @@ import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { STATE_VIEW, type SearchState } from '@/lib/searchState';
 import { NC_CREDIT } from '@/lib/ncStates';
+import { TX_CREDIT } from '@/lib/txStates';
 import { ncCountyLink, ncLinkNotice } from '@/lib/ncCountyLinks';
 
 // Traffic Styles
@@ -212,6 +213,7 @@ const measurePointLayer: any = {
 };
 
 const NC_GEOJSON = "/nc-counties.geojson"; // bundled (US Census county boundaries)
+const TX_GEOJSON = "/tx-counties.geojson"; // bundled (US Census county boundaries)
 const FL_GEOJSON = "https://raw.githubusercontent.com/danielcs88/fl_geo_json/master/geojson-fl-counties-fips.json";
 
 export default function MapView({ 
@@ -340,7 +342,7 @@ export default function MapView({
   useEffect(() => { if (clearShapeSignal > 0) { setDrawPoints([]); setIsDrawing(false); } }, [clearShapeSignal]);
   // Fly to the chosen state when it changes (not on first load, which keeps the existing Florida start)
   // County appraiser link: Florida only for now (never reuse a Florida county's link for a North Carolina parcel with the same county name)
-  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : getPropertyAppraiserUrl(p.county, p.parcel_id));
+  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : p?.state === 'TX' ? null : getPropertyAppraiserUrl(p.county, p.parcel_id));
   const firstFocus = useRef(true);
   useEffect(() => {
     if (firstFocus.current) { firstFocus.current = false; return; }
@@ -655,7 +657,7 @@ export default function MapView({
                 key={focusState} /* new state = new source: react-map-gl throws if a mounted Source's id or type changes */
                 id="county-lines"
                 type="geojson"
-                data={focusState === 'NC' ? NC_GEOJSON : FL_GEOJSON}
+                data={focusState === 'NC' ? NC_GEOJSON : focusState === 'TX' ? TX_GEOJSON : FL_GEOJSON}
             >
                 <Layer 
                     id="county-boundary-line"
@@ -803,7 +805,7 @@ export default function MapView({
                <span>{popupInfo.properties.land_use || 'N/A'}</span>
                
                <span className="font-bold text-gray-900">Property Value:</span>
-               <span>{popupInfo.properties.state === 'NC' && !popupInfo.properties.market_value ? 'N/A' : `$${Number(popupInfo.properties.market_value).toLocaleString()}`}</span>
+               <span>{(popupInfo.properties.state === 'NC' || popupInfo.properties.state === 'TX') && !popupInfo.properties.market_value ? 'N/A' : `$${Number(popupInfo.properties.market_value).toLocaleString()}`}</span>
              </div>
 
              {(() => {
@@ -835,14 +837,16 @@ export default function MapView({
                    </div>
                  );
                })}
-               {popupInfo.properties.state === 'NC'
+               {popupInfo.properties.state === 'TX'
+                 ? <div className="text-gray-400 text-xs">No sale data in Texas records</div>
+                 : popupInfo.properties.state === 'NC'
                  ? (popupInfo.properties.sale1_date
                      ? <div className="text-gray-600 text-xs">Last sale date: {new Date(popupInfo.properties.sale1_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })} <span className="text-gray-400">(price not in NC data)</span></div>
                      : <div className="text-gray-400 text-xs">No sale date on record</div>)
                  : (!popupInfo.properties.sale_prc1 && <div className="text-gray-400 text-xs">No qualified sale on record</div>)}
              </div>
 
-             {popupInfo.properties.state === 'NC' && <div className="mt-2 text-[10px] text-gray-400 leading-snug">{NC_CREDIT}</div>}
+             {(popupInfo.properties.state === 'NC' || popupInfo.properties.state === 'TX') && <div className="mt-2 text-[10px] text-gray-400 leading-snug">{popupInfo.properties.state === 'TX' ? TX_CREDIT : NC_CREDIT}</div>}
 
              <div className="mt-3">
                <div className="font-bold text-gray-900 text-xs mb-0.5 max-w-[250px] truncate">Owner: <span className="font-normal uppercase">{popupInfo.properties.owner_name}</span></div>
