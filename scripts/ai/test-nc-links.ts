@@ -29,6 +29,13 @@ eq('Guilford copies the 10-digit PIN without the -000 suffix', ncCountyLink(81, 
 eq('Guilford odd id -> null', ncCountyLink(81, { parcel_id: 'abc' }), null);
 eq('Forsyth copies the 10-digit PIN (alt_key)', ncCountyLink(67, { parcel_id: '6837-79-5898.00', alt_key: '6837795898' })?.copy, '6837795898');
 eq('Forsyth without a PIN -> null', ncCountyLink(67, { parcel_id: '6837-79-5898.00', alt_key: null }), null);
+eq('Union direct (8-digit id)', ncCountyLink(179, { parcel_id: '02311024' })?.url, 'https://property.spatialest.com/nc/union#/property/02311024');
+eq('Union one-letter suffix works (checked in browser)', ncCountyLink(179, { parcel_id: '03177012D' })?.url, 'https://property.spatialest.com/nc/union#/property/03177012D');
+eq('Union other shapes -> null (untested)', [ncCountyLink(179, { parcel_id: '01087005 60' }), ncCountyLink(179, { parcel_id: 'OID33358753' })], [null, null]);
+eq('Iredell results page', ncCountyLink(97, { parcel_id: '4638193334.000' })?.url, 'https://taxweb.iredellcountync.gov/PublicAccess/SearchResults.aspx?field=parcel&parcel=4638193334.000&order=Owner%20Name');
+eq('Iredell junk id -> null', ncCountyLink(97, { parcel_id: '4638/../x' }), null);
+eq('New Hanover copies alt_key', ncCountyLink(129, { parcel_id: '3130-45-7295.000', alt_key: 'R09006-019-004-000' })?.copy, 'R09006-019-004-000');
+eq('Brunswick / Onslow / Rowan / Cleveland / Davidson / Cumberland copy parcel_id', [19, 133, 159, 45, 57, 51].map((c) => ncCountyLink(c, { parcel_id: 'X1', alt_key: 'Y2' })?.copy), ['X1', 'X1', 'X1', 'X1', 'X1', 'X1']);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

@@ -32,6 +32,10 @@ export const NC_LINKS: Record<number, Entry> = {
   71: { kind: 'direct', label: 'Gaston County Tax', build: p => (p.alt_key && /^\d{3,8}$/.test(p.alt_key) ? `https://gastonnc.devnetwedge.com/parcel/view/${p.alt_key}/2026` : null) },
   // Yancey: the county's assessor database is a GET search form; a search by parcel number redirects straight to that parcel's record page
   199: { kind: 'direct', label: 'Yancey County Assessor', build: p => (p.parcel_id && /^\d{15}$/.test(p.parcel_id) ? `https://yancey.ias-clt.com/parcel.list.php?parcel.search%5Bp_parid%5D=${p.parcel_id}&parcel.search%5Bsearch%5D=Search` : null) },
+  // Union: its county property portal is a Spatialest record card (4 parcels checked, 8 digits with or without a one-letter suffix = about 98% of parcels; other shapes show as text)
+  179: { kind: 'direct', label: 'Union County Property', build: p => (p.parcel_id && /^\d{8}[A-Z]?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/union#/property/${p.parcel_id}` : null) },
+  // Iredell: results page for the parcel (one row per tax year; click the newest year's "PRC" for the record card)
+  97: { kind: 'direct', label: 'Iredell County Tax (results by parcel)', build: p => (p.parcel_id && /^\d{10}\.\d{3}$/.test(p.parcel_id) ? `https://taxweb.iredellcountync.gov/PublicAccess/SearchResults.aspx?field=parcel&parcel=${p.parcel_id}&order=Owner%20Name` : null) },
   // Spatialest record cards (same site as Alamance); which of our IDs the card uses differs by county
   135: { kind: 'direct', label: 'Orange County Property', build: p => (p.parcel_id && /^\d{10}(\.\d{1,4})?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/orange#/property/${p.parcel_id}` : null) },
   // Pitt's card id is the county parcel number WITHOUT leading zeros (alt_key 05533 -> 5533; with the zero the county shows "not found")
@@ -44,6 +48,14 @@ export const NC_LINKS: Record<number, Entry> = {
   // Guilford and Forsyth: "Real Property PWA" (record pages need the county's internal number, which we do not have); its search box takes the 10-digit PIN.
   81: { kind: 'search', label: 'Guilford County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/guilford/parcel-search', copy: 'parcel_id', pick: p => { const m = /^(\d{10})(-\d{3})?$/.exec(p.parcel_id ?? ''); return m ? m[1] : null; } },
   67: { kind: 'search', label: 'Forsyth County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/forsyth/parcel-search', copy: 'alt_key', pick: p => (/^\d{10}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Searches below were each tried in a real browser with our IDs (see docs/nc-pilot.md for the exact field to paste into)
+  159: { kind: 'search', label: 'Rowan County Property (paste into Parcel ID)', url: 'https://tax.rowancountync.gov/search/commonsearch.aspx?mode=realprop', copy: 'parcel_id' },
+  129: { kind: 'search', label: 'New Hanover County Property (agree to disclaimer, paste into Parcel ID)', url: 'https://etax.nhcgov.com/pt/search/commonsearch.aspx?mode=parid', copy: 'alt_key' },
+  19: { kind: 'search', label: 'Brunswick County Tax (choose "Parcel Number", paste)', url: 'https://tax.brunsco.net/itsnet/', copy: 'parcel_id' },
+  133: { kind: 'search', label: 'Onslow County Tax (choose "Alternate Parcel ID#", paste into Map Number)', url: 'https://tax.onslowcountync.gov/ITSPublicON/', copy: 'parcel_id' },
+  45: { kind: 'search', label: 'Cleveland County Taxes (accept, search, pick the "Parcel" suggestion)', url: 'https://www.clevelandcountytaxes.com/taxes.html', copy: 'parcel_id' },
+  57: { kind: 'search', label: 'Davidson County Tax (choose "PIN#", paste, Submit)', url: 'https://taxsearch.co.davidson.nc.us/', copy: 'parcel_id' },
+  51: { kind: 'search', label: 'Cumberland County Bills (Search By "Parcel Number", paste)', url: 'https://taxpwa.co.cumberland.nc.us/publicwebaccess/', copy: 'parcel_id' },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

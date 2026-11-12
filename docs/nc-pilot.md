@@ -45,8 +45,20 @@ NC county property-record links (feat/nc-county-links), NC CSV export, AI Analys
 
 `lib/ncCountyLinks.ts`, keyed by NC FIPS (`co_no`). Counties without an entry show the parcel ID as plain text.
 
-- **Direct (10):** Yancey 199 (parcel_id; the county assessor search is a GET form, so a search address redirects to the record; 3 parcels checked in a browser); Spatialest record cards, each checked in a real browser on 3 parcels (owner and street matched): Alamance 1 (alt_key), Orange 135 (parcel_id, decimal suffixes work), Pitt 147 (alt_key WITHOUT leading zeros, otherwise "not found"), Henderson 89 (alt_key); plus Wake 183 (alt_key = REID), Buncombe 21 (parcel_id), Durham 63 and Randolph 151 (alt_key = REID), Gaston 71 (alt_key; year segment 2026). Each was fetched against 3 real parcels and the owner and address matched our data. Builders return null on an unusable ID.
-- **Search page + copied ID (10):** Guilford and Forsyth ("Real Property PWA": record pages need the county internal number, so the search page opens and the 10-digit PIN is copied; both checked in a browser), Yadkin (alt_key into the "Parcel ID" box after accepting the site disclaimer popup; checked on 1 parcel), Anson (added at the owner's request), Mecklenburg, Cabarrus, Catawba, Robeson, Carteret, Harnett. The county's official lookup opens and the app copies the ID. These sites are JS or form-based, so a deep link was not verified.
-- **Not listed (need a browser check):** Johnston, Davidson, Cleveland, Moore, Iredell, Cumberland, Rowan, Union, New Hanover, Brunswick, Craven. Not used: Wayne (source unconfirmed as official) and Onslow (expired TLS certificate).
+- **Direct (12): the link opens that parcel's record (or its results list).** Each was tested in a real browser or by fetch on 3 or more real parcels, and the owner and address matched our data.
+  - Spatialest record cards: Alamance 1 (alt_key), Orange 135 (parcel_id; decimal suffixes work), Pitt 147 (alt_key WITHOUT leading zeros, otherwise "not found"), Henderson 89 (alt_key), Union 179 (parcel_id: 8 digits with or without a one-letter suffix, about 98% of parcels).
+  - Yancey 199 (parcel_id): the county assessor search is a GET form, so a search address redirects straight to the record.
+  - Iredell 97 (parcel_id): opens the results list for the parcel (one row per tax year); click the newest year's "PRC" for the record card.
+  - Wake 183 (alt_key = REID), Buncombe 21 (parcel_id), Durham 63 and Randolph 151 (alt_key = REID), Gaston 71 (alt_key; year segment 2026).
+  - Builders return null (plain text) on an unusable ID shape.
+- **Search page + copied ID (17):** the county's official lookup opens and the app copies the ID; the user pastes it. What to paste where (tested):
+  - Guilford 81 and Forsyth 67 ("Real Property PWA", record pages need an internal number we lack): paste the 10-digit PIN (Guilford drops the "-000" suffix; Forsyth uses alt_key).
+  - Yadkin 197: accept the disclaimer popup, paste alt_key into "Enter Parcel ID" (1 parcel checked).
+  - Rowan 159: "Parcel ID" box (2 of 3 checked). New Hanover 129: agree to the disclaimer, paste alt_key into "Parcel ID" (3 of 3).
+  - Brunswick 19: choose "Parcel Number", paste (3 of 3). Onslow 133: choose "Alternate Parcel ID#", paste into "Map Number" (3 of 3).
+  - Cleveland 45: accept, search, and pick the "Parcel N" suggestion (a short ID is a prefix of others) (2 of 3; tax-bill lookup). Davidson 57: choose "PIN#", paste, press Submit (2 of 3; one PIN was not found). Cumberland 51: "Search By" = "Parcel Number" (1 of 3; tax-bill search, bills not a record card).
+  - Anson 7, Mecklenburg 119, Cabarrus 25, Catawba 35, Robeson 155, Carteret 31, Harnett 85: official lookup pages (Anson added at the owner's request; the others have not had an ID paste tested).
+- **Checked and rejected:** Johnston, Moore, Craven (tax-bill portal with segmented parcel boxes that cannot take a pasted ID; Moore returned no results for our number). Wayne (page not confirmed as the county's own).
+- **Not yet researched:** the other counties (see the list in the app code: any county without an entry shows plain text).
 - Wake's link uses the legacy `services.wake.gov/realestate` path because the newer TaxPortal was down during testing. Re-test it periodically.
 - Tests: `npx tsx scripts/ai/test-nc-links.ts`.
