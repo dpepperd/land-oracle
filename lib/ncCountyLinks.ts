@@ -125,6 +125,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Person: ITS Basic Search (supplied by the owner); choose "Parcel Number", Next, paste the short county parcel number (our alt_key, e.g. "A58 62", space
   // included) into the single box and Submit (1 parcel checked; one row per tax year). Our long PIN does not fit that box.
   145: { kind: 'search', label: 'Person County Property (choose Parcel Number, paste, Submit)', url: 'https://www.bttaxpayerportal.com/ITSPublicPR', copy: 'alt_key', pick: p => (/^[A-Z]?\d{1,3} \d{1,3}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Perquimans: AGD ArcGIS parcel viewer (supplied by the owner); click OK, paste the county parcel number (our alt_key, e.g. 2-0060-0029, NOT the PIN) into
+  // "Search All or Choose Left", Enter (1 parcel checked: found and highlighted)
+  143: { kind: 'search', label: 'Perquimans County Parcel Viewer (OK, paste the parcel number in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=559506e85ee046a194333eb12e80710f', copy: 'alt_key', pick: p => (/^\d-\d{4}-\d{4}[A-Z]?$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

@@ -82,6 +82,8 @@ eq('Polk copies the parcel id as stored', [ncCountyLink(149, { parcel_id: 'P48-1
 eq('Polk placeholder ids -> null', ncCountyLink(149, { parcel_id: 'OID123' }), null);
 eq('Person copies the short county parcel number (alt_key)', [ncCountyLink(145, { parcel_id: '0928-00-02-7236.000', alt_key: 'A58 62' })?.copy, ncCountyLink(145, { alt_key: '10 1' })?.copy], ['A58 62', '10 1']);
 eq('Person without a short alt_key -> null', ncCountyLink(145, { parcel_id: '0928-00-02-7236.000', alt_key: null }), null);
+eq('Perquimans copies the county parcel number (alt_key), not the PIN', [ncCountyLink(143, { parcel_id: '7848-24-5238', alt_key: '2-0060-0029' })?.copy, ncCountyLink(143, { parcel_id: '8808-74-6282', alt_key: '4-0066-0034B' })?.copy], ['2-0060-0029', '4-0066-0034B']);
+eq('Perquimans without that alt_key -> null', ncCountyLink(143, { parcel_id: '7848-24-5238', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
