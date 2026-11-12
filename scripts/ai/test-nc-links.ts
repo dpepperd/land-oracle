@@ -52,6 +52,8 @@ eq('Wilkes: "&" joint owners still use the first person', ncCountyLink(193, { pa
 eq('Wilkes without owner -> null', ncCountyLink(193, { parcel_id: 'x', owner_name: '' }), null);
 eq('Wayne results link', ncCountyLink(191, { parcel_id: '3632437226' })?.url, 'https://realestate.waynegov.com/ITSNet/SearchResults.aspx?field=parcel&parcel=3632437226&order=Owner%20Name');
 eq('Wayne junk id -> null', ncCountyLink(191, { parcel_id: '36324372xx' }), null);
+eq('Watauga copies the 13-digit alt_key', ncCountyLink(189, { parcel_id: '1962-14-2500-000', alt_key: '1962142500000' })?.copy, '1962142500000');
+eq('Watauga without a 13-digit alt_key -> null', ncCountyLink(189, { parcel_id: 'OID123', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

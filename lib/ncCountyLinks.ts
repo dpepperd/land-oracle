@@ -82,6 +82,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Wilkes: iasWorld search (supplied by the owner). It has no PIN box and the PINs in our file differ from the county's for some parcels, so the OWNER's
   // "LAST, FIRST" is copied (the site matches the start of the name); paste into "Owner Name", press Enter, pick the row with your address (3 parcels checked).
   193: { kind: 'search', label: 'Wilkes County Property (paste the owner name, press Enter, match the address)', url: 'https://parcelinfo.wilkescounty.net/search/commonsearch.aspx?mode=realprop', copy: 'parcel_id', pick: p => ownerPrefix(p.owner_name) },
+  // Watauga: iasWorld Public Access; the address goes through its disclaimer page (click Agree) and lands on the Parcel ID search; paste the 13-digit
+  // county parcel id (our alt_key) and press Enter (3 parcels checked)
+  189: { kind: 'search', label: 'Watauga County Property (click Agree, paste into Parcel ID)', url: 'https://tax.watgov.org/WataugaNC/Search/Disclaimer.aspx?FromUrl=../search/commonsearch.aspx?mode=parid', copy: 'alt_key', pick: p => (/^\d{13}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
