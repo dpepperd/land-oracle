@@ -91,7 +91,8 @@ const COLS = ['parcel_key', 'parcel_key_local', 'county', 'co_no', 'parcel_id', 
   await pool.query(`CREATE INDEX IF NOT EXISTS ${table}_key ON public.${table} (parcel_key)`);
 
   for (const f of fips) {
-    const where = `cntyfips='${f}'`;
+    // The state stores most county codes padded ('055') but a few unpadded ('43' Clay, '5' Alleghany): match both.
+    const where = `cntyfips IN ('${f}','${String(Number(f))}')`;
     const want = (await post({ where, returnCountOnly: 'true', f: 'json' })).count;
     const have = Number((await pool.query(`SELECT count(*) n FROM public.${table} WHERE co_no = $1`, [Number(f)])).rows[0].n);
     if (want && have === want) { console.log(`county ${f}: already complete (${have}), skipped`); continue; }
