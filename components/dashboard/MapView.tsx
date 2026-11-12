@@ -652,7 +652,8 @@ export default function MapView({
 
         {showBoundaries && (
             <Source
-                id={focusState === 'NC' ? "nc-counties" : "fl-counties"}
+                key={focusState} /* new state = new source: react-map-gl throws if a mounted Source's id or type changes */
+                id="county-lines"
                 type="geojson"
                 data={focusState === 'NC' ? NC_GEOJSON : FL_GEOJSON}
             >
