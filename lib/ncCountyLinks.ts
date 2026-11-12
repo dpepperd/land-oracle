@@ -88,6 +88,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Watauga: iasWorld Public Access; the address goes through its disclaimer page (click Agree) and lands on the Parcel ID search; paste the 13-digit
   // county parcel id (our alt_key) and press Enter (3 parcels checked)
   189: { kind: 'search', label: 'Watauga County Property (click Agree, paste into Parcel ID)', url: 'https://tax.watgov.org/WataugaNC/Search/Disclaimer.aspx?FromUrl=../search/commonsearch.aspx?mode=parid', copy: 'alt_key', pick: p => (/^\d{13}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Vance: county ArcGIS parcel viewer (supplied by the owner); click "I agree", paste into the map's search box and pick the "Tax Parcels" suggestion.
+  // Our parcel_id is its PIN as is, spaces included (2 parcels checked: one plain, one with a space; the first showed the right owner and address).
+  181: { kind: 'search', label: 'Vance County Parcel Viewer (click I agree, paste in the search box, pick Tax Parcels)', url: 'https://www.arcgis.com/apps/instant/sidebar/index.html?appid=b784ca1b2bd1462bbd4d7d0b01c4fcc9', copy: 'parcel_id', pick: p => (/^\d{4}[A-Z ]\d{5}[A-Z]?$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
