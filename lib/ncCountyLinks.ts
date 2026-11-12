@@ -91,6 +91,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Vance: county ArcGIS parcel viewer (supplied by the owner); click "I agree", paste into the map's search box and pick the "Tax Parcels" suggestion.
   // Our parcel_id is its PIN as is, spaces included (2 parcels checked: one plain, one with a space; the first showed the right owner and address).
   181: { kind: 'search', label: 'Vance County Parcel Viewer (click I agree, paste in the search box, pick Tax Parcels)', url: 'https://www.arcgis.com/apps/instant/sidebar/index.html?appid=b784ca1b2bd1462bbd4d7d0b01c4fcc9', copy: 'parcel_id', pick: p => (/^\d{4}[A-Z ]\d{5}[A-Z]?$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Tyrrell: county ArcGIS parcel viewer (supplied by the owner); tick the agreement + OK, paste the 10-digit PIN into the search box, press Enter (1 parcel checked)
+  177: { kind: 'search', label: 'Tyrrell County Parcel Viewer (agree, paste the PIN in the search box, Enter)', url: 'https://www.arcgis.com/apps/webappviewer/index.html?id=1c2493cb8eb1484eb1ecc571131f5ee6', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

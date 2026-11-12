@@ -58,6 +58,8 @@ eq('Washington details link (alt_key = county PIN)', ncCountyLink(187, { parcel_
 eq('Washington placeholder parcels (no alt_key) -> null', ncCountyLink(187, { parcel_id: 'OID33884979', alt_key: null }), null);
 eq('Vance copies the PIN as stored (plain and spaced)', [ncCountyLink(181, { parcel_id: '0222A01001' })?.copy, ncCountyLink(181, { parcel_id: '0362 04013' })?.copy], ['0222A01001', '0362 04013']);
 eq('Vance placeholder ids -> null', ncCountyLink(181, { parcel_id: 'OID33884979' }), null);
+eq('Tyrrell copies the 10-digit PIN', ncCountyLink(177, { parcel_id: '8811394381' })?.copy, '8811394381');
+eq('Tyrrell odd id -> null', ncCountyLink(177, { parcel_id: '8811-39-4381' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
