@@ -193,6 +193,8 @@ export const NC_LINKS: Record<number, Entry> = {
   17: { kind: 'search', label: 'Bladen County GIS (accept, paste into Parcel PIN, press Enter twice)', url: 'https://gis.bladenco.org/bladenmap/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Beaufort: "Real Property PWA" like Madison/Hyde (the owner sent the county's ArcGIS viewer; the PWA from the vendor research is easier); paste the dashed PIN (our parcel_id) into the search box, Enter (1 parcel checked)
   13: { kind: 'search', label: 'Beaufort County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/Beaufort/parcel-search', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Bertie: ArcGIS Experience viewer. The viewer the owner sent was retired in July 2026 and points to this new one; tick the agreement + OK, paste the 10-digit GEOPIN (our parcel_id) into "Search All", Enter (1 parcel checked)
+  15: { kind: 'search', label: 'Bertie County Parcel Viewer (agree, OK, paste the PIN in Search All, Enter)', url: 'https://experience.arcgis.com/experience/35c1e586958d4014b177c8b4082a9051', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
