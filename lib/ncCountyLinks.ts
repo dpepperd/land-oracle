@@ -142,6 +142,8 @@ export const NC_LINKS: Record<number, Entry> = {
   123: { kind: 'search', label: 'Montgomery County WebGIS (accept, Search > Form, paste into Parcel Number, Enter)', url: 'https://www.webgis.net/nc/Montgomery/', copy: 'parcel_id', pick: p => (/^\d{4} \d{2} \d{2} \d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Martin: county GIS viewer (supplied by the owner); click Accept, paste the 7-digit parcel id (our parcel_id) into "Enter Parcel ID", Enter (1 parcel checked)
   117: { kind: 'search', label: 'Martin County GIS (accept, paste into Enter Parcel ID, Enter)', url: 'https://gis.martincountyncgov.com/', copy: 'parcel_id', pick: p => (/^\d{7}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Madison: "Real Property PWA" like Guilford/Forsyth (supplied by the owner); paste the 10-digit PIN into the search box, Enter (1 parcel checked)
+  115: { kind: 'search', label: 'Madison County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/Madison/parcel-search', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
