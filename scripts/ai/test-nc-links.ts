@@ -146,6 +146,8 @@ eq('Alexander copies the 10-digit PIN', ncCountyLink(3, { parcel_id: '3738031045
 eq('Alexander placeholder ids -> null', ncCountyLink(3, { parcel_id: 'OID123' }), null);
 eq('Alleghany copies the 10-digit PIN', ncCountyLink(5, { parcel_id: '4031543970' })?.copy, '4031543970');
 eq('Alleghany odd ids -> null', [ncCountyLink(5, { parcel_id: 'RIDGE CREST' }), ncCountyLink(5, { parcel_id: 'OID123' })], [null, null]);
+eq('Caldwell copies the 10-digit PIN', ncCountyLink(27, { parcel_id: '2717375683', alt_key: '06261 1 8' })?.copy, '2717375683');
+eq('Caldwell placeholder ids -> null', ncCountyLink(27, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
