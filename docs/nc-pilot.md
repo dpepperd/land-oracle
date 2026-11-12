@@ -58,7 +58,8 @@ NC county property-record links (feat/nc-county-links), NC CSV export, AI Analys
   - Brunswick 19: choose "Parcel Number", paste (3 of 3). Onslow 133: choose "Alternate Parcel ID#", paste into "Map Number" (3 of 3).
   - Cleveland 45: accept, search, and pick the "Parcel N" suggestion (a short ID is a prefix of others) (2 of 3; tax-bill lookup). Davidson 57: choose "PIN#", paste, press Submit (2 of 3; one PIN was not found). Cumberland 51: "Search By" = "Parcel Number" (1 of 3; tax-bill search, bills not a record card).
   - Anson 7, Mecklenburg 119, Cabarrus 25, Catawba 35, Robeson 155, Carteret 31, Harnett 85: official lookup pages (Anson added at the owner's request; the others have not had an ID paste tested).
-- **Checked and rejected:** Johnston, Moore, Craven (tax-bill portal with segmented parcel boxes that cannot take a pasted ID; Moore returned no results for our number). Wayne (page not confirmed as the county's own).
+- **Moore 125** (search, link supplied by the owner): its tax-bill portal could not take our ID, but the county ArcGIS viewer can: tick "I Agree" + OK, open "Parcel ID Query", paste the 12-digit parcel_id into "PIN is" and click Apply (checked on 1 parcel; Enter alone does not run it).
+- **Checked and rejected:** Johnston, Craven (tax-bill portal with segmented parcel boxes that cannot take a pasted ID). Wayne (page not confirmed as the county's own).
 - **Not yet researched:** the other counties (see the list in the app code: any county without an entry shows plain text).
 - Wake's link uses the legacy `services.wake.gov/realestate` path because the newer TaxPortal was down during testing. Re-test it periodically.
 - Tests: `npx tsx scripts/ai/test-nc-links.ts`.

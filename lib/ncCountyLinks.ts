@@ -56,6 +56,8 @@ export const NC_LINKS: Record<number, Entry> = {
   45: { kind: 'search', label: 'Cleveland County Taxes (accept, search, pick the "Parcel" suggestion)', url: 'https://www.clevelandcountytaxes.com/taxes.html', copy: 'parcel_id' },
   57: { kind: 'search', label: 'Davidson County Tax (choose "PIN#", paste, Submit)', url: 'https://taxsearch.co.davidson.nc.us/', copy: 'parcel_id' },
   51: { kind: 'search', label: 'Cumberland County Bills (Search By "Parcel Number", paste)', url: 'https://taxpwa.co.cumberland.nc.us/publicwebaccess/', copy: 'parcel_id' },
+  // Moore: county ArcGIS viewer (supplied by the owner); tick "I Agree" + OK, open "Parcel ID Query", paste into "PIN is", click Apply (1 parcel checked)
+  125: { kind: 'search', label: 'Moore County GIS (agree to disclaimer, Parcel ID Query, paste into PIN)', url: 'https://experience.arcgis.com/experience/372f89e6fdcb4bd5af38256a9744ed14/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

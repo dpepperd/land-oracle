@@ -36,6 +36,8 @@ eq('Iredell results page', ncCountyLink(97, { parcel_id: '4638193334.000' })?.ur
 eq('Iredell junk id -> null', ncCountyLink(97, { parcel_id: '4638/../x' }), null);
 eq('New Hanover copies alt_key', ncCountyLink(129, { parcel_id: '3130-45-7295.000', alt_key: 'R09006-019-004-000' })?.copy, 'R09006-019-004-000');
 eq('Brunswick / Onslow / Rowan / Cleveland / Davidson / Cumberland copy parcel_id', [19, 133, 159, 45, 57, 51].map((c) => ncCountyLink(c, { parcel_id: 'X1', alt_key: 'Y2' })?.copy), ['X1', 'X1', 'X1', 'X1', 'X1', 'X1']);
+eq('Moore copies the 12-digit PIN', ncCountyLink(125, { parcel_id: '853402565180', alt_key: '00015722' })?.copy, '853402565180');
+eq('Moore odd id -> null', ncCountyLink(125, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
