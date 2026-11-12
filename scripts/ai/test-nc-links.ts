@@ -126,6 +126,8 @@ eq('Currituck copies the dashed PIN from alt_key', ncCountyLink(53, { parcel_id:
 eq('Currituck without that alt_key -> null', ncCountyLink(53, { parcel_id: '087A00000690007', alt_key: null }), null);
 eq('Clay copies the 12-digit PIN from alt_key (its parcel_id is a placeholder)', ncCountyLink(43, { parcel_id: 'OID36492972', alt_key: '555100331266' })?.copy, '555100331266');
 eq('Clay without an alt_key -> null', ncCountyLink(43, { parcel_id: 'OID36492972', alt_key: null }), null);
+eq('Chowan copies the 12-digit PIN', ncCountyLink(41, { parcel_id: '780513031389' })?.copy, '780513031389');
+eq('Chowan placeholder ids -> null', ncCountyLink(41, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

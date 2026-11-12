@@ -178,6 +178,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Clay: county ArcGIS Experience viewer (supplied by the owner); tick the agreement + OK, paste the 12-digit PIN (our alt_key; Clay's parcel_id is a placeholder)
   // into "Find Address, Name, Parcel #", Enter (1 parcel checked: owner matched, parcel highlighted)
   43: { kind: 'search', label: 'Clay County Map (agree, OK, paste the PIN in the search box, Enter)', url: 'https://experience.arcgis.com/experience/d706343410ba46c586bfb15b0ca30bdb/', copy: 'alt_key', pick: p => (/^\d{12}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Chowan: AGD ArcGIS viewer (supplied by the owner); click OK on the splash, paste the 12-digit PIN into "Search All or Choose Left", Enter (1 parcel checked)
+  41: { kind: 'search', label: 'Chowan County GIS (OK, paste the PIN in the search box, Enter)', url: 'https://www.arcgis.com/apps/webappviewer/index.html?id=dc1c3a48141744c1a123bcad4e5cef50', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
