@@ -172,6 +172,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Hertford: "Real Property PWA" like Madison/Hyde (the owner sent the county's Instant sidebar viewer; the PWA from the vendor research is easier); paste the PIN
   // from our alt_key (dashed, e.g. 6906-76-2650) into the search box, Enter (1 parcel checked; the REID shown is our parcel_id)
   91: { kind: 'search', label: 'Hertford County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/Hertford/parcel-search', copy: 'alt_key', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Currituck: county GIS portal (supplied by the owner); click Accept, paste the dashed PIN (our alt_key, e.g. 9021-09-0950) into "Enter Global PIN", Enter (1 parcel
+  // checked; the "Parcel ID Number" shown is our parcel_id)
+  53: { kind: 'search', label: 'Currituck County GIS (accept, paste into Enter Global PIN, Enter)', url: 'https://maps.currituckcountync.gov/gis/', copy: 'alt_key', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
