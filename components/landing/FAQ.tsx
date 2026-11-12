@@ -19,7 +19,7 @@ const faqs = [
   },
   {
     question: "Is there a free trial?",
-    answer: "You can create a free account to explore the map in one county. Paid plans start at $79 a month and add more counties, higher export limits, and the AI Analyst. You can change or cancel any time from the billing portal; for billing questions, email support@landoracle.ai."
+    answer: "You can create a free account to explore the map in one county. Paid plans start at $79 a month and add more counties, higher export limits, and the AI Analyst. New subscribers get a 7-day money-back guarantee on their first payment (see the Refund Policy). You can change or cancel any time from the billing portal; for billing questions, email support@landoracle.ai."
   },
   {
     question: "Is there an AI assistant?",

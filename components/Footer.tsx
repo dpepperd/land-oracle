@@ -70,6 +70,7 @@ export default function Footer() {
             <Link href="/terms" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Terms of Service</Link>
             <Link href="/acceptable-use" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Acceptable Use</Link>
             <Link href="/data-disclaimer" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Data Disclaimer</Link>
+            <Link href="/refund-policy" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>
