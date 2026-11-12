@@ -22,6 +22,9 @@ eq('Pitt direct drops leading zeros', ncCountyLink(147, { parcel_id: '4672073353
 eq('Pitt direct (no zero)', ncCountyLink(147, { alt_key: '29423' })?.url, 'https://property.spatialest.com/nc/pitt#/property/29423');
 eq('Pitt zero/blank -> null', [ncCountyLink(147, { alt_key: '00000' }), ncCountyLink(147, { alt_key: '' })], [null, null]);
 eq('Henderson direct', ncCountyLink(89, { parcel_id: '9653139532', alt_key: '10009631' })?.url, 'https://property.spatialest.com/nc/henderson#/property/10009631');
+eq('Yancey direct (search that redirects to the record)', ncCountyLink(199, { parcel_id: '988100020758000' })?.url, 'https://yancey.ias-clt.com/parcel.list.php?parcel.search%5Bp_parid%5D=988100020758000&parcel.search%5Bsearch%5D=Search');
+eq('Yancey OID placeholder ids -> null', ncCountyLink(199, { parcel_id: 'OID34721360' }), null);
+eq('Yadkin search copies the alt_key (Parcel ID box)', ncCountyLink(197, { parcel_id: '486903423305', alt_key: '116605' })?.copy, '116605');
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
