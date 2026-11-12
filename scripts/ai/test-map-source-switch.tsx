@@ -5,6 +5,7 @@
 import React from 'react';
 import path from 'path';
 import { pathToFileURL } from 'url';
+// @ts-ignore test-only library (installed with --no-save, no types)
 import TestRenderer, { act } from 'react-test-renderer';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
