@@ -155,6 +155,8 @@ eq('Warren copies the 10-digit PIN', ncCountyLink(185, { parcel_id: '2912829477'
 eq('Warren placeholder ids -> null', ncCountyLink(185, { parcel_id: 'OID123' }), null);
 eq('Greene copies the 7-digit Parcel ID (alt_key), not the PIN', ncCountyLink(79, { parcel_id: '4630647914', alt_key: '0303289' })?.copy, '0303289');
 eq('Greene without that alt_key -> null', ncCountyLink(79, { parcel_id: '4630647914', alt_key: null }), null);
+eq('Granville copies the 12-digit PIN', ncCountyLink(77, { parcel_id: '193600920159', alt_key: '7055' })?.copy, '193600920159');
+eq('Granville odd ids -> null', [ncCountyLink(77, { parcel_id: '1936009201590000' }), ncCountyLink(77, { parcel_id: 'OID123' })], [null, null]);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

@@ -210,6 +210,8 @@ export const NC_LINKS: Record<number, Entry> = {
   185: { kind: 'search', label: 'Warren County Maps (Search > Parcels tab, paste into PIN, Search)', url: 'https://maps.roktech.net/ROKMAPS_Warren/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Greene: AGD ArcGIS viewer (supplied by the owner); paste the 7-digit county Parcel ID (our alt_key, NOT the PIN, which finds nothing) into "Search All or Choose Left", Enter (1 parcel checked)
   79: { kind: 'search', label: 'Greene County GIS (paste the Parcel ID in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=336dd11e889546b7806dded487e3fc57', copy: 'alt_key', pick: p => (/^\d{7}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Granville: ArcGIS Experience viewer (supplied by the owner); click OK, paste the 12-digit PIN (our parcel_id, the "Map Number") into "Search al...", Enter (1 parcel checked; RECN shown = our alt_key)
+  77: { kind: 'search', label: 'Granville County Parcel Viewer (OK, paste the PIN in the search box, Enter)', url: 'https://experience.arcgis.com/experience/9fb947310691479b8a2468d86316e8de/page/Granville-County-Parcel-Viewer', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
