@@ -36,6 +36,9 @@ export const NC_LINKS: Record<number, Entry> = {
   179: { kind: 'direct', label: 'Union County Property', build: p => (p.parcel_id && /^\d{8}[A-Z]?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/union#/property/${p.parcel_id}` : null) },
   // Iredell: results page for the parcel (one row per tax year; click the newest year's "PRC" for the record card)
   97: { kind: 'direct', label: 'Iredell County Tax (results by parcel)', build: p => (p.parcel_id && /^\d{10}\.\d{3}$/.test(p.parcel_id) ? `https://taxweb.iredellcountync.gov/PublicAccess/SearchResults.aspx?field=parcel&parcel=${p.parcel_id}&order=Owner%20Name` : null) },
+  // Wilson: DEVNET wEdge (same vendor as Gaston) but its record address needs an internal id; the site's quick-search address takes our PIN
+  // as is and shows a one-row result (3 parcels checked). Click the number in the row for the record.
+  195: { kind: 'direct', label: 'Wilson County Property Tax Inquiry (search result for this PIN)', build: p => (p.parcel_id && /^\d{4}-\d{2}-\d{4}\.\d{3}$/.test(p.parcel_id) ? `https://wilsonnc.devnetwedge.com/search/quick?q=${p.parcel_id}` : null) },
   // Spatialest record cards (same site as Alamance); which of our IDs the card uses differs by county
   135: { kind: 'direct', label: 'Orange County Property', build: p => (p.parcel_id && /^\d{10}(\.\d{1,4})?$/.test(p.parcel_id) ? `https://property.spatialest.com/nc/orange#/property/${p.parcel_id}` : null) },
   // Pitt's card id is the county parcel number WITHOUT leading zeros (alt_key 05533 -> 5533; with the zero the county shows "not found")
