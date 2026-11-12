@@ -33,7 +33,7 @@ Last updated 2026-11-11.
 ## Tax delinquent (Phase 5, research only)
 - Not started.
 
-## North Carolina (candidate; data tested, not loaded)
+## North Carolina (loaded into staging table nc_parcels_stage; not in the app; admin-only pilot planned)
 - Source: NC OneMap statewide parcels, https://services.nconemap.gov/secure/rest/services/NC1Map_Parcels/FeatureServer (layer 0 points, layer 1 polygons), 5,925,955 parcels, 100 counties, max 5,000 per request.
 - License: see docs/nc-onemap-terms-2026-11-11.md ("free and unrestricted use"; no written agreements issued; sales must not violate NC law; cite NC OneMap).
 - Fields: owner, mailing street/city/state/zip, site address, land/improvement/total value, acres, sale DATE (no price), land-use code and description, year built, owner type.
@@ -43,3 +43,8 @@ Last updated 2026-11-11.
 - Estimated size: 4-5 GB. Estimated build: 8-10 working days, 2-3 weeks calendar.
 - Decisions made: pilot is ADMIN-ONLY first; plans and pricing across states decided later. County access must store state plus county (county names repeat across states, e.g. Clay).
 - Order: finish the Florida flood table first, then NC.
+- LOADED 2026-11-11/12: loader scripts/data-layers/load-nc-parcels.cjs (county by county, resumable, gentle mode). All 100 counties; 5,938,804 parcels = exactly the state's total; 0 empty or invalid shapes; coordinates inside NC. Two counties (Clay 043, Alleghany 005) first loaded zero because the state labels their code unpadded ('43', '5'); the loader now matches both.
+- Size: about 5.8 GB for the whole state (about 1 KB per parcel), less than the 4-5 GB-per-million estimate. Database total about 21 GB of 80 GiB.
+- Quality (whole state): owner name 98.9%, mailing street 98.4%, out-of-state owners 503,115, land-use code on 53% of parcels, sale date on 38%, year built on 46%; 'likely vacant' stand-in flags 1.3M parcels (96% precision against the counties' own vacant-land labels in Dare County).
+- Duplicate parcel numbers (found 2026-11-12): 52,828 parcel numbers appeared on more than one row (89,320 extra rows, 1.5%), concentrated in Chowan (almost every parcel doubled), Mecklenburg, Henderson, Cabarrus. Causes: exact copies in the state's data (56% of groups), distinct records sharing a parcel number (e.g. a manufactured home and the land under it, different owners/values), and placeholder numbers ('0' 474 rows, 'ROW' 284 rows). Cleanup (scripts/data-layers/nc-dedupe-keys.cjs, one transaction): delete exact copies (47,724 rows, keeping the lowest gid), then give the other records a stable suffix -D2, -D3 (ordered by owner, use code, value desc, gid; the first keeps the plain key) (41,596 rows). Result: 5,891,080 rows, all parcel_keys unique. Re-run this script after any reload of NC.
+- Still to do: add NC to the search view with state + county access (county names repeat across states), state picker, hide unsupported filters, show the NC OneMap credit, AI tools aware of state, and an admin-only preview test. VACUUM the staging table after the dedupe.
