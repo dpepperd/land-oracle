@@ -189,6 +189,8 @@ export const NC_LINKS: Record<number, Entry> = {
   33: { kind: 'search', label: 'Caswell County WebGIS (accept, paste into Map and Parcel, Enter)', url: 'https://www.webgis.net/nc/caswell/', copy: 'alt_key', pick: p => (/^\d{3,4}[A-Z]? \d{3}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   // Camden: ArcGIS Instant viewer (supplied by the owner); click "Acknowledgement", paste the 18-digit PIN (our parcel_id) into the search box ("Find address or owner"), Enter (1 parcel checked)
   29: { kind: 'search', label: 'Camden County Property Information (acknowledge, paste the PIN in the search box, Enter)', url: 'https://ccnc.maps.arcgis.com/apps/instant/sidebar/index.html?appid=0b5925a5657e45c5937aada475ca76a7', copy: 'parcel_id', pick: p => (/^\d{18}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Bladen: Avineon viewer (supplied by the owner); click "Accept and close", paste the 12-digit PIN (our parcel_id) into "Parcel PIN", press Enter twice (1 parcel checked; our Bladen data has no site addresses)
+  17: { kind: 'search', label: 'Bladen County GIS (accept, paste into Parcel PIN, press Enter twice)', url: 'https://gis.bladenco.org/bladenmap/', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

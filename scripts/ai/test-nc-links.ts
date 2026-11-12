@@ -136,6 +136,8 @@ eq('Caswell copies the Map and Parcel number (alt_key)', [ncCountyLink(33, { par
 eq('Caswell without that alt_key -> null', ncCountyLink(33, { parcel_id: '0035000000600000', alt_key: null }), null);
 eq('Camden copies the 18-digit PIN', ncCountyLink(29, { parcel_id: '028936009008830000' })?.copy, '028936009008830000');
 eq('Camden odd ids -> null', [ncCountyLink(29, { parcel_id: 'RIDGE CREST' }), ncCountyLink(29, { parcel_id: 'OID123' })], [null, null]);
+eq('Bladen copies the 12-digit PIN', ncCountyLink(17, { parcel_id: '037500227150', alt_key: '19156' })?.copy, '037500227150');
+eq('Bladen placeholder ids -> null', ncCountyLink(17, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
