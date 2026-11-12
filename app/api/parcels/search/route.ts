@@ -8,6 +8,7 @@ import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
 import { countyCode, countyName } from '@/lib/parcels/key';
 import { ABSENTEE_SQL, addSellerSignalConditions } from '@/lib/sellerSignals';
 import { searchNc } from '@/lib/ncSearch';
+import { searchTx } from '@/lib/txSearch';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
 
     // North Carolina pilot (admin-only) has its own code path; everything below is Florida and is unchanged.
     if (body.state === 'NC') return await searchNc(body, userId);
+    if (body.state === 'TX') return await searchTx(body, userId);
     
     // Deconstruct body
     const { 
