@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import Map, { 
   Source, 
   Layer, 
@@ -99,6 +99,20 @@ const clusterCountLayer: any = {
     'text-field': '{point_count_abbreviated}',
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
     'text-size': 12
+  }
+};
+
+// Parcels are tiny at county/state zoom, so also draw each result as a dot until you zoom in (polygons take over at zoom 12+).
+const parcelDotLayer: any = {
+  id: 'parcel-dots',
+  type: 'circle',
+  maxzoom: 12,
+  paint: {
+    'circle-color': ['case', ['boolean', ['get', 'out_of_state'], false], '#ef4444', '#a855f7'],
+    'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 3, 11, 5],
+    'circle-stroke-width': 1,
+    'circle-stroke-color': '#ffffff',
+    'circle-opacity': 0.9
   }
 };
 
@@ -312,6 +326,18 @@ export default function MapView({
 
   // External Link State
   // External Link State
+  // One dot per result (from each parcel's own coordinates) so results stay visible when zoomed out.
+  const dotsGeojson = useMemo(() => ({
+    type: 'FeatureCollection' as const,
+    features: ((geojson && geojson.features) || [])
+      .filter((f: any) => f && f.properties && Number.isFinite(Number(f.properties.flood_lon ?? f.properties.longitude)) && Number.isFinite(Number(f.properties.flood_lat ?? f.properties.latitude)))
+      .map((f: any) => ({
+        type: 'Feature' as const,
+        properties: f.properties,
+        geometry: { type: 'Point' as const, coordinates: [Number(f.properties.flood_lon ?? f.properties.longitude), Number(f.properties.flood_lat ?? f.properties.latitude)] },
+      })),
+  }), [geojson]);
+
   const [externalLink, setExternalLink] = useState<{ url: string; county: string; id?: string; landUse?: string } | null>(null);
 
   // Auto-zoom to Results
@@ -413,7 +439,7 @@ export default function MapView({
         initialViewState={initialViewState}
         mapStyle={MAP_STYLES[activeStyle as keyof typeof MAP_STYLES].url}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-        interactiveLayerIds={['clusters', 'parcel-fill', 'unclustered-point']}
+        interactiveLayerIds={['clusters', 'parcel-fill', 'unclustered-point', 'parcel-dots']}
         onMoveEnd={onMoveEnd}
         onClick={(event) => {
             if (isDrawing) {
@@ -444,7 +470,7 @@ export default function MapView({
             }
 
             const feature = event.features?.[0];
-            if (feature?.layer?.id === 'parcel-fill' || feature?.layer?.id === 'unclustered-point') {
+            if (feature?.layer?.id === 'parcel-fill' || feature?.layer?.id === 'unclustered-point' || feature?.layer?.id === 'parcel-dots') {
                 setPopupInfo({
                     start_lat: event.lngLat.lat,
                     start_lng: event.lngLat.lng,
@@ -591,6 +617,10 @@ export default function MapView({
           <Layer {...clusterLayer} />
           <Layer {...clusterCountLayer} />
           <Layer {...unclusteredPointLayer} />
+        </Source>
+
+        <Source id="parcel-dots-src" type="geojson" data={dotsGeojson}>
+          <Layer {...parcelDotLayer} />
         </Source>
 
         {showBoundaries && (
