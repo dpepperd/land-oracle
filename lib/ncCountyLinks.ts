@@ -17,7 +17,7 @@ export interface NcLink {
 
 type Entry =
   | { kind: 'direct'; label: string; build: (p: NcLinkInput) => string | null }
-  | { kind: 'search'; label: string; url: string; copy: 'parcel_id' | 'alt_key' };
+  | { kind: 'search'; label: string; url: string; copy: 'parcel_id' | 'alt_key'; /** Optional: reshape the copied value (e.g. drop a suffix the county's search box does not take). */ pick?: (p: NcLinkInput) => string | null };
 
 const digits = (s: string | null | undefined) => (s ?? '').replace(/[^0-9A-Za-z]/g, '');
 
@@ -41,6 +41,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // ---- search: the county's own lookup page (linked from the county website); the parcel ID is copied for pasting ----
   // Yadkin: map viewer; accept its disclaimer popup, then paste the copied number into "Enter Parcel ID" (alt_key; the PIN it shows is our parcel_id)
   197: { kind: 'search', label: 'Yadkin County GIS (accept the disclaimer, paste into Parcel ID)', url: 'https://gis.yadkincountync.gov/', copy: 'alt_key' },
+  // Guilford and Forsyth: "Real Property PWA" (record pages need the county's internal number, which we do not have); its search box takes the 10-digit PIN.
+  81: { kind: 'search', label: 'Guilford County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/guilford/parcel-search', copy: 'parcel_id', pick: p => { const m = /^(\d{10})(-\d{3})?$/.exec(p.parcel_id ?? ''); return m ? m[1] : null; } },
+  67: { kind: 'search', label: 'Forsyth County Property (paste the PIN)', url: 'https://lrcpwa.ncptscloud.com/forsyth/parcel-search', copy: 'alt_key', pick: p => (/^\d{10}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
@@ -59,7 +62,7 @@ export function ncCountyLink(coNo: number | null | undefined, p: NcLinkInput): N
     const url = e.build(p);
     return url ? { url, kind: 'direct', label: e.label } : null;
   }
-  const copy = (e.copy === 'alt_key' ? p.alt_key : p.parcel_id) ?? '';
+  const copy = (e.pick ? e.pick(p) : e.copy === 'alt_key' ? p.alt_key : p.parcel_id) ?? '';
   return copy ? { url: e.url, kind: 'search', copy, label: e.label } : null;
 }
 

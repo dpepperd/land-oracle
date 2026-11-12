@@ -25,6 +25,10 @@ eq('Henderson direct', ncCountyLink(89, { parcel_id: '9653139532', alt_key: '100
 eq('Yancey direct (search that redirects to the record)', ncCountyLink(199, { parcel_id: '988100020758000' })?.url, 'https://yancey.ias-clt.com/parcel.list.php?parcel.search%5Bp_parid%5D=988100020758000&parcel.search%5Bsearch%5D=Search');
 eq('Yancey OID placeholder ids -> null', ncCountyLink(199, { parcel_id: 'OID34721360' }), null);
 eq('Yadkin search copies the alt_key (Parcel ID box)', ncCountyLink(197, { parcel_id: '486903423305', alt_key: '116605' })?.copy, '116605');
+eq('Guilford copies the 10-digit PIN without the -000 suffix', ncCountyLink(81, { parcel_id: '7887615302-000' })?.copy, '7887615302');
+eq('Guilford odd id -> null', ncCountyLink(81, { parcel_id: 'abc' }), null);
+eq('Forsyth copies the 10-digit PIN (alt_key)', ncCountyLink(67, { parcel_id: '6837-79-5898.00', alt_key: '6837795898' })?.copy, '6837795898');
+eq('Forsyth without a PIN -> null', ncCountyLink(67, { parcel_id: '6837-79-5898.00', alt_key: null }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
