@@ -68,6 +68,10 @@ eq('Surry copies the 12-digit PIN', ncCountyLink(171, { parcel_id: '595300060782
 eq('Surry untested 15-digit shape -> null', ncCountyLink(171, { parcel_id: '595300060782000' }), null);
 eq('Stokes copies the 10-digit PIN', ncCountyLink(169, { parcel_id: '6000318549', alt_key: '600000318549' })?.copy, '6000318549');
 eq('Stokes placeholder ids -> null', ncCountyLink(169, { parcel_id: 'OID33301043' }), null);
+eq('Stanly copies the 12-digit PIN', ncCountyLink(167, { parcel_id: '656402572960' })?.copy, '656402572960');
+eq('Stanly placeholder ids -> null', ncCountyLink(167, { parcel_id: 'OID33301043' }), null);
+eq('Scotland copies the parcel id as stored (space included)', [ncCountyLink(165, { parcel_id: '040153 02007' })?.copy, ncCountyLink(165, { parcel_id: '040153A02016' })?.copy], ['040153 02007', '040153A02016']);
+eq('Scotland placeholder ids -> null', ncCountyLink(165, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);

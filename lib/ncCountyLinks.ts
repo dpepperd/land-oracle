@@ -105,6 +105,11 @@ export const NC_LINKS: Record<number, Entry> = {
   // Stokes: county GIS (supplied by the owner); paste the 10-digit PIN into "Parcel Number or PIN" and press Enter; a disclaimer appears on the first
   // search: click "Accept and close" and press Enter again (1 parcel checked: 1642 HORSESHOE RD)
   169: { kind: 'search', label: 'Stokes County GIS (paste into Parcel Number or PIN, Enter, accept the disclaimer, Enter again)', url: 'https://www.stokescountygis.com/maps/', copy: 'parcel_id', pick: p => (/^\d{10}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Stanly: county ArcGIS viewer (supplied by the owner); tick the agreement + OK, paste the 12-digit PIN into "Search Parcel Information", Enter (1 parcel checked)
+  167: { kind: 'search', label: 'Stanly County Property Viewer (agree, paste the PIN in the search box, Enter)', url: 'https://stanlycounty.maps.arcgis.com/apps/webappviewer/index.html?id=195ae28fc5454875a5cc60eb8b28bbf6', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Scotland: Laurinburg Parcel Explorer (county-wide ArcGIS viewer, supplied by the owner); paste our parcel_id as is (space included) into the search box and
+  // pick the "Parcel Number" suggestion (1 parcel checked: 040153 02007 on Mceachin Rd)
+  165: { kind: 'search', label: 'Scotland County Parcel Explorer (paste in the search box, pick the Parcel Number suggestion)', url: 'https://laurinburg.maps.arcgis.com/apps/webappviewer/index.html?id=889f012d9e2645278a18addbedd03d74', copy: 'parcel_id', pick: p => (/^\d{6}[A-Z ]\d{5,7}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
