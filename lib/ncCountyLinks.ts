@@ -133,6 +133,8 @@ export const NC_LINKS: Record<number, Entry> = {
   // Pamlico: AGD viewer (supplied by the owner); paste the 13-digit PIN into the search box, Enter; a splash screen appears: click OK (1 parcel checked; the
   // popup showed the matching situs address). The 12- and 10-digit ids (about 27% of parcels) were not tested and show as text.
   137: { kind: 'search', label: 'Pamlico County Parcel Viewer (paste the PIN in the search box, Enter, OK the splash)', url: 'https://webapp.agdmaps.com/nc/pamlico/', copy: 'parcel_id', pick: p => (/^\d{13}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Northampton: AGD viewer (supplied by the owner); paste our dashed PIN into the search box, Enter; a disclaimer appears: tick "I agree" and OK (1 parcel checked)
+  131: { kind: 'search', label: 'Northampton County Parcel Viewer (paste the PIN in the search box, Enter, agree)', url: 'https://webapp.agdmaps.com/nc/northampton/', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
