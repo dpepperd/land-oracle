@@ -211,6 +211,7 @@ const measurePointLayer: any = {
     }
 };
 
+const NC_GEOJSON = "/nc-counties.geojson"; // bundled (US Census county boundaries)
 const FL_GEOJSON = "https://raw.githubusercontent.com/danielcs88/fl_geo_json/master/geojson-fl-counties-fips.json";
 
 export default function MapView({ 
@@ -649,11 +650,11 @@ export default function MapView({
           <Layer {...parcelDotLayer} />
         </Source>
 
-        {showBoundaries && focusState === 'FL' && (
+        {showBoundaries && (
             <Source
-                id="fl-counties"
+                id={focusState === 'NC' ? "nc-counties" : "fl-counties"}
                 type="geojson"
-                data={FL_GEOJSON}
+                data={focusState === 'NC' ? NC_GEOJSON : FL_GEOJSON}
             >
                 <Layer 
                     id="county-boundary-line"
