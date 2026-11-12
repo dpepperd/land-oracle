@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { uiTier } from '@/lib/tierAccess';
+import { withArea, stripArea, type SearchArea } from '@/lib/searchArea';
 import { useAuth } from "@clerk/nextjs";
 import Header from "@/components/dashboard/Header";
 import FilterSidebar from "@/components/dashboard/FilterSidebar";
@@ -23,6 +24,11 @@ export default function Dashboard() {
     parcelId: '',
     limit: 1000
   });
+
+  // The drawn search area lives in its own state so changing/applying sidebar filters can never drop it.
+  const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
+  const [clearShapeSignal, setClearShapeSignal] = useState(0);
+  const areaFilters = useMemo(() => withArea(filters, searchArea), [filters, searchArea]);
 
   const [userTier, setUserTier] = useState<'demo' | 'paid'>('demo');
   const [userRole, setUserRole] = useState<string>('user'); // Admin Role
@@ -84,7 +90,7 @@ export default function Dashboard() {
       const res = await fetch('/api/parcels/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filters),
+        body: JSON.stringify(withArea(filters, searchArea)),
         signal: controller.signal
       });
       const data = await res.json();
@@ -132,7 +138,7 @@ export default function Dashboard() {
         abortControllerRef.current = null;
       }
     }
-  }, [filters]);
+  }, [filters, searchArea]);
 
   // Debounce effect? Or simple effect.
   useEffect(() => {
@@ -267,6 +273,12 @@ export default function Dashboard() {
         </div>
       )}
       
+      {!aiResults && totalCount > 0 && !(filters as any).counties?.length && !searchArea && !(filters as any).parcelId && !(filters as any).address && (
+        <div className="bg-amber-100 text-amber-900 px-6 py-2 shadow text-sm">
+          No county or drawn area is selected, so this shows the first {totalCount.toLocaleString()} matches across the whole state. Pick a county or draw an area to narrow it down.
+        </div>
+      )}
+
       {aiResults && (
         <div className="bg-emerald-700 text-white px-6 py-2 shadow flex items-center justify-between text-sm">
           <span>Showing {aiResults.count} parcel{aiResults.count === 1 ? '' : 's'} from the AI Analyst</span>
@@ -286,8 +298,9 @@ export default function Dashboard() {
             ${isMobileFiltersOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}>
           <FilterSidebar 
-            initialFilters={filters}
-            onFilterChange={setFilters} 
+            initialFilters={areaFilters}
+            onFilterChange={(f: any) => setFilters(stripArea(f))}
+            onClearArea={() => { setSearchArea(null); setClearShapeSignal((n) => n + 1); }}
             userTier={userTier}
             unlockedCounties={unlockedCounties}
             onUpsell={() => {
@@ -315,15 +328,10 @@ export default function Dashboard() {
               userRole={userRole}
               userTier={userTier}
               onUpsell={() => setShowUpsell(true)}
+              clearShapeSignal={clearShapeSignal}
               onSearchArea={(bounds, shape) => {
-                  setFilters(prev => ({
-                      ...prev,
-                      minLat: bounds[0],
-                      maxLat: bounds[1],
-                      minLon: bounds[2],
-                      maxLon: bounds[3],
-                      spatialShape: shape // Pass complex geometry
-                  }));
+                  if (shape) setSearchArea({ shape, bounds: [bounds[0], bounds[1], bounds[2], bounds[3]] });
+                  else setSearchArea(null); // Clear Shape
               }}
             />
             {/* Mobile Floating Controls */}
