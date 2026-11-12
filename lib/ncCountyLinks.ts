@@ -110,6 +110,9 @@ export const NC_LINKS: Record<number, Entry> = {
   // Scotland: Laurinburg Parcel Explorer (county-wide ArcGIS viewer, supplied by the owner); paste our parcel_id as is (space included) into the search box and
   // pick the "Parcel Number" suggestion (1 parcel checked: 040153 02007 on Mceachin Rd)
   165: { kind: 'search', label: 'Scotland County Parcel Explorer (paste in the search box, pick the Parcel Number suggestion)', url: 'https://laurinburg.maps.arcgis.com/apps/webappviewer/index.html?id=889f012d9e2645278a18addbedd03d74', copy: 'parcel_id', pick: p => (/^\d{6}[A-Z ]\d{5,7}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Rutherford: county GIS viewer (supplied by the owner); click Accept, paste the 6-7 digit parcel number (our parcel_id) into "Enter Parcel Tax ID Number",
+  // press Enter (1 parcel checked; the result shows the PIN = our alt_key)
+  161: { kind: 'search', label: 'Rutherford County GIS (accept, paste into Parcel Tax ID Number, Enter)', url: 'https://gis.rutherfordcountync.gov/maps/', copy: 'parcel_id', pick: p => (/^\d{6,7}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
