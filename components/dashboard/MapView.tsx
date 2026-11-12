@@ -78,6 +78,8 @@ interface MapViewProps {
   userTier?: string;
   onUpsell?: () => void;
   onSearchArea?: (bounds: number[], shape?: any) => void;
+  /** Increments when the sidebar's Clear All / Reset cleared the search area: drop the drawn outline too. */
+  clearShapeSignal?: number;
 }
 
 // Layer Styles
@@ -207,7 +209,8 @@ export default function MapView({
   userRole = 'user',
   userTier = 'demo',
   onUpsell,
-  onSearchArea 
+  onSearchArea,
+  clearShapeSignal = 0
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const { theme } = useTheme();
@@ -320,6 +323,7 @@ export default function MapView({
   // Drawing Tool State (Spatial Search)
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawPoints, setDrawPoints] = useState<any[]>([]);
+  useEffect(() => { if (clearShapeSignal > 0) { setDrawPoints([]); setIsDrawing(false); } }, [clearShapeSignal]);
   const [isShapeVisible, setIsShapeVisible] = useState(true);
 
   // Admin Edit State

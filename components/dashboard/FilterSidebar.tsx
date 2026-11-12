@@ -151,6 +151,8 @@ interface FilterSidebarProps {
   userTier?: string;
   unlockedCounties?: string[];
   onUpsell?: () => void;
+  /** Called by Clear All / Reset so the page also drops the drawn area and the map clears its outline. */
+  onClearArea?: () => void;
 }
 
 export default function FilterSidebar({ 
@@ -158,7 +160,8 @@ export default function FilterSidebar({
   initialFilters, 
   userTier = 'demo', 
   unlockedCounties = ['Baker'],
-  onUpsell 
+  onUpsell,
+  onClearArea
 }: FilterSidebarProps) {
   const isInitialMount = useRef(true);
   const previousSpatialShapeRef = useRef<any>(null);
@@ -302,6 +305,7 @@ export default function FilterSidebar({
     setFilters(reset);
     setLocalAddress(''); // Reset local input
     onFilterChange(reset);
+    onClearArea?.();
     previousSpatialShapeRef.current = null;
   };
 
