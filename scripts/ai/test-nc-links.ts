@@ -142,6 +142,8 @@ eq('Beaufort copies the dashed PIN', ncCountyLink(13, { parcel_id: '5657-57-2238
 eq('Beaufort placeholder ids -> null', ncCountyLink(13, { parcel_id: 'OID123' }), null);
 eq('Bertie copies the 10-digit GEOPIN', ncCountyLink(15, { parcel_id: '6828132610' })?.copy, '6828132610');
 eq('Bertie placeholder ids -> null', ncCountyLink(15, { parcel_id: 'OID123' }), null);
+eq('Alexander copies the 10-digit PIN', ncCountyLink(3, { parcel_id: '3738031045', alt_key: '3738 03 1045' })?.copy, '3738031045');
+eq('Alexander placeholder ids -> null', ncCountyLink(3, { parcel_id: 'OID123' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
