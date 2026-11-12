@@ -6,6 +6,9 @@ import { Globe, Menu, X, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 
+// Landing nav: Features jumps to the section on the home page; Data opens the data disclaimer (there is no separate /features or /data page).
+const NAV: [string, string][] = [['Features', '/#features'], ['Territories', '/territories'], ['Pricing', '/pricing'], ['Data', '/data-disclaimer'], ['About', '/about'], ['Contact', '/contact']];
+
 export default function LandingHeader() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -82,10 +85,10 @@ export default function LandingHeader() {
         {/* Desktop Links */}
         <div className="hidden w-full md:block md:w-auto md:order-1">
           <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-zinc-100 rounded-lg bg-zinc-50 md:space-x-8 md:flex-row md:mt-0 md:border-0 md:bg-transparent dark:bg-zinc-800 md:dark:bg-transparent dark:border-zinc-700">
-            {['Features', 'Territories', 'Pricing', 'Data', 'About', 'Contact'].map((item) => (
+            {NAV.map(([item, href]) => (
                <li key={item}>
                 <Link 
-                    href={`/${item.toLowerCase()}`}
+                    href={href}
                     className="block py-2 px-3 md:p-0 text-foreground rounded hover:bg-zinc-100 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:text-blue-500 transition-colors"
                 >
                     {item}
@@ -100,10 +103,10 @@ export default function LandingHeader() {
         {isOpen && (
             <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                  <ul className="flex flex-col p-4 font-medium space-y-2">
-                    {['Features', 'Territories', 'Pricing', 'Data', 'About', 'Contact'].map((item) => (
+                    {NAV.map(([item, href]) => (
                         <li key={item}>
                             <Link 
-                                href={`/${item.toLowerCase()}`}
+                                href={href}
                                 className="block py-2 px-3 text-zinc-900 rounded hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800"
                                 onClick={() => setIsOpen(false)}
                             >

@@ -3,23 +3,31 @@ import { Plus } from 'lucide-react';
 const faqs = [
   {
     question: "What counties do you cover?",
-    answer: "We are currently live in Baker County, FL with full data coverage. We are rapidly expanding to surrounding North Florida counties including Columbia, Union, and Nassau. Check back weekly for updates!"
+    answer: "All 67 Florida counties are live, using the 2026 Florida Department of Revenue tax roll. Your plan decides how many counties you can search: Scout includes 1, Pro includes 3, and Statewide includes all 67. You can add counties to Scout and Pro."
   },
   {
     question: "What types of properties are included?",
-    answer: "We index every parcel in the county—Residential, Agricultural, Commercial, Industrial, and Vacant Land. Use our Land Use filters to specifically target Single Family Homes, Row Crops, Timberland, or Retail potential."
+    answer: "Every parcel in each county: residential, agricultural, commercial, industrial, and vacant land. Use the land use filters to target single-family homes, row crops, timberland, or retail, and see owner, mailing address, value, acreage, recent sales, and FEMA flood zone on each parcel."
   },
   {
     question: "Can I export the data?",
-    answer: "Yes! Pro and Enterprise plans allow CSV exports of your searches, including owner mailing addresses, facilitating direct mail campaigns."
+    answer: "Yes. Every plan can export your searches to CSV, including owner mailing addresses: free accounts up to 100 rows a month, Scout up to 1,000 rows a month, and Pro and Statewide unlimited."
   },
   {
     question: "Do you offer skip tracing?",
-    answer: "We provide partial contact info (phone/email) where available in public records. For deep skip tracing, we integrate with third-party providers (coming soon)."
+    answer: "Not yet. Owner names and mailing addresses come from public tax records, so you can mail owners today. Phone and email lookups (skip tracing) are planned but not available yet."
   },
   {
     question: "Is there a free trial?",
-    answer: "Absolutely. You can explore the map and see basic data for free. Advanced filtering and ownership details require a subscription, but we offer a 14-day money-back guarantee."
+    answer: "You can create a free account to explore the map in one county. Paid plans start at $79 a month and add more counties, higher export limits, and the AI Analyst. You can change or cancel any time from the billing portal; for billing questions, email support@landoracle.ai."
+  },
+  {
+    question: "Is there an AI assistant?",
+    answer: "Yes. Pro and Statewide plans include an AI Analyst. Ask for what you want in plain English, like vacant land over 5 acres with an out-of-state owner, and the matching parcels appear on your map and in your results. It uses property facts only and can make mistakes, so always verify before you act."
+  },
+  {
+    question: "Where does the data come from?",
+    answer: "Ownership, value, and sales data come from the Florida Department of Revenue tax roll, and flood zones come from FEMA. It is meant for research. Always confirm ownership, liens, zoning, and flood status with the county and a title company before you buy."
   }
 ];
 

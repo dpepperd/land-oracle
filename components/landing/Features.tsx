@@ -1,4 +1,4 @@
-import { ScanSearch, Database, Users, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
+import { ScanSearch, Database, Users, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 
 const features = [
   {
@@ -9,7 +9,7 @@ const features = [
   {
     icon: Database,
     title: "Deep Property Data",
-    description: "Access ownership details, land use codes, acreage, and valuation data sourced directly from county records."
+    description: "See owner and mailing address, land use, acreage, value, recent sales, and the FEMA flood zone for every parcel, from Florida tax records and FEMA maps."
   },
   {
     icon: Users,
@@ -19,23 +19,23 @@ const features = [
   {
     icon: Zap,
     title: "Smart Filtering",
-    description: "Filter by market value, owner type (in-state vs out-of-state), and distance to major highways to find high-intent sellers."
+    description: "Filter by market value, acreage, land use, owner type (in-state or out-of-state), and distance to major highways to narrow a county down fast."
   },
   {
-    icon: TrendingUp,
-    title: "Market Analytics",
-    description: "Visualize price trends and property values with heatmaps and cluster analysis to spot undervalued areas."
+    icon: Sparkles,
+    title: "AI Analyst",
+    description: "Ask for what you want in plain English. Matching parcels land on your map and results list. Included with Pro and Statewide."
   },
   {
     icon: ShieldCheck,
-    title: "Absentee Owner Targeting",
-    description: "Instantly filter for out-of-state owners to identify high-motivation leads. Skip the locals and find sellers who just want to cash out."
+    title: "Seller Signals",
+    description: "Filter for absentee and out-of-state owners, parcels with no homestead exemption, and parcels with no recent sale, to find owners who may be more likely to sell."
   }
 ];
 
 export default function Features() {
   return (
-    <section className="py-24 bg-background border-y border-border">
+    <section id="features" className="py-24 bg-background border-y border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center max-w-3xl mx-auto mb-16">
