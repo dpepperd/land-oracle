@@ -24,6 +24,7 @@ const digits = (s: string | null | undefined) => (s ?? '').replace(/[^0-9A-Za-z]
 // Keyed by NC FIPS county code (co_no). Filled from tested research; see docs/nc-county-links.md.
 export const NC_LINKS: Record<number, Entry> = {
   // ---- direct: fetched against 3 real parcels each; owner and address matched our data ----
+  1: { kind: 'direct', label: 'Alamance County Property', build: p => (p.alt_key && /^\d{4,8}$/.test(p.alt_key) ? `https://property.spatialest.com/nc/alamance#/property/${p.alt_key}` : null) },
   183: { kind: 'direct', label: 'Wake County Real Estate', build: p => (p.alt_key && /^\d{4,8}$/.test(p.alt_key) ? `https://services.wake.gov/realestate/Account.asp?id=${p.alt_key}` : null) },
   21: { kind: 'direct', label: 'Buncombe County Tax', build: p => (p.parcel_id && /^\d{10,15}$/.test(p.parcel_id) ? `https://tax.buncombenc.gov/Parcel/Details/${p.parcel_id}` : null) },
   63: { kind: 'direct', label: 'Durham County Property', build: p => (p.alt_key && /^\d{3,8}$/.test(p.alt_key) ? `https://taxcama.dconc.gov/camapwa/PropertySummary.aspx?REID=${p.alt_key}` : null) },

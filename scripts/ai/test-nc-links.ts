@@ -13,6 +13,8 @@ eq('Buncombe direct', ncCountyLink(21, { parcel_id: '972001824300000', alt_key: 
 eq('Durham direct', ncCountyLink(63, { parcel_id: 'x', alt_key: '139751' })?.url, 'https://taxcama.dconc.gov/camapwa/PropertySummary.aspx?REID=139751');
 eq('Randolph direct', ncCountyLink(151, { alt_key: '13405' })?.url, 'https://txpwa.randolphcountync.gov/camapwa/PropertySummary.aspx?REID=13405');
 eq('Gaston direct', ncCountyLink(71, { alt_key: '203529' })?.url, 'https://gastonnc.devnetwedge.com/parcel/view/203529/2026');
+eq('Alamance direct (alt_key = Parcel ID No. on the county page)', ncCountyLink(1, { parcel_id: '8863806901', alt_key: '120399' })?.url, 'https://property.spatialest.com/nc/alamance#/property/120399');
+eq('Alamance non-numeric alt_key -> null', ncCountyLink(1, { parcel_id: '8863806901', alt_key: 'A-12' }), null);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
