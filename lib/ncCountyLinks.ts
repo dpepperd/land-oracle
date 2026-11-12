@@ -159,6 +159,8 @@ export const NC_LINKS: Record<number, Entry> = {
   87: { kind: 'search', label: 'Haywood County GIS (open the PIN tab, paste the PIN, Enter)', url: 'https://maps.haywoodcountync.gov/gisweb/default.htm', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Jones: AGD ArcGIS viewer (supplied by the owner); tick "I agree" + OK, paste the 12-digit PIN into "Search All or Choose Left", Enter (1 parcel checked)
   103: { kind: 'search', label: 'Jones County Parcel Viewer (agree, OK, paste the PIN in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=1a75ffe4b94c46748cd14c475ffc94ad', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
+  // Jackson: Real Property Viewer (supplied by the owner); click OK, paste our dashed PIN into "Owner, Address, or PIN", Enter (1 parcel checked; it also offers a PRC link)
+  99: { kind: 'search', label: 'Jackson County Real Property Viewer (OK, paste the PIN in the search box, Enter)', url: 'https://gis.jacksonnc.org/rpv/', copy: 'parcel_id', pick: p => (/^\d{4}-\d{2}-\d{4}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },
