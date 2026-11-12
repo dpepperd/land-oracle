@@ -180,20 +180,29 @@ export default function Dashboard() {
   }, [isLoaded, showAiParcels]);
 
   const handleExport = async () => {
+    // While the AI Analyst's parcels are on screen, export exactly those parcels (not the last filter search).
+    const exportingAi = !!aiResults;
     try {
-      const res = await fetch('/api/parcels/export', {
+      const res = await fetch(exportingAi ? '/api/assistant/export' : '/api/parcels/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filters)
+        body: JSON.stringify(exportingAi ? { keys: parcels.map((p: any) => p.parcel_key).filter(Boolean).slice(0, 60) } : filters)
       });
       
-      if (!res.ok) throw new Error('Export failed');
+      if (!res.ok) {
+        if (exportingAi) {
+          const j = await res.json().catch(() => ({}));
+          alert(j.message || 'Failed to export data');
+          return;
+        }
+        throw new Error('Export failed');
+      }
       
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `parcels_export_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `${exportingAi ? 'ai_parcels' : 'parcels'}_export_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -275,7 +284,10 @@ export default function Dashboard() {
       {aiResults && (
         <div className="bg-emerald-700 text-white px-6 py-2 shadow flex items-center justify-between text-sm">
           <span>Showing {aiResults.count} parcel{aiResults.count === 1 ? '' : 's'} from the AI Analyst</span>
-          <button onClick={() => { setAiResults(null); void fetchData(); }} className="underline hover:text-emerald-100">Back to my filters</button>
+          <div className="flex items-center gap-4">
+            <button onClick={() => void handleExport()} className="underline hover:text-emerald-100">Download these as CSV</button>
+            <button onClick={() => { setAiResults(null); void fetchData(); }} className="underline hover:text-emerald-100">Back to my filters</button>
+          </div>
         </div>
       )}
 
