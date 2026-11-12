@@ -214,6 +214,9 @@ export const NC_LINKS: Record<number, Entry> = {
   77: { kind: 'search', label: 'Granville County Parcel Viewer (OK, paste the PIN in the search box, Enter)', url: 'https://experience.arcgis.com/experience/9fb947310691479b8a2468d86316e8de/page/Granville-County-Parcel-Viewer', copy: 'parcel_id', pick: p => (/^\d{12}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   // Graham: ArcGIS viewer (supplied by the owner); tick the agreement + OK, paste the 14-digit parcel number (our alt_key; the 10-digit PIN finds nothing) into "Choose Left or Search All", Enter (1 parcel checked)
   75: { kind: 'search', label: 'Graham County GIS (agree, OK, paste the parcel number in the search box, Enter)', url: 'https://www.arcgis.com/apps/webappviewer/index.html?id=561a20cc33894cb98ff18aa6925af254', copy: 'alt_key', pick: p => (/^\d{12,14}[A-Z0-9]{0,2}$/.test(p.alt_key ?? '') ? p.alt_key! : null) },
+  // Gates: AGD ArcGIS viewer (supplied by the owner); click OK, paste the 13-digit "NC GEO PIN" (our parcel_id) into "Search All or Choose Left", Enter (1 parcel checked; Pclnbr shown = our alt_key).
+  // The 10-digit ids (about 15% of Gates parcels) were not tested and show as text.
+  73: { kind: 'search', label: 'Gates County Parcel Viewer (OK, paste the PIN in the search box, Enter)', url: 'https://agdonline.maps.arcgis.com/apps/webappviewer/index.html?id=5140b9aee17143cda7e51801b085f10d', copy: 'parcel_id', pick: p => (/^\d{13}$/.test(p.parcel_id ?? '') ? p.parcel_id! : null) },
   7: { kind: 'search', label: 'Anson County Tax', url: 'https://www.bttaxpayerportal.com/itspublican/TaxBillSearch', copy: 'parcel_id' },
   119: { kind: 'search', label: 'Mecklenburg County Polaris', url: 'https://polaris3g.mecklenburgcountync.gov/', copy: 'parcel_id' },
   25: { kind: 'search', label: 'Cabarrus County Real Estate', url: 'https://tax.cabarruscounty.us/RealEstate.aspx', copy: 'alt_key' },

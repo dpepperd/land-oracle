@@ -160,6 +160,8 @@ eq('Granville odd ids -> null', [ncCountyLink(77, { parcel_id: '1936009201590000
 eq('Graham copies the 14-digit parcel number (alt_key), not the PIN', ncCountyLink(75, { parcel_id: '5598274329', alt_key: '55980000000324' })?.copy, '55980000000324');
 eq('Graham: 12-digit and lettered parcel numbers work too (checked in the viewer)', [ncCountyLink(75, { alt_key: '553800001360' })?.copy, ncCountyLink(75, { alt_key: '553800010048P' })?.copy, ncCountyLink(75, { alt_key: '553800010094P1' })?.copy], ['553800001360', '553800010048P', '553800010094P1']);
 eq('Graham without that alt_key -> null', ncCountyLink(75, { parcel_id: '5598274329', alt_key: null }), null);
+eq('Gates copies the 13-digit GEO PIN', ncCountyLink(73, { parcel_id: '6091098851000', alt_key: '0401078' })?.copy, '6091098851000');
+eq('Gates untested 10-digit and placeholder ids -> null', [ncCountyLink(73, { parcel_id: '6091098851' }), ncCountyLink(73, { parcel_id: 'OID123' })], [null, null]);
 eq('Wake missing id -> null', ncCountyLink(183, { parcel_id: '1', alt_key: null }), null);
 eq('Wake bad id (injection) -> null', ncCountyLink(183, { alt_key: '1&x=<script>' }), null);
 eq('Buncombe dashed id -> null', ncCountyLink(21, { parcel_id: '9720-01-82' }), null);
