@@ -5,6 +5,6 @@ import { searchPilot, type PilotConfig } from '@/lib/pilotSearch';
 import { ncCountyCode, NC_CREDIT } from '@/lib/ncStates';
 import type { searchSchema } from '@/lib/validation';
 
-const NC: PilotConfig = { state: 'NC', label: 'North Carolina', view: 'parcels_nc_current', countyCode: ncCountyCode, credit: NC_CREDIT, hasSaleDate: true };
+const NC: PilotConfig = { state: 'NC', label: 'North Carolina', view: 'parcels_nc_current', countyCode: ncCountyCode, credit: NC_CREDIT, hasSaleDate: true, hasUseCat: true };
 
 export const searchNc = (body: z.infer<typeof searchSchema>, userId: string): Promise<NextResponse> => searchPilot(NC, body, userId);

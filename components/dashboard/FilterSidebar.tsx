@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Layers, X, Ruler, Edit2, CheckCircle2, ScanSearch, Eye, EyeOff, Lock, MapPin } from 'lucide-react';
 import { NC_COUNTY_NAMES } from '@/lib/ncStates';
+import { LAND_USE_CATS } from '@/lib/landUseCats';
 import { TX_COUNTY_NAMES } from '@/lib/txStates';
 import { STATE_NOTES, isPilotState, type SearchState } from '@/lib/searchState';
 
@@ -647,6 +648,33 @@ export default function FilterSidebar({
                 <span className="block text-[10px] text-gray-400">Estimated: land value but no building value or year built. {searchState === 'TX' ? 'Texas class C (vacant lot) where the county supplies one, otherwise land value with no building value. Travis has no class codes.' : 'NC land-use codes are missing for about half of parcels.'}</span>
               </span>
             </label>
+          </div>
+        )}
+
+        {isPilotState(searchState) && (
+          <div className="mb-6">
+            <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
+              Land Use <span className="text-xs font-normal text-slate-500 dark:text-slate-300 ml-1">({(filters.useCats || []).length})</span>
+            </label>
+            <div className="space-y-1">
+              {LAND_USE_CATS.map((c) => (
+                <label key={c.key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(filters.useCats || []).includes(c.key)}
+                    onChange={(e) => {
+                      const cur: string[] = filters.useCats || [];
+                      handleChange('useCats', e.target.checked ? [...cur, c.key] : cur.filter((k) => k !== c.key));
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm text-slate-900 dark:text-white">{c.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">{searchState === 'TX'
+              ? 'From the Texas property class. Parcels in counties that do not supply one (Travis, Dallas, El Paso, Fort Bend, Montgomery, Williamson and others) only match "Vacant land" when they look vacant.'
+              : 'Sorted from each county’s own wording for the use, so a few parcels may land in the wrong group. About a quarter have no use recorded and only match "Vacant land" when they look vacant.'}</p>
           </div>
         )}
 

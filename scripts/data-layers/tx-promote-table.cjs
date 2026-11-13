@@ -29,7 +29,16 @@ const log = (...a) => console.log(...a);
            p.acreage, COALESCE(p.use_desc, p.use_code) AS dor_uc, p.use_code, p.use_desc, p.owner_type,
            p.jv, p.land_value, p.improvement_value, p.year_built, NULL::smallint AS eff_year_built, NULL::bigint AS living_area_sqft, NULL::boolean AS homestead,
            p.sale1_date, NULL::bigint AS sale_prc1, NULL::date AS sale2_date, NULL::bigint AS sale_prc2, NULL::date AS sale3_date, NULL::bigint AS sale_prc3,
-           NULL::numeric AS distance_to_highway, p.latitude, p.longitude, p.geom, true AS has_geom, p.likely_vacant, p.source_revised, NULL::text AS acreage_source
+           NULL::numeric AS distance_to_highway, p.latitude, p.longitude, p.geom, true AS has_geom, p.likely_vacant, p.source_revised, NULL::text AS acreage_source,
+           CASE WHEN p.use_code IS NOT NULL THEN
+                  CASE upper(left(p.use_code, 1))
+                    WHEN 'A' THEN 'residential' WHEN 'M' THEN 'residential' WHEN 'O' THEN 'residential'
+                    WHEN 'B' THEN 'multifamily' WHEN 'C' THEN 'vacant'
+                    WHEN 'D' THEN 'agricultural' WHEN 'E' THEN 'agricultural'
+                    WHEN 'F' THEN CASE WHEN upper(left(p.use_code, 2)) = 'F2' THEN 'industrial' ELSE 'commercial' END
+                    WHEN 'L' THEN 'commercial' WHEN 'J' THEN 'industrial' WHEN 'X' THEN 'exempt'
+                    ELSE 'other' END
+                WHEN p.likely_vacant THEN 'vacant' END AS lu_cat
       FROM public.parcels_tx p LEFT JOIN public.tx_county_names n ON n.co_no = p.co_no`);
   log('view created');
   const role = (await pool.query(`select 1 from pg_roles where rolname='landoracle_prod'`)).rowCount;

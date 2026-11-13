@@ -31,6 +31,7 @@ check('NC admin: all NC counties selectable, none locked', !/Lock/i.test(nc.spli
 check('NC admin: pilot notes shown', /admin-only pilot/.test(nc) && /No sale prices or homestead data/.test(nc));
 check('NC admin: "Likely vacant land" option shown', /Likely vacant land/.test(nc));
 check('NC admin: Florida land use block and highway filter hidden', /class="hidden"/.test(nc) && /Land Use \(Florida DOR codes\)|Land Use/.test(nc));
+check('NC admin: land-use category checkboxes', /Agricultural \/ rural/.test(nc) && /Multifamily/.test(nc));
 check('NC admin: homestead checkbox hidden', /mb-2 cursor-pointer hidden/.test(nc));
 const ncChips = sidebar({ searchState: 'NC', isAdmin: true, onStateChange: noop, initialFilters: { ...baseFilters, counties: ['Wake'], vacantOnly: true, absentee: true } });
 check('NC: active-filter chips include Likely vacant land and Absentee', /Likely vacant land/.test(ncChips) && /Absentee owner/.test(ncChips));
@@ -41,6 +42,8 @@ check('TX admin: picker shows Texas', /Texas/.test(tx));
 check('TX admin: TX counties listed (Harris, Travis, Bexar), no FL/NC counties', /Harris/.test(tx) && /Travis/.test(tx) && /Bexar/.test(tx) && !/Alachua/.test(tx) && !/Mecklenburg/.test(tx));
 check('TX admin: pilot notes shown', /admin-only pilot/.test(tx) && /StratMap/.test(tx));
 check('TX admin: Likely vacant land shown; FL land use and homestead hidden', /Likely vacant land/.test(tx) && /mb-2 cursor-pointer hidden/.test(tx) && /class="hidden"/.test(tx));
+check('TX admin: land-use category checkboxes (Residential, Vacant land, Agricultural / rural, Commercial)', /Residential/.test(tx) && /Vacant land/.test(tx) && /Agricultural \/ rural/.test(tx) && /Commercial/.test(tx));
+check('FL: no category checkboxes', !/Agricultural \/ rural/.test(fl));
 check('TX admin: no-sale filter hidden', /flex items-center gap-2 hidden"><span[^>]*>No sale shown in/.test(tx));
 const ncParcel = { parcel_id: '0001', parcel_key: 'NC-183-0001', county: 'Wake', owner_name: 'DOE JANE', owner_state: 'SC', acreage: 12.5, property_address: '100 MAIN ST', state: 'NC', likely_vacant: true, out_of_state: true, is_absentee: true, sale1_date: null, has_outline: true, flood_lat: 35.8, flood_lon: -78.6 };
 const clean = (h: string) => h.replace(/<!-- -->/g, ''); // React inserts invisible markers between adjacent text pieces
