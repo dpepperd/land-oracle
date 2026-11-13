@@ -86,3 +86,8 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 - Fort Bend (157): `https://esearch.fbcad.org/Property/View/R<Prop_ID>` (BIS; the bare number gives "not found", the R prefix works). Found via the county's
   parcel layer (`gisportal.fortbendcountytx.gov/.../InteractiveMap/Parcels_Public/MapServer/1`, `CAD_Reference_Number` = `R` + our id).
   12 of 12 random Fort Bend parcels matched owner on that layer; the CAD pages for R12489 and R12490 were opened in a browser and showed the right owners.
+
+- Denton (121): `https://denton.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy, same as Travis; `TX_PRODIGY` in `lib/txCountyLinks.ts`).
+  Found in the county's own parcel layer (`gis.dentoncounty.gov/.../CAD_GC/MapServer/0`, `property_url` field). 12 random parcels looked up by
+  `prop_id` on that layer: 10 matched owner, 2 differed only because the owner changed (same id). The portal pages for 28507 and 47124 were opened in a
+  browser and showed the right owners.

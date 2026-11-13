@@ -113,7 +113,11 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
 
 /** The appraisal roll year that Bexar's portal needs in its address (`/property/<year>-<id>`). Update when the new roll opens. */
 export const TX_ROLL_YEAR = 2026;
-const TRAVIS = 453;
+/** TrueProdigy portals: `https://<subdomain>.prodigycad.com/property-detail/<Prop_ID>`, keyed by county FIPS. */
+export const TX_PRODIGY: Record<number, { sub: string; name: string }> = {
+  453: { sub: 'travis', name: 'Travis' },
+  121: { sub: 'denton', name: 'Denton' },
+};
 const BEXAR = 29;
 const HARRIS = 201;
 const TARRANT = 439;
@@ -136,7 +140,8 @@ export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): T
   // Fort Bend (FBCAD): a BIS site that wants the id with an "R" in front (real property). The bare number gives "not found".
   if (coNo === FORT_BEND) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://esearch.fbcad.org/Property/View/R${id}`, label: 'Fort Bend CAD property search' } : null;
   // Travis CAD (TrueProdigy portal): opens the property by its id. Bexar CAD (Harris Govern portal): `<roll year>-<id>`.
-  if (coNo === TRAVIS) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://travis.prodigycad.com/property-detail/${id}`, label: 'Travis CAD property search' } : null;
+  const pr = coNo != null ? TX_PRODIGY[coNo] : undefined;
+  if (pr) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://${pr.sub}.prodigycad.com/property-detail/${id}`, label: `${pr.name} CAD property search` } : null;
   if (coNo === BEXAR) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-${id}`, label: 'Bexar CAD property search' } : null;
   const e = coNo != null ? TX_BIS_HOSTS[coNo] : undefined;
   if (!e || !/^\d{1,9}$/.test(id)) return null;
