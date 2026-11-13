@@ -10,8 +10,11 @@ t('every linked county is a real Texas county', () => assert.ok(Object.keys(TX_B
 t('hosts are esearch.* with no scheme or path', () => assert.ok(Object.values(TX_BIS_HOSTS).every((e) => /^esearch\.[a-z0-9.-]+$/.test(e.host))));
 t('Taylor (441) opens the parcel', () => assert.strictEqual(txCountyLink(441, { parcel_id: '10001' })?.url, 'https://esearch.taylor-cad.org/Property/View/10001'));
 t('link is direct and has a notice', () => { const l = txCountyLink(441, { parcel_id: '10001' })!; assert.strictEqual(l.kind, 'direct'); assert.ok(/opens that parcel/.test(ncLinkNotice(l))); });
+t('Dallas (113) 17-digit account opens DCAD', () => assert.strictEqual(txCountyLink(113, { parcel_id: '26578600020010000' })?.url, 'https://www.dallascad.org/AcctDetailRes.aspx?ID=26578600020010000'));
+t('Dallas non-17-digit id -> null', () => assert.strictEqual(txCountyLink(113, { parcel_id: '12345' }), null));
+t('Comal (91) opens esearch.comalad.org', () => assert.strictEqual(txCountyLink(91, { parcel_id: '151939' })?.url, 'https://esearch.comalad.org/Property/View/151939'));
 t('county with no entry (Harris 201) -> null', () => assert.strictEqual(txCountyLink(201, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));
-t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443)', () => assert.ok(![35, 361, 443].some((c) => c in TX_BIS_HOSTS)));
+t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443, Mills 333)', () => assert.ok(![35, 361, 443, 333].some((c) => c in TX_BIS_HOSTS)));
 process.exit(fails ? 1 : 0);
