@@ -3,6 +3,7 @@
 import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config({ path: path.join(__dirname, '..', '..', '.env.local'), quiet: true } as any);
+import { txCountyLink } from '../../lib/txCountyLinks';
 import { txCountyCode, txCountyName, TX_COUNTIES } from '../../lib/txStates';
 
 const results: string[] = [];
@@ -51,6 +52,9 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   check('TX land-use category: two categories at once', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => ['agricultural', 'multifamily'].includes(x.land_use_cat)), `${r.json?.list?.length} rows`);
   r = await S({ state: 'TX', counties: ['Bexar'], useCats: ['bogus'], limit: 5 });
   check('TX land-use category: unknown value rejected 400', r.status === 400, `status ${r.status}`);
+  r = await S({ state: 'TX', counties: ['Taylor'], limit: 20 });
+  const linked = (r.json?.list || []).filter((x: any) => txCountyLink(x.co_no, x)?.url?.startsWith('https://esearch.taylor-cad.org/Property/View/'));
+  check('TX search results carry what the BIS link needs (Taylor)', r.status === 200 && r.json.list.length > 0 && linked.length === r.json.list.length, `${linked.length}/${r.json?.list?.length} rows link`);
   // Florida unaffected
   r = await S({ counties: ['Clay'], landUse: ['001'], limit: 50 });
   check('FL (no state) still Florida only', r.status === 200 && keysOf(r).length > 0 && keysOf(r).every((x: string) => x.startsWith('FL-')), `${keysOf(r).length} rows`);

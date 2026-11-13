@@ -29,3 +29,19 @@ The survey's open question was whether the downloadable files are richer than th
 ## Status
 
 See the "Load results" section below (filled in as loads finish).
+
+
+## County links (BIS eSearch)
+
+`lib/txCountyLinks.ts` links a parcel to its appraisal district's record. First family: BIS Consultants "eSearch" sites,
+`https://<host>/Property/View/<Prop_ID>` (our `parcel_id` is the Prop_ID, so nothing needs copying).
+
+How the list was built (2026-11): for every Texas county, tried the usual `esearch.<county>cad.org/.com/.net` (and hyphen) hosts, kept
+those whose page says "Powered by BIS Consultants" (105), then fetched `/Property/View/<id>` for 3 real parcels per county and
+required HTTP 200 and the owner's name on the page. 90 counties passed and are linked. 15 did not and are NOT linked:
+Borden, Bosque, Brazos, Callahan, Concho, Hartley, Johnson, Knox, McMullen, Mills, Oldham, Orange, Robertson, Terrell, Willacy
+(Orange and Terrell show a different owner for the same id; Bosque, Callahan, Knox show no owner block; Johnson and Robertson had
+no numeric ids to test; the rest matched only some samples).
+
+Not covered yet: BIS counties on non-standard hosts (e.g. Fort Bend `esearch.fbcad.org`, Bell, Dallas), Cloudflare-blocked sites,
+Bexar (True Automation), TrueProdigy and other vendors. Harris, Travis and the other big districts have their own sites.
