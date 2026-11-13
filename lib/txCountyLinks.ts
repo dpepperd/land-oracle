@@ -117,6 +117,7 @@ export const TX_ROLL_YEAR = 2026;
 export const TX_PRODIGY: Record<number, { sub: string; name: string }> = {
   453: { sub: 'travis', name: 'Travis' },
   121: { sub: 'denton', name: 'Denton' },
+  215: { sub: 'hidalgo', name: 'Hidalgo' },
 };
 const BEXAR = 29;
 const HARRIS = 201;

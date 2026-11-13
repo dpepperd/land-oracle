@@ -91,3 +91,6 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
   Found in the county's own parcel layer (`gis.dentoncounty.gov/.../CAD_GC/MapServer/0`, `property_url` field). 12 random parcels looked up by
   `prop_id` on that layer: 10 matched owner, 2 differed only because the owner changed (same id). The portal pages for 28507 and 47124 were opened in a
   browser and showed the right owners.
+
+- Hidalgo (215): `https://hidalgo.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; address pattern from the owner's `/maps` link).
+  Browser check: ids 709382 (ROCHA) and 241128 (SMITH JOHN C) both showed the right owner and id. All 327,261 Hidalgo ids are plain numbers.
