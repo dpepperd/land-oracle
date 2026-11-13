@@ -99,3 +99,6 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 - Montgomery (339): `https://montgomery.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; the owner's map link only pointed to mcad-tx.org, so the portal
   was found by trying the TrueProdigy pattern). Our Montgomery ids look like `106321.00000000`; the link code strips the `.00000000`.
   Browser check: 106321 (ROCHA, 19177 BEDFORD) and 233579 (FUENTEZ, HALL DR) both matched.
+
+- Williamson (491): `https://search.wcad.org/Property-Detail/PropertyQuickRefID/<R-id>` (WCAD's own site). Our ids are already the quick-ref ids (282,857 of 282,858
+  match `R` + 5-7 digits; the one exception is "PRIVATE ROAD" and gets no link). Browser check: R506607 (SMITH, KRISTIN N) and R020444 (TOP HAT INVESTMENTS) matched.

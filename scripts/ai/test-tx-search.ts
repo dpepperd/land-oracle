@@ -61,6 +61,9 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await S({ state: 'TX', counties: ['Harris'], limit: 100 });
   const hl = (r.json?.list || []).filter((x: any) => txCountyLink(x.co_no, x)?.kind === 'search');
   check('TX Harris results get the account search link', r.status === 200 && hl.length > 0, `${hl.length}/${r.json?.list?.length} rows link`);
+  r = await S({ state: 'TX', counties: ['Montgomery'], limit: 100 });
+  const ml = (r.json?.list || []).filter((x: any) => /^https:\/\/montgomery\.prodigycad\.com\/property-detail\/\d+$/.test(txCountyLink(x.co_no, x)?.url || ''));
+  check('TX Montgomery results link with the decimal tail stripped', r.status === 200 && r.json.list.length > 0 && ml.length === r.json.list.length, `${ml.length}/${r.json?.list?.length} rows link`);
   // Florida unaffected
   r = await S({ counties: ['Clay'], landUse: ['001'], limit: 50 });
   check('FL (no state) still Florida only', r.status === 200 && keysOf(r).length > 0 && keysOf(r).every((x: string) => x.startsWith('FL-')), `${keysOf(r).length} rows`);

@@ -29,7 +29,9 @@ t('Hidalgo (215) opens its TrueProdigy portal', () => assert.strictEqual(txCount
 t('Cameron (61) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(61, { parcel_id: '151941' })?.url, 'https://cameron.prodigycad.com/property-detail/151941'));
 t('Montgomery (339): decimal tail stripped', () => assert.strictEqual(txCountyLink(339, { parcel_id: '106321.00000000' })?.url, 'https://montgomery.prodigycad.com/property-detail/106321'));
 t('a real decimal id is not mangled (12.5 -> null)', () => assert.strictEqual(txCountyLink(339, { parcel_id: '12.5' }), null));
-t('county with no entry (Williamson 491) -> null', () => assert.strictEqual(txCountyLink(491, { parcel_id: '123' }), null));
+t('Williamson (491) opens WCAD by quick-ref id', () => assert.strictEqual(txCountyLink(491, { parcel_id: 'R506607' })?.url, 'https://search.wcad.org/Property-Detail/PropertyQuickRefID/R506607'));
+t('Williamson: "PRIVATE ROAD" and bare numbers -> null', () => { assert.strictEqual(txCountyLink(491, { parcel_id: 'PRIVATE ROAD' }), null); assert.strictEqual(txCountyLink(491, { parcel_id: '506607' }), null); });
+t('county with no entry (Bell 27) -> null', () => assert.strictEqual(txCountyLink(27, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));
 t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443, Mills 333)', () => assert.ok(![35, 361, 443, 333].some((c) => c in TX_BIS_HOSTS)));
