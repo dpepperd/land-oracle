@@ -26,6 +26,7 @@ import { STATE_VIEW, type SearchState } from '@/lib/searchState';
 import { NC_CREDIT } from '@/lib/ncStates';
 import { TX_CREDIT } from '@/lib/txStates';
 import { ncCountyLink, ncLinkNotice } from '@/lib/ncCountyLinks';
+import { txCountyLink } from '@/lib/txCountyLinks';
 
 // Traffic Styles
 const trafficLayer: any = {
@@ -342,7 +343,7 @@ export default function MapView({
   useEffect(() => { if (clearShapeSignal > 0) { setDrawPoints([]); setIsDrawing(false); } }, [clearShapeSignal]);
   // Fly to the chosen state when it changes (not on first load, which keeps the existing Florida start)
   // County appraiser link: Florida only for now (never reuse a Florida county's link for a North Carolina parcel with the same county name)
-  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : p?.state === 'TX' ? null : getPropertyAppraiserUrl(p.county, p.parcel_id));
+  const appraiserUrl = (p: any): string | null => (p?.state === 'NC' ? (ncCountyLink(p.co_no, p)?.url ?? null) : p?.state === 'TX' ? (txCountyLink(p.co_no, p)?.url ?? null) : getPropertyAppraiserUrl(p.county, p.parcel_id));
   const firstFocus = useRef(true);
   useEffect(() => {
     if (firstFocus.current) { firstFocus.current = false; return; }
@@ -775,6 +776,10 @@ export default function MapView({
                                if (popupInfo.properties.state === 'NC') {
                                  const nl = ncCountyLink(popupInfo.properties.co_no, popupInfo.properties);
                                  if (nl) ncNote = ncLinkNotice(nl);
+                               }
+                               if (popupInfo.properties.state === 'TX') {
+                                 const tl = txCountyLink(popupInfo.properties.co_no, popupInfo.properties);
+                                 if (tl) ncNote = ncLinkNotice(tl);
                                }
                                if (url) setExternalLink({ url, county: popupInfo.properties.county, id: val, landUse: popupInfo.properties.land_use, ncNote });
                             }
