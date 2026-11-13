@@ -65,3 +65,11 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
   3 real parcels: owner matched. The roll year is `TX_ROLL_YEAR` in `lib/txCountyLinks.ts`; update it when a new roll opens.
 - Not linkable yet: Harris (the map viewer has no known deep link; HCAD's own details page errors for scripts) and Tarrant
   (TAD's pages need an account number we do not have; our ids are the tax-parcel numbers like 47830-6-6).
+
+### Harris and Tarrant (2026-11-13)
+
+- Harris (201): search link. Opens the HCAD parcel viewer and copies the 13-digit account; the user pastes it into "Find address or place".
+  Checked: the viewer suggests the parcel with the right street for a real account. Not a direct link (the viewer has no per-parcel address).
+- Tarrant (439): `https://www.tad.org/property?account=<8-digit PID>`. Our ids are tax-parcel numbers, so `scripts/data-layers/tx-tarrant-pid.cjs`
+  downloads the PID from TAD's public ArcGIS layer (`tad.newedgeservices.com/.../InteractiveMap/TADMap/MapServer/0`) into
+  `public.tx_tarrant_pid` and fills `parcels_tx.alt_key` for county 439 (746,706 of 757,156 rows). Checked: ONECAT LLC's page opened with its PID.

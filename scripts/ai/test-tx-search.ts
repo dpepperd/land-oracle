@@ -55,6 +55,12 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await S({ state: 'TX', counties: ['Taylor'], limit: 20 });
   const linked = (r.json?.list || []).filter((x: any) => txCountyLink(x.co_no, x)?.url?.startsWith('https://esearch.taylor-cad.org/Property/View/'));
   check('TX search results carry what the BIS link needs (Taylor)', r.status === 200 && r.json.list.length > 0 && linked.length === r.json.list.length, `${linked.length}/${r.json?.list?.length} rows link`);
+  r = await S({ state: 'TX', counties: ['Tarrant'], limit: 200 });
+  const tl = (r.json?.list || []).filter((x: any) => /^https:\/\/www\.tad\.org\/property\?account=\d{8}$/.test(txCountyLink(x.co_no, x)?.url || ''));
+  check('TX Tarrant results link to TAD (most rows have an account)', r.status === 200 && r.json.list.length > 0 && tl.length >= r.json.list.length * 0.9, `${tl.length}/${r.json?.list?.length} rows link`);
+  r = await S({ state: 'TX', counties: ['Harris'], limit: 100 });
+  const hl = (r.json?.list || []).filter((x: any) => txCountyLink(x.co_no, x)?.kind === 'search');
+  check('TX Harris results get the account search link', r.status === 200 && hl.length > 0, `${hl.length}/${r.json?.list?.length} rows link`);
   // Florida unaffected
   r = await S({ counties: ['Clay'], landUse: ['001'], limit: 50 });
   check('FL (no state) still Florida only', r.status === 200 && keysOf(r).length > 0 && keysOf(r).every((x: string) => x.startsWith('FL-')), `${keysOf(r).length} rows`);
