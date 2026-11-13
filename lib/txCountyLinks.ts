@@ -116,6 +116,7 @@ const TRAVIS = 453;
 const BEXAR = 29;
 const HARRIS = 201;
 const TARRANT = 439;
+const EL_PASO = 141;
 
 /** Dallas CAD: one account page per 17-digit account (the residential page shows commercial accounts too; tested on 10 random parcels). */
 const DALLAS = 113;
@@ -127,6 +128,9 @@ export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): T
   if (coNo === HARRIS) return /^\d{13}$/.test(id) ? { kind: 'search', url: 'https://arcweb.hcad.org/parcel-viewer-v2.0/', copy: id, label: 'paste the account number into the "Find address or place" box at the top of the map, then pick the parcel from the list' } : null;
   // Tarrant (TAD): the property page takes the 8-digit account number (PID), which we hold in alt_key.
   if (coNo === TARRANT) { const a = (p.alt_key ?? '').trim(); return /^\d{1,8}$/.test(a) ? { kind: 'direct', url: `https://www.tad.org/property?account=${a.padStart(8, '0')}`, label: 'Tarrant Appraisal District property page' } : null; }
+  // El Paso (EPCAD): the search page takes the property id in the address and shows that property as the result. Its policy forbids automated
+  // access, so this was NOT checked by script: the owner tested one id by hand (390172). No year is sent, so the site uses its default.
+  if (coNo === EL_PASO) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://epcad.org/Search?Keywords=${id}`, label: 'El Paso CAD property search (this property shows as the result)' } : null;
   // Travis CAD (TrueProdigy portal): opens the property by its id. Bexar CAD (Harris Govern portal): `<roll year>-<id>`.
   if (coNo === TRAVIS) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://travis.prodigycad.com/property-detail/${id}`, label: 'Travis CAD property search' } : null;
   if (coNo === BEXAR) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-${id}`, label: 'Bexar CAD property search' } : null;

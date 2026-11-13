@@ -73,3 +73,7 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 - Tarrant (439): `https://www.tad.org/property?account=<8-digit PID>`. Our ids are tax-parcel numbers, so `scripts/data-layers/tx-tarrant-pid.cjs`
   downloads the PID from TAD's public ArcGIS layer (`tad.newedgeservices.com/.../InteractiveMap/TADMap/MapServer/0`) into
   `public.tx_tarrant_pid` and fills `parcels_tx.alt_key` for county 439 (746,706 of 757,156 rows). Checked: ONECAT LLC's page opened with its PID.
+
+- El Paso (141): `https://epcad.org/Search?Keywords=<Prop_ID>` (address supplied by the owner; Year left out so the site uses its default).
+  EPCAD's acceptable-use policy forbids scripts/crawlers, so nothing was fetched from epcad.org: only the owner's hand check of id 390172 exists.
+  Do not add automated verification for this county.
