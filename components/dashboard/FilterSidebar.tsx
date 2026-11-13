@@ -651,7 +651,7 @@ export default function FilterSidebar({
           </div>
         )}
 
-        {searchState === 'TX' && (
+        {isPilotState(searchState) && (
           <div className="mb-6">
             <label className="block text-base font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-wide">
               Land Use <span className="text-xs font-normal text-slate-500 dark:text-slate-300 ml-1">({(filters.useCats || []).length})</span>
@@ -672,7 +672,9 @@ export default function FilterSidebar({
                 </label>
               ))}
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">From the Texas property class. Parcels in counties that do not supply one (Travis, Dallas, El Paso, Fort Bend, Montgomery, Williamson and others) only match &quot;Vacant land&quot; when they look vacant.</p>
+            <p className="text-[10px] text-gray-400 mt-1">{searchState === 'TX'
+              ? 'From the Texas property class. Parcels in counties that do not supply one (Travis, Dallas, El Paso, Fort Bend, Montgomery, Williamson and others) only match "Vacant land" when they look vacant.'
+              : 'Sorted from each county’s own wording for the use, so a few parcels may land in the wrong group. About a quarter have no use recorded and only match "Vacant land" when they look vacant.'}</p>
           </div>
         )}
 

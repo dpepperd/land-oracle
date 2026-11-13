@@ -40,6 +40,11 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   check('NC result has the fields the screen needs', ['id', 'parcel_key', 'owner_name', 'owner_address', 'owner_state', 'acreage', 'land_use', 'market_value', 'out_of_state', 'has_outline', 'latitude', 'longitude', 'flood_lat', 'is_lead', 'has_note'].every((f) => f in r.json.list[0]), Object.keys(r.json.list[0]).length + ' fields');
   check('NC response carries the NC OneMap credit', typeof r.json.credit === 'string' && r.json.credit.includes('NC OneMap'), r.json.credit?.slice(0, 40));
 
+  r = await S({ state: 'NC', counties: ['Wake'], useCats: ['commercial'], limit: 200 });
+  check('NC land-use category: commercial in Wake', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.land_use_cat === 'commercial'), `${r.json?.list?.length} rows, status ${r.status}`);
+  r = await S({ state: 'NC', counties: ['Wake'], useCats: ['agricultural', 'multifamily'], limit: 300 });
+  check('NC land-use category: two at once', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => ['agricultural', 'multifamily'].includes(x.land_use_cat)), `${r.json?.list?.length} rows`);
+
   // ---- Florida regressions: same county NAMES exist in NC
   for (const county of ['Clay', 'Washington', 'Jefferson']) {
     r = await S({ counties: [county], landUse: ['001'], limit: 200 });

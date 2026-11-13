@@ -31,6 +31,7 @@ check('NC admin: all NC counties selectable, none locked', !/Lock/i.test(nc.spli
 check('NC admin: pilot notes shown', /admin-only pilot/.test(nc) && /No sale prices or homestead data/.test(nc));
 check('NC admin: "Likely vacant land" option shown', /Likely vacant land/.test(nc));
 check('NC admin: Florida land use block and highway filter hidden', /class="hidden"/.test(nc) && /Land Use \(Florida DOR codes\)|Land Use/.test(nc));
+check('NC admin: land-use category checkboxes', /Agricultural \/ rural/.test(nc) && /Multifamily/.test(nc));
 check('NC admin: homestead checkbox hidden', /mb-2 cursor-pointer hidden/.test(nc));
 const ncChips = sidebar({ searchState: 'NC', isAdmin: true, onStateChange: noop, initialFilters: { ...baseFilters, counties: ['Wake'], vacantOnly: true, absentee: true } });
 check('NC: active-filter chips include Likely vacant land and Absentee', /Likely vacant land/.test(ncChips) && /Absentee owner/.test(ncChips));
