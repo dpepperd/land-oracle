@@ -94,3 +94,8 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 
 - Hidalgo (215): `https://hidalgo.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; address pattern from the owner's `/maps` link).
   Browser check: ids 709382 (ROCHA) and 241128 (SMITH JOHN C) both showed the right owner and id. All 327,261 Hidalgo ids are plain numbers.
+
+- Cameron (61): `https://cameron.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy). Browser check: 151941 and 201170 showed the right owner and street.
+- Montgomery (339): `https://montgomery.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; the owner's map link only pointed to mcad-tx.org, so the portal
+  was found by trying the TrueProdigy pattern). Our Montgomery ids look like `106321.00000000`; the link code strips the `.00000000`.
+  Browser check: 106321 (ROCHA, 19177 BEDFORD) and 233579 (FUENTEZ, HALL DR) both matched.

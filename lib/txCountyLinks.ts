@@ -118,6 +118,8 @@ export const TX_PRODIGY: Record<number, { sub: string; name: string }> = {
   453: { sub: 'travis', name: 'Travis' },
   121: { sub: 'denton', name: 'Denton' },
   215: { sub: 'hidalgo', name: 'Hidalgo' },
+  61: { sub: 'cameron', name: 'Cameron' },
+  339: { sub: 'montgomery', name: 'Montgomery' },
 };
 const BEXAR = 29;
 const HARRIS = 201;
@@ -129,7 +131,8 @@ const FORT_BEND = 157;
 const DALLAS = 113;
 
 export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): TxLink | null {
-  const id = (p.parcel_id ?? '').trim();
+  // Some counties' ids come with a decimal tail (Montgomery: "106321.00000000"); the sites want the plain number.
+  const id = (p.parcel_id ?? '').trim().replace(/\.0+$/, '');
   if (coNo === DALLAS) return /^\d{17}$/.test(id) ? { kind: 'direct', url: `https://www.dallascad.org/AcctDetailRes.aspx?ID=${id}`, label: 'Dallas CAD account detail' } : null;
   // Harris (HCAD): the parcel viewer has no address that opens one parcel, but its search box takes the 13-digit account number.
   if (coNo === HARRIS) return /^\d{13}$/.test(id) ? { kind: 'search', url: 'https://arcweb.hcad.org/parcel-viewer-v2.0/', copy: id, label: 'paste the account number into the "Find address or place" box at the top of the map, then pick the parcel from the list' } : null;

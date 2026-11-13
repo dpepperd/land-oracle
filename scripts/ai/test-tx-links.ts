@@ -26,7 +26,10 @@ t('Collin (85) opens esearch.collincad.org', () => assert.strictEqual(txCountyLi
 t('Fort Bend (157) needs the R prefix', () => assert.strictEqual(txCountyLink(157, { parcel_id: '12489' })?.url, 'https://esearch.fbcad.org/Property/View/R12489'));
 t('Denton (121) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(121, { parcel_id: '47124' })?.url, 'https://denton.prodigycad.com/property-detail/47124'));
 t('Hidalgo (215) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(215, { parcel_id: '709382' })?.url, 'https://hidalgo.prodigycad.com/property-detail/709382'));
-t('county with no entry (Montgomery 339) -> null', () => assert.strictEqual(txCountyLink(339, { parcel_id: '123' }), null));
+t('Cameron (61) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(61, { parcel_id: '151941' })?.url, 'https://cameron.prodigycad.com/property-detail/151941'));
+t('Montgomery (339): decimal tail stripped', () => assert.strictEqual(txCountyLink(339, { parcel_id: '106321.00000000' })?.url, 'https://montgomery.prodigycad.com/property-detail/106321'));
+t('a real decimal id is not mangled (12.5 -> null)', () => assert.strictEqual(txCountyLink(339, { parcel_id: '12.5' }), null));
+t('county with no entry (Williamson 491) -> null', () => assert.strictEqual(txCountyLink(491, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));
 t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443, Mills 333)', () => assert.ok(![35, 361, 443, 333].some((c) => c in TX_BIS_HOSTS)));
