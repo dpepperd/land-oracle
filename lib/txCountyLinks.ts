@@ -20,7 +20,9 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   21: { host: 'esearch.bastropcad.org', name: 'Bastrop' },
   25: { host: 'esearch.beecad.org', name: 'Bee' },
   31: { host: 'esearch.blancocad.com', name: 'Blanco' },
+  33: { host: 'esearch.bordencad.org', name: 'Borden' },
   39: { host: 'esearch.brazoriacad.org', name: 'Brazoria' },
+  41: { host: 'esearch.brazoscad.org', name: 'Brazos' },
   47: { host: 'esearch.brookscad.org', name: 'Brooks' },
   49: { host: 'esearch.brown-cad.org', name: 'Brown' },
   53: { host: 'esearch.burnet-cad.org', name: 'Burnet' },
@@ -32,6 +34,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   73: { host: 'esearch.cherokeecad.com', name: 'Cherokee' },
   79: { host: 'esearch.cochrancad.com', name: 'Cochran' },
   89: { host: 'esearch.coloradocad.org', name: 'Colorado' },
+  91: { host: 'esearch.comalad.org', name: 'Comal' },
   93: { host: 'esearch.comanchecad.org', name: 'Comanche' },
   99: { host: 'esearch.coryellcad.org', name: 'Coryell' },
   111: { host: 'esearch.dallamcad.org', name: 'Dallam' },
@@ -47,6 +50,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   169: { host: 'esearch.garzacad.org', name: 'Garza' },
   171: { host: 'esearch.gillespiecad.org', name: 'Gillespie' },
   179: { host: 'esearch.graycad.org', name: 'Gray' },
+  187: { host: 'esearch.guadalupead.org', name: 'Guadalupe' },
   189: { host: 'esearch.halecad.org', name: 'Hale' },
   199: { host: 'esearch.hardin-cad.org', name: 'Hardin' },
   213: { host: 'esearch.henderson-cad.org', name: 'Henderson' },
@@ -55,6 +59,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   227: { host: 'esearch.howardcad.org', name: 'Howard' },
   229: { host: 'esearch.hudspethcad.org', name: 'Hudspeth' },
   241: { host: 'esearch.jaspercad.org', name: 'Jasper' },
+  245: { host: 'esearch.jcad.org', name: 'Jefferson' },
   257: { host: 'esearch.kaufman-cad.org', name: 'Kaufman' },
   261: { host: 'esearch.kenedycad.org', name: 'Kenedy' },
   265: { host: 'esearch.kerrcad.org', name: 'Kerr' },
@@ -67,6 +72,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   285: { host: 'esearch.lavacacad.com', name: 'Lavaca' },
   287: { host: 'esearch.lee-cad.org', name: 'Lee' },
   291: { host: 'esearch.libertycad.com', name: 'Liberty' },
+  311: { host: 'esearch.mcmullencad.org', name: 'McMullen' },
   313: { host: 'esearch.madisoncad.org', name: 'Madison' },
   319: { host: 'esearch.masoncad.org', name: 'Mason' },
   321: { host: 'esearch.matagorda-cad.org', name: 'Matagorda' },
@@ -95,6 +101,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   471: { host: 'esearch.walkercad.org', name: 'Walker' },
   473: { host: 'esearch.waller-cad.org', name: 'Waller' },
   477: { host: 'esearch.washingtoncad.org', name: 'Washington' },
+  489: { host: 'esearch.willacycad.org', name: 'Willacy' },
   493: { host: 'esearch.wilson-cad.org', name: 'Wilson' },
   499: { host: 'esearch.woodcad.net', name: 'Wood' },
   501: { host: 'esearch.yoakumcad.org', name: 'Yoakum' },
@@ -103,9 +110,13 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   507: { host: 'esearch.zavalacad.com', name: 'Zavala' },
 };
 
+/** Dallas CAD: one account page per 17-digit account (the residential page shows commercial accounts too; tested on 10 random parcels). */
+const DALLAS = 113;
+
 export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): TxLink | null {
-  const e = coNo != null ? TX_BIS_HOSTS[coNo] : undefined;
   const id = (p.parcel_id ?? '').trim();
+  if (coNo === DALLAS) return /^\d{17}$/.test(id) ? { kind: 'direct', url: `https://www.dallascad.org/AcctDetailRes.aspx?ID=${id}`, label: 'Dallas CAD account detail' } : null;
+  const e = coNo != null ? TX_BIS_HOSTS[coNo] : undefined;
   if (!e || !/^\d{1,9}$/.test(id)) return null;
   return { kind: 'direct', url: `https://${e.host}/Property/View/${id}`, label: `${e.name} CAD property search` };
 }

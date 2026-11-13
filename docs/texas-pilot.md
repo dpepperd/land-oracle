@@ -45,3 +45,15 @@ no numeric ids to test; the rest matched only some samples).
 
 Not covered yet: BIS counties on non-standard hosts (e.g. Fort Bend `esearch.fbcad.org`, Bell, Dallas), Cloudflare-blocked sites,
 Bexar (True Automation), TrueProdigy and other vendors. Harris, Travis and the other big districts have their own sites.
+
+### Second batch (2026-11)
+
+Dallas CAD (113): `https://www.dallascad.org/AcctDetailRes.aspx?ID=<17-digit account>`; 10 random parcels all showed the owner
+(the residential page also shows commercial accounts). BIS hosts on non-standard addresses, each 9-10 of 10 random parcels matched
+the owner: Comal `esearch.comalad.org`, Brazos `esearch.brazoscad.org`, Guadalupe `esearch.guadalupead.org`, Jefferson `esearch.jcad.org`;
+and a re-check with 10 random parcels (any owner word) passed Borden, McMullen, Willacy. Mills, Hartley, Concho, Oldham, Orange,
+Terrell still fail and stay unlinked.
+
+Still open (big counties, formats not yet confirmed): Harris (public.hcad.org returns a server error to automated requests), Tarrant,
+Bexar, Travis, El Paso, Collin, Denton, Hidalgo, Montgomery, Williamson, Fort Bend (BIS host `esearch.fbcad.org` loads, but the page
+shows no owner without scripts, so it cannot be verified the same way). Need one real parcel-detail URL from each site.
