@@ -110,12 +110,20 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   507: { host: 'esearch.zavalacad.com', name: 'Zavala' },
 };
 
+/** The appraisal roll year that Bexar's portal needs in its address (`/property/<year>-<id>`). Update when the new roll opens. */
+export const TX_ROLL_YEAR = 2026;
+const TRAVIS = 453;
+const BEXAR = 29;
+
 /** Dallas CAD: one account page per 17-digit account (the residential page shows commercial accounts too; tested on 10 random parcels). */
 const DALLAS = 113;
 
 export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): TxLink | null {
   const id = (p.parcel_id ?? '').trim();
   if (coNo === DALLAS) return /^\d{17}$/.test(id) ? { kind: 'direct', url: `https://www.dallascad.org/AcctDetailRes.aspx?ID=${id}`, label: 'Dallas CAD account detail' } : null;
+  // Travis CAD (TrueProdigy portal): opens the property by its id. Bexar CAD (Harris Govern portal): `<roll year>-<id>`.
+  if (coNo === TRAVIS) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://travis.prodigycad.com/property-detail/${id}`, label: 'Travis CAD property search' } : null;
+  if (coNo === BEXAR) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-${id}`, label: 'Bexar CAD property search' } : null;
   const e = coNo != null ? TX_BIS_HOSTS[coNo] : undefined;
   if (!e || !/^\d{1,9}$/.test(id)) return null;
   return { kind: 'direct', url: `https://${e.host}/Property/View/${id}`, label: `${e.name} CAD property search` };

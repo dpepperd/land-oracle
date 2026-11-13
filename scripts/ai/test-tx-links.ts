@@ -1,6 +1,6 @@
 // Texas county links: shape rules (no network). The live check against real parcels is documented in docs/texas-pilot.md.
 import assert from 'assert';
-import { txCountyLink, TX_BIS_HOSTS } from '../../lib/txCountyLinks';
+import { txCountyLink, TX_BIS_HOSTS, TX_ROLL_YEAR } from '../../lib/txCountyLinks';
 import { ncLinkNotice } from '../../lib/ncCountyLinks';
 import { TX_COUNTIES } from '../../lib/txStates';
 let fails = 0;
@@ -13,6 +13,9 @@ t('link is direct and has a notice', () => { const l = txCountyLink(441, { parce
 t('Dallas (113) 17-digit account opens DCAD', () => assert.strictEqual(txCountyLink(113, { parcel_id: '26578600020010000' })?.url, 'https://www.dallascad.org/AcctDetailRes.aspx?ID=26578600020010000'));
 t('Dallas non-17-digit id -> null', () => assert.strictEqual(txCountyLink(113, { parcel_id: '12345' }), null));
 t('Comal (91) opens esearch.comalad.org', () => assert.strictEqual(txCountyLink(91, { parcel_id: '151939' })?.url, 'https://esearch.comalad.org/Property/View/151939'));
+t('Travis (453) opens TrueProdigy', () => assert.strictEqual(txCountyLink(453, { parcel_id: '127296' })?.url, 'https://travis.prodigycad.com/property-detail/127296'));
+t('Bexar (29) opens the portal with the roll year', () => assert.strictEqual(txCountyLink(29, { parcel_id: '558902' })?.url, `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-558902`));
+t('Bexar / Travis reject odd ids (-1, letters)', () => { assert.strictEqual(txCountyLink(29, { parcel_id: '-1' }), null); assert.strictEqual(txCountyLink(453, { parcel_id: 'R12' }), null); });
 t('county with no entry (Harris 201) -> null', () => assert.strictEqual(txCountyLink(201, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));

@@ -57,3 +57,11 @@ Terrell still fail and stay unlinked.
 Still open (big counties, formats not yet confirmed): Harris (public.hcad.org returns a server error to automated requests), Tarrant,
 Bexar, Travis, El Paso, Collin, Denton, Hidalgo, Montgomery, Williamson, Fort Bend (BIS host `esearch.fbcad.org` loads, but the page
 shows no owner without scripts, so it cannot be verified the same way). Need one real parcel-detail URL from each site.
+
+### Third batch (2026-11-13), links found by the owner and checked in a browser
+
+- Travis (453): `https://travis.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy). 2 real parcels: owner and street matched.
+- Bexar (29): `https://hgo.harrisgovern.com/bexar/property/<roll year>-<Prop_ID>` (Harris Govern portal; the bare id gives "Not Found").
+  3 real parcels: owner matched. The roll year is `TX_ROLL_YEAR` in `lib/txCountyLinks.ts`; update it when a new roll opens.
+- Not linkable yet: Harris (the map viewer has no known deep link; HCAD's own details page errors for scripts) and Tarrant
+  (TAD's pages need an account number we do not have; our ids are the tax-parcel numbers like 47830-6-6).
