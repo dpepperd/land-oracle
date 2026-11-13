@@ -127,6 +127,12 @@ const TARRANT = 439;
 const EL_PASO = 141;
 const FORT_BEND = 157;
 const WILLIAMSON = 491;
+/** TrueProdigy portals that run on the county's own domain instead of <sub>.prodigycad.com. Each opened on real parcels showing the right owner. */
+export const TX_PRODIGY_OWN: Record<number, { host: string; name: string }> = {
+  309: { host: 'mclennancad.org', name: 'McLennan' },
+  139: { host: 'www.elliscad.com', name: 'Ellis' },
+  479: { host: 'www.webbcad.org', name: 'Webb' },
+};
 
 /** Dallas CAD: one account page per 17-digit account (the residential page shows commercial accounts too; tested on 10 random parcels). */
 const DALLAS = 113;
@@ -144,6 +150,9 @@ export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): T
   if (coNo === EL_PASO) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://epcad.org/Search?Keywords=${id}`, label: 'El Paso CAD property search (this property shows as the result)' } : null;
   // Williamson (WCAD): our parcel_id is already the quick-ref id ("R506607"), which its property-detail page is keyed on.
   if (coNo === WILLIAMSON) return /^R\d{5,7}$/.test(id) ? { kind: 'direct', url: `https://search.wcad.org/Property-Detail/PropertyQuickRefID/${id}`, label: 'Williamson CAD property search' } : null;
+  // TrueProdigy portals on the county's own domain (same /property-detail/<Prop_ID> page).
+  const own = coNo != null ? TX_PRODIGY_OWN[coNo] : undefined;
+  if (own) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://${own.host}/property-detail/${id}`, label: `${own.name} CAD property search` } : null;
   // Fort Bend (FBCAD): a BIS site that wants the id with an "R" in front (real property). The bare number gives "not found".
   if (coNo === FORT_BEND) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://esearch.fbcad.org/Property/View/R${id}`, label: 'Fort Bend CAD property search' } : null;
   // Travis CAD (TrueProdigy portal): opens the property by its id. Bexar CAD (Harris Govern portal): `<roll year>-<id>`.

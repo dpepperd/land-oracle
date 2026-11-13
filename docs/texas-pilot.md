@@ -102,3 +102,10 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 
 - Williamson (491): `https://search.wcad.org/Property-Detail/PropertyQuickRefID/<R-id>` (WCAD's own site). Our ids are already the quick-ref ids (282,857 of 282,858
   match `R` + 5-7 digits; the one exception is "PRIVATE ROAD" and gets no link). Browser check: R506607 (SMITH, KRISTIN N) and R020444 (TOP HAT INVESTMENTS) matched.
+
+### Links, step 12: McLennan, Ellis, Webb (TrueProdigy on the county's own domain)
+
+These three run the same "Public Portal" (TrueProdigy) software as Travis and the others, but on the county's own site, so the link is `https://<county host>/property-detail/<Prop_ID>`
+(`TX_PRODIGY_OWN` in lib/txCountyLinks.ts). Opened in a browser: McLennan 2 of 3 parcels showed the right owner (the third page never filled in, so it is unconfirmed),
+Ellis 2 of 2, Webb 2 of 2. Not linked yet: Bell (its search site's robots.txt disallows all automated access, so we do not test it; waiting on a hand-copied property URL),
+Smith, Lubbock, Johnson, Hays (links not yet worked out).
