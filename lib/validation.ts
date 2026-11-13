@@ -1,3 +1,4 @@
+import { LAND_USE_CAT_KEYS } from '@/lib/landUseCats';
 import { z } from 'zod';
 
 // FIX: More explicit GeoJSON coordinate validation
@@ -28,6 +29,8 @@ export const searchSchema = z.object({
   state: z.enum(['FL', 'NC', 'TX']).optional(),
   /** North Carolina pilot: only parcels that look like vacant land (no building value or year). */
   vacantOnly: z.boolean().optional(),
+  /** Pilot states: land-use categories (lib/landUseCats.ts). */
+  useCats: z.array(z.enum(LAND_USE_CAT_KEYS)).optional(),
   counties: z.array(z.string()).optional(), 
   landUse: z.array(z.string()).optional(),
   ownerType: z.enum(['all', 'in_state', 'out_of_state']).optional(),

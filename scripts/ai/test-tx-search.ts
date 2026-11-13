@@ -45,6 +45,12 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await S({ state: 'TX', counties: ['Harris'], limit: 5 });
   const id = r.json.list[0]?.parcel_id;
   if (id) { const r2 = await S({ state: 'TX', counties: ['Harris'], parcelId: id, limit: 5 }); check('TX id search finds the parcel', r2.status === 200 && r2.json.list.length >= 1, `id ${id}, ${r2.json?.list?.length} rows, status ${r2.status}`); }
+  r = await S({ state: 'TX', counties: ['Bexar'], useCats: ['commercial'], limit: 200 });
+  check('TX land-use category: commercial in Bexar', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.land_use_cat === 'commercial'), `${r.json?.list?.length} rows, status ${r.status}`);
+  r = await S({ state: 'TX', counties: ['Bexar'], useCats: ['agricultural', 'multifamily'], limit: 300 });
+  check('TX land-use category: two categories at once', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => ['agricultural', 'multifamily'].includes(x.land_use_cat)), `${r.json?.list?.length} rows`);
+  r = await S({ state: 'TX', counties: ['Bexar'], useCats: ['bogus'], limit: 5 });
+  check('TX land-use category: unknown value rejected 400', r.status === 400, `status ${r.status}`);
   // Florida unaffected
   r = await S({ counties: ['Clay'], landUse: ['001'], limit: 50 });
   check('FL (no state) still Florida only', r.status === 200 && keysOf(r).length > 0 && keysOf(r).every((x: string) => x.startsWith('FL-')), `${keysOf(r).length} rows`);

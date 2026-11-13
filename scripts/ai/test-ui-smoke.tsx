@@ -41,6 +41,8 @@ check('TX admin: picker shows Texas', /Texas/.test(tx));
 check('TX admin: TX counties listed (Harris, Travis, Bexar), no FL/NC counties', /Harris/.test(tx) && /Travis/.test(tx) && /Bexar/.test(tx) && !/Alachua/.test(tx) && !/Mecklenburg/.test(tx));
 check('TX admin: pilot notes shown', /admin-only pilot/.test(tx) && /StratMap/.test(tx));
 check('TX admin: Likely vacant land shown; FL land use and homestead hidden', /Likely vacant land/.test(tx) && /mb-2 cursor-pointer hidden/.test(tx) && /class="hidden"/.test(tx));
+check('TX admin: land-use category checkboxes (Residential, Vacant land, Agricultural / rural, Commercial)', /Residential/.test(tx) && /Vacant land/.test(tx) && /Agricultural \/ rural/.test(tx) && /Commercial/.test(tx));
+check('FL: no category checkboxes', !/Agricultural \/ rural/.test(fl));
 check('TX admin: no-sale filter hidden', /flex items-center gap-2 hidden"><span[^>]*>No sale shown in/.test(tx));
 const ncParcel = { parcel_id: '0001', parcel_key: 'NC-183-0001', county: 'Wake', owner_name: 'DOE JANE', owner_state: 'SC', acreage: 12.5, property_address: '100 MAIN ST', state: 'NC', likely_vacant: true, out_of_state: true, is_absentee: true, sale1_date: null, has_outline: true, flood_lat: 35.8, flood_lon: -78.6 };
 const clean = (h: string) => h.replace(/<!-- -->/g, ''); // React inserts invisible markers between adjacent text pieces

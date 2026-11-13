@@ -6,6 +6,6 @@ import { searchPilot, type PilotConfig } from '@/lib/pilotSearch';
 import { txCountyCode, TX_CREDIT } from '@/lib/txStates';
 import type { searchSchema } from '@/lib/validation';
 
-const TX: PilotConfig = { state: 'TX', label: 'Texas', view: 'parcels_tx_current', countyCode: txCountyCode, credit: TX_CREDIT, hasSaleDate: false };
+const TX: PilotConfig = { state: 'TX', label: 'Texas', view: 'parcels_tx_current', countyCode: txCountyCode, credit: TX_CREDIT, hasSaleDate: false, hasUseCat: true };
 
 export const searchTx = (body: z.infer<typeof searchSchema>, userId: string): Promise<NextResponse> => searchPilot(TX, body, userId);

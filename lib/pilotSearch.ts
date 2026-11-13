@@ -20,6 +20,8 @@ export interface PilotConfig {
   credit: string;
   /** Does the roll carry a sale date? Texas does not, so the no-sale filter is ignored there. */
   hasSaleDate: boolean;
+  /** Does the view carry a lu_cat (land-use category) column? */
+  hasUseCat?: boolean;
 }
 
 const EMPTY = { geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 };
@@ -31,7 +33,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
   if (!isAdmin) return NextResponse.json({ error: 'state_not_available', message: `${cfg.label} is not available yet.` }, { status: 403 });
 
   const { counties, acreageMin, acreageMax, marketValueMin, marketValueMax, minLat, maxLat, minLon, maxLon, spatialShape, ownerType,
-    absentee, noSaleYears, vacantOnly, parcelId, address, limit = 500 } = body as SearchBody & { vacantOnly?: boolean };
+    absentee, noSaleYears, vacantOnly, parcelId, address, limit = 500, useCats } = body as SearchBody & { vacantOnly?: boolean; useCats?: string[] };
 
   const values: any[] = [];
   const conditions: string[] = ['1=1'];
@@ -54,6 +56,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     valIdx++;
   } else {
     if (vacantOnly) conditions.push('p.likely_vacant');
+    if (cfg.hasUseCat && useCats?.length) { conditions.push(`p.lu_cat = ANY($${valIdx}::text[])`); values.push(useCats); valIdx++; }
     if (acreageMin !== undefined) { conditions.push(`p.acreage >= $${valIdx}`); values.push(acreageMin); valIdx++; }
     if (acreageMax !== undefined) { conditions.push(`p.acreage <= $${valIdx}`); values.push(acreageMax); valIdx++; }
     if (marketValueMin !== undefined) { conditions.push(`p.jv >= $${valIdx}`); values.push(marketValueMin); valIdx++; }
@@ -108,7 +111,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     SELECT
       p.parcel_key as id, p.parcel_key, p.state, p.co_no, p.county, p.parcel_id, p.parcelno, p.alt_key,
       p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip,
-      p.acreage, p.acreage_source, p.dor_uc as land_use, p.use_desc, p.likely_vacant, COALESCE(p.phy_addr1, p.own_addr1) as property_address,
+      p.acreage, p.acreage_source, p.dor_uc as land_use, p.use_desc, ${cfg.hasUseCat ? 'p.lu_cat' : 'NULL::text'} as land_use_cat, p.likely_vacant, COALESCE(p.phy_addr1, p.own_addr1) as property_address,
       p.jv as market_value, p.land_value, p.improvement_value,
       p.sale_prc1, p.sale1_date, p.sale_prc2, p.sale2_date, p.sale_prc3, p.sale3_date, p.living_area_sqft, p.year_built,
       (p.own_state != '${cfg.state}' AND p.own_state IS NOT NULL) as out_of_state,
