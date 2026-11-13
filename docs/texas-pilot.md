@@ -57,3 +57,55 @@ Terrell still fail and stay unlinked.
 Still open (big counties, formats not yet confirmed): Harris (public.hcad.org returns a server error to automated requests), Tarrant,
 Bexar, Travis, El Paso, Collin, Denton, Hidalgo, Montgomery, Williamson, Fort Bend (BIS host `esearch.fbcad.org` loads, but the page
 shows no owner without scripts, so it cannot be verified the same way). Need one real parcel-detail URL from each site.
+
+### Third batch (2026-11-13), links found by the owner and checked in a browser
+
+- Travis (453): `https://travis.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy). 2 real parcels: owner and street matched.
+- Bexar (29): `https://hgo.harrisgovern.com/bexar/property/<roll year>-<Prop_ID>` (Harris Govern portal; the bare id gives "Not Found").
+  3 real parcels: owner matched. The roll year is `TX_ROLL_YEAR` in `lib/txCountyLinks.ts`; update it when a new roll opens.
+- Not linkable yet: Harris (the map viewer has no known deep link; HCAD's own details page errors for scripts) and Tarrant
+  (TAD's pages need an account number we do not have; our ids are the tax-parcel numbers like 47830-6-6).
+
+### Harris and Tarrant (2026-11-13)
+
+- Harris (201): search link. Opens the HCAD parcel viewer and copies the 13-digit account; the user pastes it into "Find address or place".
+  Checked: the viewer suggests the parcel with the right street for a real account. Not a direct link (the viewer has no per-parcel address).
+- Tarrant (439): `https://www.tad.org/property?account=<8-digit PID>`. Our ids are tax-parcel numbers, so `scripts/data-layers/tx-tarrant-pid.cjs`
+  downloads the PID from TAD's public ArcGIS layer (`tad.newedgeservices.com/.../InteractiveMap/TADMap/MapServer/0`) into
+  `public.tx_tarrant_pid` and fills `parcels_tx.alt_key` for county 439 (746,706 of 757,156 rows). Checked: ONECAT LLC's page opened with its PID.
+
+- El Paso (141): `https://epcad.org/Search?Keywords=<Prop_ID>` (address supplied by the owner; Year left out so the site uses its default).
+  EPCAD's acceptable-use policy forbids scripts/crawlers, so nothing was fetched from epcad.org: only the owner's hand check of id 390172 exists.
+  Do not add automated verification for this county.
+
+- Collin (85): `https://esearch.collincad.org/Property/View/<Prop_ID>` (BIS). Found in the config of the county's own parcel viewer
+  (`maps.collincountytx.gov/.../Appraisal_District/MapServer/1`, whose popups link every parcel that way). 8 random Collin parcels
+  looked up by PROP_ID on that layer: 7 matched our street address, 1 differed only in wording. The BIS site blocks scripts (403), so
+  its pages were not fetched.
+
+- Fort Bend (157): `https://esearch.fbcad.org/Property/View/R<Prop_ID>` (BIS; the bare number gives "not found", the R prefix works). Found via the county's
+  parcel layer (`gisportal.fortbendcountytx.gov/.../InteractiveMap/Parcels_Public/MapServer/1`, `CAD_Reference_Number` = `R` + our id).
+  12 of 12 random Fort Bend parcels matched owner on that layer; the CAD pages for R12489 and R12490 were opened in a browser and showed the right owners.
+
+- Denton (121): `https://denton.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy, same as Travis; `TX_PRODIGY` in `lib/txCountyLinks.ts`).
+  Found in the county's own parcel layer (`gis.dentoncounty.gov/.../CAD_GC/MapServer/0`, `property_url` field). 12 random parcels looked up by
+  `prop_id` on that layer: 10 matched owner, 2 differed only because the owner changed (same id). The portal pages for 28507 and 47124 were opened in a
+  browser and showed the right owners.
+
+- Hidalgo (215): `https://hidalgo.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; address pattern from the owner's `/maps` link).
+  Browser check: ids 709382 (ROCHA) and 241128 (SMITH JOHN C) both showed the right owner and id. All 327,261 Hidalgo ids are plain numbers.
+
+- Cameron (61): `https://cameron.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy). Browser check: 151941 and 201170 showed the right owner and street.
+- Montgomery (339): `https://montgomery.prodigycad.com/property-detail/<Prop_ID>` (TrueProdigy; the owner's map link only pointed to mcad-tx.org, so the portal
+  was found by trying the TrueProdigy pattern). Our Montgomery ids look like `106321.00000000`; the link code strips the `.00000000`.
+  Browser check: 106321 (ROCHA, 19177 BEDFORD) and 233579 (FUENTEZ, HALL DR) both matched.
+
+- Williamson (491): `https://search.wcad.org/Property-Detail/PropertyQuickRefID/<R-id>` (WCAD's own site). Our ids are already the quick-ref ids (282,857 of 282,858
+  match `R` + 5-7 digits; the one exception is "PRIVATE ROAD" and gets no link). Browser check: R506607 (SMITH, KRISTIN N) and R020444 (TOP HAT INVESTMENTS) matched.
+
+### Links, step 12: McLennan, Ellis, Webb (TrueProdigy on the county's own domain)
+
+These three run the same "Public Portal" (TrueProdigy) software as Travis and the others, but on the county's own site, so the link is `https://<county host>/property-detail/<Prop_ID>`
+(`TX_PRODIGY_OWN` in lib/txCountyLinks.ts). Opened in a browser: McLennan 2 of 3 parcels showed the right owner (the third page never filled in, so it is unconfirmed),
+Ellis 2 of 2, Webb 2 of 2. Not linked yet: Bell (its search site's robots.txt disallows all automated access, so we do not test it; waiting on a hand-copied property URL),
+Smith, Lubbock, Johnson, Hays (links not yet worked out).

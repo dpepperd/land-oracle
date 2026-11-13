@@ -1,6 +1,6 @@
 // Texas county links: shape rules (no network). The live check against real parcels is documented in docs/texas-pilot.md.
 import assert from 'assert';
-import { txCountyLink, TX_BIS_HOSTS } from '../../lib/txCountyLinks';
+import { txCountyLink, TX_BIS_HOSTS, TX_ROLL_YEAR } from '../../lib/txCountyLinks';
 import { ncLinkNotice } from '../../lib/ncCountyLinks';
 import { TX_COUNTIES } from '../../lib/txStates';
 let fails = 0;
@@ -13,7 +13,27 @@ t('link is direct and has a notice', () => { const l = txCountyLink(441, { parce
 t('Dallas (113) 17-digit account opens DCAD', () => assert.strictEqual(txCountyLink(113, { parcel_id: '26578600020010000' })?.url, 'https://www.dallascad.org/AcctDetailRes.aspx?ID=26578600020010000'));
 t('Dallas non-17-digit id -> null', () => assert.strictEqual(txCountyLink(113, { parcel_id: '12345' }), null));
 t('Comal (91) opens esearch.comalad.org', () => assert.strictEqual(txCountyLink(91, { parcel_id: '151939' })?.url, 'https://esearch.comalad.org/Property/View/151939'));
-t('county with no entry (Harris 201) -> null', () => assert.strictEqual(txCountyLink(201, { parcel_id: '123' }), null));
+t('Travis (453) opens TrueProdigy', () => assert.strictEqual(txCountyLink(453, { parcel_id: '127296' })?.url, 'https://travis.prodigycad.com/property-detail/127296'));
+t('Bexar (29) opens the portal with the roll year', () => assert.strictEqual(txCountyLink(29, { parcel_id: '558902' })?.url, `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-558902`));
+t('Bexar / Travis reject odd ids (-1, letters)', () => { assert.strictEqual(txCountyLink(29, { parcel_id: '-1' }), null); assert.strictEqual(txCountyLink(453, { parcel_id: 'R12' }), null); });
+t('Harris (201): search link that copies the 13-digit account', () => { const l = txCountyLink(201, { parcel_id: '1412580030019' })!; assert.ok(l.kind === 'search' && l.copy === '1412580030019' && l.url.startsWith('https://arcweb.hcad.org/')); assert.ok(/Find address or place/.test(ncLinkNotice(l))); });
+t('Harris: short or odd ids -> null', () => { assert.strictEqual(txCountyLink(201, { parcel_id: '123' }), null); assert.strictEqual(txCountyLink(201, { parcel_id: '1412580030019X' }), null); });
+t('Tarrant (439) uses the TAD account from alt_key, padded to 8', () => assert.strictEqual(txCountyLink(439, { parcel_id: '47830-6-6', alt_key: '3674053' })?.url, 'https://www.tad.org/property?account=03674053'));
+t('Tarrant without a TAD account -> null (never the tax-parcel number)', () => { assert.strictEqual(txCountyLink(439, { parcel_id: '47830-6-6' }), null); assert.strictEqual(txCountyLink(439, { parcel_id: '47830-6-6', alt_key: '47830-6-6' }), null); });
+t('El Paso (141) opens EPCAD search for the property id', () => assert.strictEqual(txCountyLink(141, { parcel_id: '390172' })?.url, 'https://epcad.org/Search?Keywords=390172'));
+t('El Paso rejects non-numeric ids', () => assert.strictEqual(txCountyLink(141, { parcel_id: 'H78801004300210' }), null));
+t('Collin (85) opens esearch.collincad.org', () => assert.strictEqual(txCountyLink(85, { parcel_id: '271306' })?.url, 'https://esearch.collincad.org/Property/View/271306'));
+t('Fort Bend (157) needs the R prefix', () => assert.strictEqual(txCountyLink(157, { parcel_id: '12489' })?.url, 'https://esearch.fbcad.org/Property/View/R12489'));
+t('Denton (121) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(121, { parcel_id: '47124' })?.url, 'https://denton.prodigycad.com/property-detail/47124'));
+t('Hidalgo (215) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(215, { parcel_id: '709382' })?.url, 'https://hidalgo.prodigycad.com/property-detail/709382'));
+t('Cameron (61) opens its TrueProdigy portal', () => assert.strictEqual(txCountyLink(61, { parcel_id: '151941' })?.url, 'https://cameron.prodigycad.com/property-detail/151941'));
+t('Montgomery (339): decimal tail stripped', () => assert.strictEqual(txCountyLink(339, { parcel_id: '106321.00000000' })?.url, 'https://montgomery.prodigycad.com/property-detail/106321'));
+t('a real decimal id is not mangled (12.5 -> null)', () => assert.strictEqual(txCountyLink(339, { parcel_id: '12.5' }), null));
+t('Williamson (491) opens WCAD by quick-ref id', () => assert.strictEqual(txCountyLink(491, { parcel_id: 'R506607' })?.url, 'https://search.wcad.org/Property-Detail/PropertyQuickRefID/R506607'));
+t('Williamson: "PRIVATE ROAD" and bare numbers -> null', () => { assert.strictEqual(txCountyLink(491, { parcel_id: 'PRIVATE ROAD' }), null); assert.strictEqual(txCountyLink(491, { parcel_id: '506607' }), null); });
+t('McLennan (309) and Ellis (139) open their own-domain TrueProdigy portals', () => { assert.strictEqual(txCountyLink(309, { parcel_id: '192263' })?.url, 'https://mclennancad.org/property-detail/192263'); assert.strictEqual(txCountyLink(139, { parcel_id: '235172' })?.url, 'https://www.elliscad.com/property-detail/235172'); assert.strictEqual(txCountyLink(309, { parcel_id: 'abc' }), null); });
+t('Webb (479) opens its own-domain TrueProdigy portal', () => assert.strictEqual(txCountyLink(479, { parcel_id: '318880' })?.url, 'https://www.webbcad.org/property-detail/318880'));
+t('county with no entry (Bell 27) -> null', () => assert.strictEqual(txCountyLink(27, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));
 t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443, Mills 333)', () => assert.ok(![35, 361, 443, 333].some((c) => c in TX_BIS_HOSTS)));

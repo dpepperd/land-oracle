@@ -753,6 +753,7 @@ export default function MapView({
                                let val = popupInfo.properties.parcel_id;
                                // North Carolina search-page counties: copy the ID that county's site expects
                                if (popupInfo.properties.state === 'NC') { const nl = ncCountyLink(popupInfo.properties.co_no, popupInfo.properties); if (nl?.copy) val = nl.copy; }
+                               if (popupInfo.properties.state === 'TX') { const tl = txCountyLink(popupInfo.properties.co_no, popupInfo.properties); if (tl?.copy) val = tl.copy; }
                                // Pinellas Search requires 01-30-14... (S-T-R) not 14-30-01... (R-T-S)
                                if (popupInfo.properties.county === 'Pinellas') {
                                    const p = val.trim().replace(/\s+/g, '-').split('-');
