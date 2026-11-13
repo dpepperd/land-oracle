@@ -118,6 +118,7 @@ const BEXAR = 29;
 const HARRIS = 201;
 const TARRANT = 439;
 const EL_PASO = 141;
+const FORT_BEND = 157;
 
 /** Dallas CAD: one account page per 17-digit account (the residential page shows commercial accounts too; tested on 10 random parcels). */
 const DALLAS = 113;
@@ -132,6 +133,8 @@ export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): T
   // El Paso (EPCAD): the search page takes the property id in the address and shows that property as the result. Its policy forbids automated
   // access, so this was NOT checked by script: the owner tested one id by hand (390172). No year is sent, so the site uses its default.
   if (coNo === EL_PASO) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://epcad.org/Search?Keywords=${id}`, label: 'El Paso CAD property search (this property shows as the result)' } : null;
+  // Fort Bend (FBCAD): a BIS site that wants the id with an "R" in front (real property). The bare number gives "not found".
+  if (coNo === FORT_BEND) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://esearch.fbcad.org/Property/View/R${id}`, label: 'Fort Bend CAD property search' } : null;
   // Travis CAD (TrueProdigy portal): opens the property by its id. Bexar CAD (Harris Govern portal): `<roll year>-<id>`.
   if (coNo === TRAVIS) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://travis.prodigycad.com/property-detail/${id}`, label: 'Travis CAD property search' } : null;
   if (coNo === BEXAR) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://hgo.harrisgovern.com/bexar/property/${TX_ROLL_YEAR}-${id}`, label: 'Bexar CAD property search' } : null;

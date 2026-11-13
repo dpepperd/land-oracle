@@ -82,3 +82,7 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
   (`maps.collincountytx.gov/.../Appraisal_District/MapServer/1`, whose popups link every parcel that way). 8 random Collin parcels
   looked up by PROP_ID on that layer: 7 matched our street address, 1 differed only in wording. The BIS site blocks scripts (403), so
   its pages were not fetched.
+
+- Fort Bend (157): `https://esearch.fbcad.org/Property/View/R<Prop_ID>` (BIS; the bare number gives "not found", the R prefix works). Found via the county's
+  parcel layer (`gisportal.fortbendcountytx.gov/.../InteractiveMap/Parcels_Public/MapServer/1`, `CAD_Reference_Number` = `R` + our id).
+  12 of 12 random Fort Bend parcels matched owner on that layer; the CAD pages for R12489 and R12490 were opened in a browser and showed the right owners.
