@@ -33,6 +33,7 @@ export const TX_BIS_HOSTS: Record<number, { host: string; name: string }> = {
   69: { host: 'esearch.castrocad.org', name: 'Castro' },
   73: { host: 'esearch.cherokeecad.com', name: 'Cherokee' },
   79: { host: 'esearch.cochrancad.com', name: 'Cochran' },
+  85: { host: 'esearch.collincad.org', name: 'Collin' },
   89: { host: 'esearch.coloradocad.org', name: 'Colorado' },
   91: { host: 'esearch.comalad.org', name: 'Comal' },
   93: { host: 'esearch.comanchecad.org', name: 'Comanche' },

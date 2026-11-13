@@ -22,7 +22,8 @@ t('Tarrant (439) uses the TAD account from alt_key, padded to 8', () => assert.s
 t('Tarrant without a TAD account -> null (never the tax-parcel number)', () => { assert.strictEqual(txCountyLink(439, { parcel_id: '47830-6-6' }), null); assert.strictEqual(txCountyLink(439, { parcel_id: '47830-6-6', alt_key: '47830-6-6' }), null); });
 t('El Paso (141) opens EPCAD search for the property id', () => assert.strictEqual(txCountyLink(141, { parcel_id: '390172' })?.url, 'https://epcad.org/Search?Keywords=390172'));
 t('El Paso rejects non-numeric ids', () => assert.strictEqual(txCountyLink(141, { parcel_id: 'H78801004300210' }), null));
-t('county with no entry (Collin 85) -> null', () => assert.strictEqual(txCountyLink(85, { parcel_id: '123' }), null));
+t('Collin (85) opens esearch.collincad.org', () => assert.strictEqual(txCountyLink(85, { parcel_id: '271306' })?.url, 'https://esearch.collincad.org/Property/View/271306'));
+t('county with no entry (Denton 121) -> null', () => assert.strictEqual(txCountyLink(121, { parcel_id: '123' }), null));
 t('missing / non-numeric id -> null', () => { assert.strictEqual(txCountyLink(441, { parcel_id: null }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '12-3' }), null); assert.strictEqual(txCountyLink(441, { parcel_id: '' }), null); });
 t('null county -> null', () => assert.strictEqual(txCountyLink(null, { parcel_id: '1' }), null));
 t('unverified counties are not listed (Bosque 35, Orange 361, Terrell 443, Mills 333)', () => assert.ok(![35, 361, 443, 333].some((c) => c in TX_BIS_HOSTS)));

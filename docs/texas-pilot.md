@@ -77,3 +77,8 @@ shows no owner without scripts, so it cannot be verified the same way). Need one
 - El Paso (141): `https://epcad.org/Search?Keywords=<Prop_ID>` (address supplied by the owner; Year left out so the site uses its default).
   EPCAD's acceptable-use policy forbids scripts/crawlers, so nothing was fetched from epcad.org: only the owner's hand check of id 390172 exists.
   Do not add automated verification for this county.
+
+- Collin (85): `https://esearch.collincad.org/Property/View/<Prop_ID>` (BIS). Found in the config of the county's own parcel viewer
+  (`maps.collincountytx.gov/.../Appraisal_District/MapServer/1`, whose popups link every parcel that way). 8 random Collin parcels
+  looked up by PROP_ID on that layer: 7 matched our street address, 1 differed only in wording. The BIS site blocks scripts (403), so
+  its pages were not fetched.
