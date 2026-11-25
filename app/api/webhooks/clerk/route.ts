@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import pool from '@/lib/db'
 import { isAdminEmail } from '@/lib/admin'
+import { deleteUserAndData } from '@/lib/deleteUser'
 import { stripe } from '@/lib/stripe'
 
 export async function POST(req: Request) {
@@ -109,8 +110,8 @@ export async function POST(req: Request) {
         if (sub && process.env.STRIPE_SECRET_KEY) {
           try { await stripe.subscriptions.cancel(sub); } catch (e: any) { console.error('Could not cancel Stripe subscription for deleted user', id, e?.message); }
         }
-        // ON DELETE CASCADE on user_county_access / export_usage handles the rest.
-        await client.query(`DELETE FROM users WHERE clerk_id = $1`, [id || '']);
+        // Removes the user and their leads, notes, county access and usage rows in one transaction (lib/deleteUser.ts).
+        await deleteUserAndData(client, id || '');
         console.log(`User deleted: ${id}`);
     } catch (e) {
         console.error('Error deleting user from DB:', e);

@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { searchSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { getEntitlements } from '@/lib/entitlements';
+import { countSearch } from '@/lib/searchCounter';
 import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
 import { countyCode, countyName } from '@/lib/parcels/key';
 import { ABSENTEE_SQL, addSellerSignalConditions } from '@/lib/sellerSignals';
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
     console.log('[SPATIAL] Request received at:', new Date().toISOString());
     
     const body = searchSchema.parse(rawBody);
+    countSearch(userId); // record only (refund-policy evidence + admin panel); never blocks the search
 
     // North Carolina pilot (admin-only) has its own code path; everything below is Florida and is unchanged.
     if (body.state === 'NC') return await searchNc(body, userId);

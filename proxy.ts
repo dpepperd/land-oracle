@@ -29,6 +29,7 @@ const isPublicApi = createRouteMatcher([
   "/api/map/flood",
   "/api/highways",
   "/api/parcels/stats",
+  "/api/health", // uptime monitor: reports only ok/fail per table
   "/api/chat", // public site chatbot: static product facts only, no user data
 ]);
 

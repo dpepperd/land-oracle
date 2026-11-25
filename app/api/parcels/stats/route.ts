@@ -10,6 +10,15 @@ let cache: { at: number; stats: Record<string, number> } | null = null;
 let inflight: Promise<Record<string, number>> | null = null;
 
 async function loadStats(): Promise<Record<string, number>> {
+  // Fast path: the small summary table (scripts/data-layers/county-counts.cjs). Falls back to the full count if it is missing or empty.
+  try {
+    const fast = await pool.query('SELECT county, n FROM public.county_parcel_counts');
+    if (fast.rows.length > 0) {
+      const out: Record<string, number> = {};
+      for (const row of fast.rows) out[row.county] = Number(row.n);
+      return out;
+    }
+  } catch { /* table not there yet: use the slow query below */ }
   const result = await pool.query(
     `SELECT county, COUNT(*) as count
      FROM parcels_v2
