@@ -10,6 +10,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import { X, Send, Bot, User, Loader2, Search, MapPin, Sparkles, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
+import { readAssistantStream } from '@/lib/ai/clientStream';
 
 const HANDOFF_KEY = 'lo:ai-handoff';
 const CHANNEL = 'lo-assistant';
@@ -196,7 +197,6 @@ export default function AssistantPanel({ standalone = false }: { standalone?: bo
     setMessages([...messages, history[history.length - 1], { id: aId, role: 'assistant', text: '', tools: [] }]);
     setBusy(true);
     const ac = new AbortController(); abortRef.current = ac;
-    let finished = false; let stalled = false; let stall: ReturnType<typeof setTimeout> | undefined; // finished = saw the server's final "done"/"error" event
     const patch = (fn: (m: Msg) => Msg) => setMessages((prev) => prev.map((m) => (m.id === aId ? fn(m) : m)));
     try {
       const res = await fetch('/api/assistant', {
@@ -208,37 +208,22 @@ export default function AssistantPanel({ standalone = false }: { standalone?: bo
         patch((m) => ({ ...m, error: true, text: j.message || (res.status === 401 ? 'Please sign in to use the assistant.' : 'The assistant is unavailable right now.') }));
         return;
       }
-      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
-      // If nothing arrives for a long time (the server was cut off), stop waiting and say so instead of spinning forever.
-      const armStall = () => { if (stall) clearTimeout(stall); stall = setTimeout(() => { stalled = true; ac.abort(); }, 100_000); };
-      armStall();
-      for (;;) {
-        const { value, done } = await reader.read(); if (done) break;
-        armStall();
-        buf += dec.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
-          if (!line) continue;
-          let ev: any; try { ev = JSON.parse(line); } catch { continue; }
-          if (ev.type === 'text') patch((m) => ({ ...m, text: m.text + ev.delta }));
-          else if (ev.type === 'tool_use') patch((m) => ({ ...m, tools: [...(m.tools ?? []), { id: ev.id, name: ev.name, done: false }] }));
-          else if (ev.type === 'tool_result') {
-            patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
-            if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
-            if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showKeys(ev.keys); }
-          } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
-          else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
-          else if (ev.type === 'error') { finished = true; patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message })); }
-          else if (ev.type === 'done') finished = true;
-        }
-      }
-      // The stream closed without the server's final event: it was cut off (e.g. the platform's time limit). Say so instead of leaving a half answer.
-      if (!finished && !ac.signal.aborted) patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + SLOW_MESSAGE }));
+      const { finished, stalled } = await readAssistantStream(res.body.getReader(), (ev: any) => {
+        if (ev.type === 'text') patch((m) => ({ ...m, text: m.text + ev.delta }));
+        else if (ev.type === 'tool_use') patch((m) => ({ ...m, tools: [...(m.tools ?? []), { id: ev.id, name: ev.name, done: false }] }));
+        else if (ev.type === 'tool_result') {
+          patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
+          if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
+          if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showKeys(ev.keys); }
+        } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
+        else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
+        else if (ev.type === 'error') patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message }));
+      }, { abort: () => ac.abort() }); // the helper (lib/ai/clientStream.ts, tested) gives up if the server goes quiet for 100 s
+      // Quiet for too long, or the stream closed without the server's final event (e.g. the platform's time limit): say so instead of leaving a half answer.
+      if (stalled || (!finished && !ac.signal.aborted)) patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + SLOW_MESSAGE }));
     } catch (e: any) {
-      if (e?.name === 'AbortError') { if (stalled) patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + SLOW_MESSAGE })); }
-      else patch((m) => ({ ...m, error: true, text: m.text || 'Connection problem. Please try again.' }));
-    } finally { if (stall) clearTimeout(stall); setBusy(false); abortRef.current = null; }
+      if (e?.name !== 'AbortError') patch((m) => ({ ...m, error: true, text: m.text || 'Connection problem. Please try again.' }));
+    } finally { setBusy(false); abortRef.current = null; }
   };
 
   if (!isSignedIn || !enabled) return null;
