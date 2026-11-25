@@ -864,44 +864,8 @@ export default function MapView({
                </div>
              </div>
 
-              {/* Contact Info (Premium Blurring) */}
-              <div className="mt-3 pt-2 border-t border-gray-100">
-                  <div className="font-bold text-gray-900 text-xs mb-1">Contact Info:</div>
-                  
-                  {/* Phone */}
-                  <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-gray-600">Phone:</span>
-                      {userRole === 'admin' || userTier === 'paid' ? (
-                          <span className="font-mono">{popupInfo.properties.owner_phone || 'N/A'}</span>
-                      ) : (
-                           <span 
-                             onClick={(e) => { e.stopPropagation(); if(onUpsell) onUpsell(); }}
-                             className="font-mono text-transparent bg-gray-200 rounded px-1 cursor-pointer select-none blur-[2px] hover:bg-gray-300 transition-colors"
-                             title="Upgrade to view"
-                           >
-                              (555) 000-0000
-                           </span>
-                      )}
-                  </div>
-
-                  {/* Email */}
-                  <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Email:</span>
-                      {userRole === 'admin' || userTier === 'paid' ? (
-                          <span className="font-mono">{popupInfo.properties.owner_email || 'N/A'}</span>
-                      ) : (
-                           <span 
-                             onClick={(e) => { e.stopPropagation(); if(onUpsell) onUpsell(); }}
-                             className="font-mono text-transparent bg-gray-200 rounded px-1 cursor-pointer select-none blur-[2px] hover:bg-gray-300 transition-colors"
-                             title="Upgrade to view"
-                           >
-                              user@example.com
-                           </span>
-                      )}
-                  </div>
-                  {/* Owner contact lookup (skip tracing): renders nothing unless the server flag SKIPTRACE_ENABLED is on. Florida parcels only. */}
-                  <OwnerContact parcelKey={popupInfo.properties.parcel_key} state={popupInfo.properties.state} variant="popup" />
-              </div>
+              {/* Owner contact lookup (skip tracing): renders nothing unless the server flag SKIPTRACE_ENABLED is on. Florida parcels only. */}
+              <OwnerContact parcelKey={popupInfo.properties.parcel_key} state={popupInfo.properties.state} variant="popup" />
 
               {/* CRM Notes Section */}
               {/* CRM Notes Section */}
