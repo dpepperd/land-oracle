@@ -4,11 +4,12 @@ import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import pool from '@/lib/db';
 import { markPaymentFailed, syncSubscription } from '@/lib/billing';
+import { creditTopupFromSession, isWalletTopup } from '@/lib/wallet/topup';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Events: checkout.session.completed, customer.subscription.created|updated|deleted, invoice.payment_failed.
+// Events: checkout.session.completed (subscriptions and wallet top-ups), customer.subscription.created|updated|deleted, invoice.payment_failed.
 // Entitlements are always derived from the Subscription object (lib/billing.ts). Idempotent via stripe_events.
 export async function POST(req: Request) {
   const body = await req.text();
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
       switch (event.type) {
         case 'checkout.session.completed': {
           const s = event.data.object as Stripe.Checkout.Session;
+          if (isWalletTopup(s)) { result = await creditTopupFromSession(client, s, event.livemode); break; } // wallet top-up: credited once, and only when paid
           if (s.mode !== 'subscription' || !s.subscription || !s.customer) break;
           const customerId = typeof s.customer === 'string' ? s.customer : s.customer.id;
           const clerkId = s.client_reference_id || s.metadata?.userId;
