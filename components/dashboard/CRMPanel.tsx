@@ -200,6 +200,7 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add a new note..."
+                    maxLength={5000}
                     className="w-full text-sm font-medium p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[80px] resize-none bg-white text-black dark:bg-gray-700 dark:text-white shadow-sm placeholder:text-gray-500"
                     disabled={isNoteSaving}
                 />

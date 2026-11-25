@@ -6,6 +6,7 @@ import pool from '@/lib/db';
 import { getEntitlements } from '@/lib/entitlements';
 import { absenteeSqlFor, addSellerSignalConditions } from '@/lib/sellerSignals';
 import type { searchSchema } from '@/lib/validation';
+import { likePattern } from '@/lib/searchText';
 
 type SearchBody = z.infer<typeof searchSchema>;
 
@@ -53,7 +54,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     conditions.push(text.kind === 'id'
       ? `(p.parcel_id ILIKE $${valIdx} OR p.alt_key ILIKE $${valIdx})`
       : `(p.phy_addr1 ILIKE $${valIdx} OR p.own_addr1 ILIKE $${valIdx})`);
-    values.push(`%${text.value}%`);
+    values.push(likePattern(text.value)); // wildcards typed by the user are taken literally (the 3-character minimum is checked in the route)
     valIdx++;
   } else {
     if (vacantOnly) conditions.push('p.likely_vacant');
@@ -80,6 +81,9 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
       } else if ((spatialShape as any).properties?.subType === 'Circle' && (spatialShape as any).properties?.radius) {
         hasSpatial = true;
         const center = (spatialShape as any).geometry?.coordinates;
+        if (!Array.isArray(center) || center.length < 2 || !Number.isFinite(Number(center[0])) || !Number.isFinite(Number(center[1])) || !Number.isFinite(Number((spatialShape as any).properties.radius))) {
+          return NextResponse.json({ error: 'invalid_area', message: 'The drawn area is not valid. Please draw it again.' }, { status: 400 });
+        }
         conditions.push(`ST_DWithin(ST_PointOnSurface(p.geom)::geography, ST_SetSRID(ST_MakePoint($${valIdx}, $${valIdx + 1}), 4326)::geography, $${valIdx + 2})`);
         values.push(center[0], center[1], (spatialShape as any).properties.radius * 1609.34);
         valIdx += 3;
@@ -124,11 +128,10 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
       p.latitude as latitude, p.longitude as longitude, p.latitude as flood_lat, p.longitude as flood_lon,
       ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
       ${absenteeSqlFor(cfg.state)} as is_absentee,
-      (l.id IS NOT NULL) as is_lead,
+      EXISTS (SELECT 1 FROM leads l WHERE l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)) as is_lead,
       EXISTS (SELECT 1 FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin')))) as has_note,
       (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
     FROM ${cfg.view} p
-    LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
     WHERE ${conditions.join(' AND ')}
     LIMIT $${valIdx + 1}
   `;

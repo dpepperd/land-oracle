@@ -7,6 +7,7 @@ import pool from '@/lib/db';
 import { AccessError, canReadCounty, resolveAccess } from '@/lib/parcels/access';
 import { countyName, parseParcelKey } from '@/lib/parcels/key';
 import { getEntitlements, trackExport } from '@/lib/entitlements';
+import { toCSV } from '@/lib/csv'; // shared CSV writer with spreadsheet formula protection
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,17 +15,6 @@ export const dynamic = 'force-dynamic';
 const body = z.object({ keys: z.array(z.string().min(5).max(80)).min(1).max(60) });
 const MAX_ROWS = 60;
 
-function toCSV(data: any[]) {
-  if (data.length === 0) return '';
-  const headers = Object.keys(data[0]);
-  const rows = data.map((row) => headers.map((h) => {
-    const val = row[h];
-    if (val === null || val === undefined) return '';
-    const str = String(val);
-    return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str;
-  }).join(','));
-  return [headers.join(','), ...rows].join('\n');
-}
 
 export async function POST(req: Request) {
   const { userId } = await auth();
