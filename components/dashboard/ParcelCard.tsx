@@ -2,6 +2,7 @@ import { MapPin, StickyNote, Home, Droplets } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
 import { useFlood, requestFlood } from '@/lib/floodClient';
+import OwnerContact from './OwnerContact';
 
 interface Parcel {
   parcel_id: string;
@@ -122,6 +123,7 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
           {parcel.is_lead ? 'Saved Lead' : isMarking ? 'Saving...' : 'Mark as Lead'}
         </button>
       </div>
+      <OwnerContact parcelKey={parcel.parcel_key} state={parcel.state} />
     </div>
   );
 }
