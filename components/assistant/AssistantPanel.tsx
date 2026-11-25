@@ -10,6 +10,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import { X, Send, Bot, User, Loader2, Search, MapPin, Sparkles, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
+import { readAssistantStream } from '@/lib/ai/clientStream';
 
 const HANDOFF_KEY = 'lo:ai-handoff';
 const CHANNEL = 'lo-assistant';
@@ -18,6 +19,7 @@ const EXPANDED_KEY = 'lo:ai-expanded';
 interface ToolChip { id: string; name: string; done: boolean; ok?: boolean; summary?: string }
 interface Msg { id: string; role: 'user' | 'assistant'; text: string; tools?: ToolChip[]; error?: boolean; cost?: number | null }
 
+const SLOW_MESSAGE = 'That question took longer than expected, so I stopped. Try a narrower question (one county, a tighter acreage or value range) and ask again.';
 const TOOL_LABEL: Record<string, string> = {
   search_parcels: 'Searching parcels', get_parcel: 'Reading parcel', get_comps: 'Finding comparable sales', get_parcel_context: 'Checking flood and highways',
 };
@@ -206,26 +208,19 @@ export default function AssistantPanel({ standalone = false }: { standalone?: bo
         patch((m) => ({ ...m, error: true, text: j.message || (res.status === 401 ? 'Please sign in to use the assistant.' : 'The assistant is unavailable right now.') }));
         return;
       }
-      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
-      for (;;) {
-        const { value, done } = await reader.read(); if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
-          if (!line) continue;
-          let ev: any; try { ev = JSON.parse(line); } catch { continue; }
-          if (ev.type === 'text') patch((m) => ({ ...m, text: m.text + ev.delta }));
-          else if (ev.type === 'tool_use') patch((m) => ({ ...m, tools: [...(m.tools ?? []), { id: ev.id, name: ev.name, done: false }] }));
-          else if (ev.type === 'tool_result') {
-            patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
-            if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
-            if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showKeys(ev.keys); }
-          } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
-          else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
-          else if (ev.type === 'error') patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message }));
-        }
-      }
+      const { finished, stalled } = await readAssistantStream(res.body.getReader(), (ev: any) => {
+        if (ev.type === 'text') patch((m) => ({ ...m, text: m.text + ev.delta }));
+        else if (ev.type === 'tool_use') patch((m) => ({ ...m, tools: [...(m.tools ?? []), { id: ev.id, name: ev.name, done: false }] }));
+        else if (ev.type === 'tool_result') {
+          patch((m) => ({ ...m, tools: (m.tools ?? []).map((t) => (t.id === ev.id ? { ...t, done: true, ok: ev.ok, summary: ev.summary } : t)) }));
+          if (ev.keys?.length) setKnown((prev) => new Set([...prev, ...ev.keys]));
+          if (ev.ok && ev.keys?.length && (ev.name === 'search_parcels' || ev.name === 'get_comps')) { lastKeys.current = ev.keys; showKeys(ev.keys); }
+        } else if (ev.type === 'cost') patch((m) => ({ ...m, cost: ev.usd }));
+        else if (ev.type === 'notice') patch((m) => ({ ...m, text: m.text + `\n\n_${ev.message}_` }));
+        else if (ev.type === 'error') patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + ev.message }));
+      }, { abort: () => ac.abort() }); // the helper (lib/ai/clientStream.ts, tested) gives up if the server goes quiet for 100 s
+      // Quiet for too long, or the stream closed without the server's final event (e.g. the platform's time limit): say so instead of leaving a half answer.
+      if (stalled || (!finished && !ac.signal.aborted)) patch((m) => ({ ...m, error: true, text: (m.text ? m.text + '\n\n' : '') + SLOW_MESSAGE }));
     } catch (e: any) {
       if (e?.name !== 'AbortError') patch((m) => ({ ...m, error: true, text: m.text || 'Connection problem. Please try again.' }));
     } finally { setBusy(false); abortRef.current = null; }
