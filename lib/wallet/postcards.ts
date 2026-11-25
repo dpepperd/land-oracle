@@ -1,54 +1,79 @@
 // Sending a postcard. The order matters and is tested in scripts/ai/test-wallet.ts:
-//   1. price and balance check (too little money: stop, nothing sent, nothing charged)
+//   1. price (per size, from admin settings) and balance check (too little money: stop, nothing sent, nothing charged)
 //   2. Lob's US address verification (undeliverable: stop, nothing sent, nothing charged, the user is told why)
-//   3. Lob creates the postcard
-//   4. ONLY NOW the wallet is charged (the card was accepted)
+//   3. Lob creates the postcard (First Class)
+//   4. ONLY NOW the wallet is charged (the card was accepted), at the price the user was shown
 // An advisory lock per account makes one account's postcard sends run one after the other, so the balance checked in step 1 is still there at step 4.
 // If the charge somehow still fails after Lob accepted the card, we ask Lob to cancel it and record that.
 import type { Pool } from 'pg';
 import { z } from 'zod';
-import { debit, getBalance, inTx } from './ledger';
-import { getPrices, getReturnAddress, SettingsError } from './settings';
+import { getBalance } from './ledger';
+import { chargeForService } from './charge';
+import { getPrices, getReturnAddress, postcardItem, SettingsError } from './settings';
 import { LobError, type LobClient, type UsAddress } from './lob';
-
-export const MESSAGE_MAX = 300;
+import { applyMerge, messageMax, normalizePhone, renderPostcard, SIZES, type DesignId, type PostcardSize, type PostcardSpec, type Rendered } from './templates';
 
 export const postcardSchema = z.object({
+  size: z.enum(SIZES).default('4x6'),
+  design: z.enum(['classic', 'bold', 'friendly']).default('classic'),
   parcelKey: z.string().max(80).optional(),
-  message: z.string().trim().min(1, 'Write a message for the card.').max(MESSAGE_MAX, `Keep the message to ${MESSAGE_MAX} characters.`),
+  message: z.string().trim().min(1, 'Write a message for the back of the card.').max(1000),
+  agent: z.object({
+    name: z.string().trim().min(2, 'Agent name is required.').max(60),
+    phone: z.string().trim().min(1, 'Agent phone is required.').max(30),
+    brokerage: z.string().trim().min(2, 'Brokerage name is required.').max(80),
+  }),
   to: z.object({
-    name: z.string().trim().min(1, 'Recipient name is required.').max(80),
+    name: z.string().trim().min(1, 'Owner name is required.').max(80),
     line1: z.string().trim().min(1, 'Street address is required.').max(100),
     line2: z.string().trim().max(100).optional().default(''),
     city: z.string().trim().min(1, 'City is required.').max(60),
     state: z.string().trim().length(2, 'Use the 2-letter state, like FL.').transform((s) => s.toUpperCase()),
     zip: z.string().trim().regex(/^\d{5}(-\d{4})?$/, 'ZIP must be 5 digits (or ZIP+4).'),
   }),
+  propertyAddress: z.string().trim().max(80, 'Keep the property address to 80 characters.').optional(),
+  acreage: z.number().positive('Acreage must be more than 0.').max(100000).optional(),
+  logoAssetId: z.number().int().positive().optional(),
+  photoAssetId: z.number().int().positive().optional(),
+}).superRefine((v, ctx) => {
+  if (!normalizePhone(v.agent.phone)) ctx.addIssue({ code: 'custom', path: ['agent', 'phone'], message: 'Enter a valid US phone number for the agent.' });
+  const m = applyMerge(v.message, { ownerName: v.to.name, propertyAddress: v.propertyAddress, acreage: v.acreage });
+  if (m.unknown.length) ctx.addIssue({ code: 'custom', path: ['message'], message: `Unknown merge field {{${m.unknown[0]}}}. Use {{owner_name}}, {{property_address}} or {{acreage}}.` });
+  else if (m.missing.length) ctx.addIssue({ code: 'custom', path: ['message'], message: `Your message uses {{${m.missing[0]}}} but that field is empty. Fill it in or remove it from the message.` });
+  else if (m.text.length > messageMax(v.size)) ctx.addIssue({ code: 'custom', path: ['message'], message: `The back message is ${m.text.length} characters after merging; the ${v.size} card holds ${messageMax(v.size)}.` });
 });
 export type PostcardInput = z.infer<typeof postcardSchema>;
+
+export interface Images { logo?: string; photo?: string }
+
+/** Everything the card shows, built the same way for the preview and for the real send. */
+export function buildSpec(input: PostcardInput, images: Images = {}): PostcardSpec {
+  const merge = { ownerName: input.to.name, propertyAddress: input.propertyAddress, acreage: input.acreage };
+  return {
+    size: input.size as PostcardSize,
+    design: input.design as DesignId,
+    message: applyMerge(input.message, merge).text,
+    agent: { name: input.agent.name, phone10: normalizePhone(input.agent.phone)!, brokerage: input.agent.brokerage },
+    merge,
+    logoDataUri: images.logo,
+    photoDataUri: images.photo,
+  };
+}
+export const buildPreview = (input: PostcardInput, images: Images = {}): Rendered => renderPostcard(buildSpec(input, images));
 
 export type SendResult =
   | { ok: true; postcardId: number; lobId: string; chargedCents: number; balanceAfterCents: number }
   | { ok: false; code: 'insufficient_funds' | 'address_rejected' | 'not_set_up' | 'mail_failed' | 'busy'; message: string; postcardId?: number; balanceCents?: number; priceCents?: number };
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-// 4x6 postcard, Lob's 6.25in x 4.25in print area. The right side of the back is left empty on purpose: Lob prints the address block there.
-export const frontHtml = (message: string) =>
-  `<html><head><style>body{margin:0;width:6.25in;height:4.25in;font-family:Arial,Helvetica,sans-serif}.m{position:absolute;top:.5in;left:.5in;width:5.25in;font-size:15pt;line-height:1.35;color:#111}</style></head><body><div class="m">${esc(message).replace(/\n/g, '<br>')}</div></body></html>`;
-export const backHtml = (fromName: string) =>
-  `<html><head><style>body{margin:0;width:6.25in;height:4.25in;font-family:Arial,Helvetica,sans-serif}.f{position:absolute;top:.4in;left:.4in;width:2.6in;font-size:9pt;color:#444}</style></head><body><div class="f">From ${esc(fromName)}</div></body></html>`;
-
-export async function sendPostcard(deps: { pool: Pool; lob: LobClient }, userId: number, input: PostcardInput): Promise<SendResult> {
+export async function sendPostcard(deps: { pool: Pool; lob: LobClient }, userId: number, input: PostcardInput, images: Images = {}): Promise<SendResult> {
   const { pool, lob } = deps;
-
   // One send at a time per account (held on its own connection until we are done).
   const lock = await pool.connect();
   try {
     const got = (await lock.query('SELECT pg_try_advisory_lock(7001, $1) AS ok', [userId])).rows[0].ok;
     if (!got) return { ok: false, code: 'busy', message: 'Another postcard from your account is still being sent. Try again in a moment.' };
     try {
-      return await run(pool, lob, userId, input);
+      return await run(pool, lob, userId, input, images);
     } finally {
       await lock.query('SELECT pg_advisory_unlock(7001, $1)', [userId]).catch(() => {});
     }
@@ -57,13 +82,15 @@ export async function sendPostcard(deps: { pool: Pool; lob: LobClient }, userId:
   }
 }
 
-async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardInput): Promise<SendResult> {
-  // 1. price (from admin settings), return address, balance
+async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardInput, images: Images): Promise<SendResult> {
+  // 1. price for this size (from admin settings), return address, balance
+  const item = postcardItem(input.size as PostcardSize);
   let price: number;
   let from;
   try {
-    price = (await getPrices(pool)).postcard;
-    if (!Number.isInteger(price) || price <= 0) throw new SettingsError('The postcard price is not set.');
+    const p = (await getPrices(pool))[item];
+    if (!p.enabled || !Number.isInteger(p.cents) || p.cents <= 0) throw new SettingsError('That postcard size is not available.');
+    price = p.cents;
     from = await getReturnAddress(pool);
   } catch (e: any) {
     if (e instanceof SettingsError) return { ok: false, code: 'not_set_up', message: 'Postcards are not set up yet.' };
@@ -71,13 +98,16 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
   }
   if (!from) return { ok: false, code: 'not_set_up', message: 'Postcards are not set up yet (no return address).' };
   const balance = await getBalance(pool, userId);
-  if (balance < price) return { ok: false, code: 'insufficient_funds', message: 'Not enough wallet balance for a postcard. Add funds first.', balanceCents: balance, priceCents: price };
+  if (balance < price) return { ok: false, code: 'insufficient_funds', message: 'Not enough wallet balance for this postcard. Add funds first.', balanceCents: balance, priceCents: price };
 
   const to = input.to;
+  const spec = buildSpec(input, images);
+  const rendered = renderPostcard(spec);
+  const record = { size: input.size, design: input.design, agent: { name: input.agent.name, brokerage: input.agent.brokerage }, propertyAddress: input.propertyAddress ?? null, acreage: input.acreage ?? null, hasLogo: !!images.logo, hasPhoto: !!images.photo };
   const row = (await pool.query(
-    `INSERT INTO postcards (user_id, parcel_key, to_name, to_line1, to_line2, to_city, to_state, to_zip, message, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'sending') RETURNING id`,
-    [userId, input.parcelKey ?? null, to.name, to.line1, to.line2 || null, to.city, to.state, to.zip, input.message])).rows[0];
+    `INSERT INTO postcards (user_id, parcel_key, to_name, to_line1, to_line2, to_city, to_state, to_zip, message, status, size, design, mail_type, spec)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'sending',$10,$11,'usps_first_class',$12::jsonb) RETURNING id`,
+    [userId, input.parcelKey ?? null, to.name, to.line1, to.line2 || null, to.city, to.state, to.zip, spec.message, input.size, input.design, JSON.stringify(record)])).rows[0];
   const id = Number(row.id);
   const setStatus = (status: string, reason: string | null, extra: { lobId?: string; cost?: number; ledgerId?: number } = {}) =>
     pool.query('UPDATE postcards SET status=$2, reason=$3, lob_id=COALESCE($4, lob_id), cost_cents=COALESCE($5, cost_cents), ledger_id=COALESCE($6, ledger_id) WHERE id=$1',
@@ -104,7 +134,7 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     lobId = (await lob.createPostcard({
       to: verified.address,
       from: { name: from.name, line1: from.address_line1, line2: from.address_line2 || undefined, city: from.city, state: from.state, zip: from.zip },
-      front: frontHtml(input.message), back: backHtml(from.name), description: `Land Oracle postcard ${id}`, idempotencyKey: `landoracle-postcard-${id}`,
+      front: rendered.front, back: rendered.back, size: input.size as PostcardSize, description: `Land Oracle postcard ${id}`, idempotencyKey: `landoracle-postcard-${id}`,
     })).id;
   } catch (e: any) {
     const msg = e instanceof LobError && e.code === 'rejected' ? `The mailing service refused the card: ${e.message}` : 'The postcard could not be sent right now. You were not charged. Please try again.';
@@ -112,9 +142,9 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     return { ok: false, code: 'mail_failed', message: msg + (e instanceof LobError && e.code === 'rejected' ? ' You were not charged.' : ''), postcardId: id };
   }
 
-  // 4. Lob accepted the card: charge the wallet now
+  // 4. Lob accepted the card: charge the wallet now, at the price that was checked above
   try {
-    const res = await inTx(pool, (c) => debit(c, { userId, cents: price, kind: 'charge', item: 'postcard', ref: lobId, idempotencyKey: `postcard:${id}`, description: `Postcard to ${to.city}, ${to.state}` }));
+    const res = await chargeForService(pool, { userId, item, quotedCents: price, ref: lobId, idempotencyKey: `postcard:${id}`, description: `${input.size} postcard to ${to.city}, ${to.state}` });
     if (!res.ok) {
       await lob.cancelPostcard(lobId).catch(() => {});
       await setStatus('sent_unpaid_cancel_requested', 'The balance was too low at the moment of charging; cancellation was requested.', { lobId });

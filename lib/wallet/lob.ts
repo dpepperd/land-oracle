@@ -5,6 +5,10 @@ export class LobError extends Error {
   constructor(code: LobError['code'], message: string) { super(message); this.name = 'LobError'; this.code = code; }
 }
 
+/** First Class for every size: faster than Standard, and 4x6 is only offered in First Class. use_type is Lob's required marketing/operational label: these are marketing mailings. */
+export const MAIL_TYPE = 'usps_first_class';
+export const USE_TYPE = 'marketing';
+
 export interface UsAddress { name?: string; line1: string; line2?: string; city: string; state: string; zip: string }
 export type Verification =
   | { ok: true; address: UsAddress; deliverability: string }
@@ -12,7 +16,7 @@ export type Verification =
 
 export interface LobClient {
   verify(a: UsAddress): Promise<Verification>;
-  createPostcard(p: { to: UsAddress; from: UsAddress; front: string; back: string; description: string; idempotencyKey: string }): Promise<{ id: string }>;
+  createPostcard(p: { to: UsAddress; from: UsAddress; front: string; back: string; size: '4x6' | '6x9' | '6x11'; description: string; idempotencyKey: string }): Promise<{ id: string }>;
   cancelPostcard(id: string): Promise<void>;
 }
 
@@ -80,7 +84,7 @@ export function makeLobClient(opts: { apiKey?: string; fetchImpl?: FetchLike } =
       };
     },
     async createPostcard(p) {
-      const j = await call('POST', '/postcards', { description: p.description, to: toLob(p.to), from: toLob(p.from), front: p.front, back: p.back, size: '4x6' }, { 'Idempotency-Key': p.idempotencyKey });
+      const j = await call('POST', '/postcards', { description: p.description, to: toLob(p.to), from: toLob(p.from), front: p.front, back: p.back, size: p.size, mail_type: MAIL_TYPE, use_type: USE_TYPE }, { 'Idempotency-Key': p.idempotencyKey });
       if (!j?.id) throw new LobError('unavailable', 'The mailing service gave an unexpected answer.');
       return { id: String(j.id) };
     },

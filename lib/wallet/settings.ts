@@ -1,9 +1,16 @@
 // Admin-editable settings (db table app_settings). Prices live in the database, never in code: if the row is missing or damaged, nothing is charged.
+// Every priced item is { cents, enabled }. An item that is switched off cannot be charged, whatever its price.
 import type { Pool, PoolClient } from 'pg';
 
-export const PRICE_ITEMS = ['skip_trace', 'postcard', 'property_data', 'permit', 'monitor_alert'] as const;
+export const POSTCARD_SIZES = ['4x6', '6x9', '6x11'] as const;
+export type PostcardSize = (typeof POSTCARD_SIZES)[number];
+export const postcardItem = (size: PostcardSize) => `postcard_${size}` as const;
+
+/** Every item that can be priced. Postcards are live; the rest are placeholders switched off until a feature uses them. */
+export const PRICE_ITEMS = ['postcard_4x6', 'postcard_6x9', 'postcard_6x11', 'skip_trace', 'property_data', 'permit', 'monitor_alert'] as const;
 export type PriceItem = (typeof PRICE_ITEMS)[number];
-export type Prices = Record<PriceItem, number>; // whole cents
+export interface PriceEntry { cents: number; enabled: boolean }
+export type Prices = Record<PriceItem, PriceEntry>;
 type Db = Pool | PoolClient;
 
 export class SettingsError extends Error {
@@ -14,9 +21,11 @@ export function validatePrices(v: unknown): Prices {
   if (!v || typeof v !== 'object') throw new SettingsError('Prices are not set up.');
   const out: any = {};
   for (const k of PRICE_ITEMS) {
-    const n = (v as any)[k];
-    if (!Number.isInteger(n) || n < 0 || n > 100_000) throw new SettingsError(`The price for ${k} is missing or invalid.`);
-    out[k] = n;
+    const e = (v as any)[k];
+    if (!e || typeof e !== 'object' || !Number.isInteger(e.cents) || e.cents < 0 || e.cents > 100_000 || typeof e.enabled !== 'boolean') {
+      throw new SettingsError(`The price for ${k} is missing or invalid.`);
+    }
+    out[k] = { cents: e.cents, enabled: e.enabled };
   }
   return out as Prices;
 }

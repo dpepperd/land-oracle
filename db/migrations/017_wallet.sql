@@ -33,9 +33,10 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_by integer REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Starting prices, in cents. This is data, not code: change it in /admin/settings. Existing values are never overwritten.
+-- Starting prices, in cents, each with an on/off switch (skip trace, property data, permit and monitor alert are placeholders: OFF, nothing uses them yet).
+-- This is data, not code: change it in /admin/settings. Existing values are never overwritten.
 INSERT INTO app_settings (key, value) VALUES
-  ('wallet_prices', '{"skip_trace":15,"postcard":115,"property_data":20,"permit":20,"monitor_alert":75}'::jsonb),
+  ('wallet_prices', '{"postcard_4x6":{"cents":115,"enabled":true},"postcard_6x9":{"cents":130,"enabled":true},"postcard_6x11":{"cents":155,"enabled":true},"skip_trace":{"cents":15,"enabled":false},"property_data":{"cents":20,"enabled":false},"permit":{"cents":20,"enabled":false},"monitor_alert":{"cents":75,"enabled":false}}'::jsonb),
   ('postcard_return_address', '{"name":"","address_line1":"","address_line2":"","city":"","state":"","zip":""}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 

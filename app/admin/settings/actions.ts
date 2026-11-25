@@ -21,14 +21,14 @@ export async function loadSettings() {
   return { prices, returnAddress: await getReturnAddress(pool) };
 }
 
-/** `dollars` maps each price item to text like "1.15". Anything that is not a valid dollar amount is refused and nothing is saved. */
-export async function savePrices(dollars: Record<string, string>) {
+/** Each price item maps to { dollars: text like "1.15", enabled }. Anything that is not a valid dollar amount is refused and nothing is saved. */
+export async function savePrices(entries: Record<string, { dollars: string; enabled: boolean }>) {
   await requireAdmin();
-  const cents: Record<string, number> = {};
+  const cents: Record<string, { cents: number; enabled: boolean }> = {};
   for (const k of PRICE_ITEMS) {
-    const c = parseUsdToCents(dollars[k] ?? '');
+    const c = parseUsdToCents(entries[k]?.dollars ?? '');
     if (c === null) return { success: false, error: `Enter the price for ${k.replace('_', ' ')} like 1.15.` };
-    cents[k] = c;
+    cents[k] = { cents: c, enabled: !!entries[k]?.enabled };
   }
   try {
     await setPrices(pool, cents, await adminDbId());
