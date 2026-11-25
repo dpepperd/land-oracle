@@ -775,7 +775,9 @@ export default function FilterSidebar({
               ].map((preset) => (
                 <button
                   key={preset.label}
-                  onClick={() => setAcreageRange(preset.min, preset.max)}
+                  onClick={() => (filters.acreageMin === preset.min && filters.acreageMax === preset.max
+                    ? setAcreageRange(undefined, undefined) // click the active size again to turn it off
+                    : setAcreageRange(preset.min, preset.max))}
                   className={`py-2 px-1 text-xs border rounded transition-colors ${
                     filters.acreageMin === preset.min && filters.acreageMax === preset.max
                     ? 'bg-blue-600 text-white border-blue-600'
@@ -793,7 +795,7 @@ export default function FilterSidebar({
             <input
               type="number"
               value={filters.acreageMin || ''}
-              onChange={(e) => handleChange('acreageMin', parseFloat(e.target.value))}
+              onChange={(e) => { const v = parseFloat(e.target.value); handleChange('acreageMin', Number.isFinite(v) ? v : undefined); }}
               className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Min"
             />
@@ -801,11 +803,14 @@ export default function FilterSidebar({
             <input
               type="number"
               value={filters.acreageMax || ''}
-              onChange={(e) => handleChange('acreageMax', parseFloat(e.target.value))}
+              onChange={(e) => { const v = parseFloat(e.target.value); handleChange('acreageMax', Number.isFinite(v) ? v : undefined); }}
               className="w-full px-3 py-2 border border-theme rounded-md bg-white text-black font-bold placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Max"
             />
           </div>
+          {(filters.acreageMin !== undefined || filters.acreageMax !== undefined) && (
+            <button type="button" onClick={() => setAcreageRange(undefined, undefined)} className="mt-2 text-xs text-blue-500 hover:underline">Clear acreage (any size)</button>
+          )}
         </div>
 
         {/* Market Value */}
