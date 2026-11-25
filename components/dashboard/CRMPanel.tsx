@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Phone, Mail, User, MapPin, Calendar, Save, Clock } from 'lucide-react';
+import { X, User, MapPin, Calendar, Save, Clock } from 'lucide-react';
 import { useAuth } from "@clerk/nextjs";
 
 interface CRMPanelProps {
@@ -138,26 +138,6 @@ export default function CRMPanel({ parcel, onClose, userRole, userTier, onUpsell
                 <div className="text-base font-medium text-gray-800 dark:text-gray-200 whitespace-pre-line">
                     {parcel.owner_address}<br/>
                     {parcel.owner_city}, {parcel.owner_state} {parcel.owner_zip}
-                </div>
-                
-                {/* Contacts */}
-                <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
-                     <div className="flex items-center justify-between text-xs">
-                         <span className="text-gray-500 flex items-center gap-1"><Phone size={10}/> Phone</span>
-                         {userRole === 'admin' || userTier === 'paid' ? (
-                            <span className="font-mono">{parcel.owner_phone || 'N/A'}</span>
-                         ) : (
-                            <span onClick={onUpsell} className="font-mono blur-[2px] cursor-pointer hover:bg-gray-200 px-1 rounded transition-all select-none">(555) 555-5555</span>
-                         )}
-                     </div>
-                     <div className="flex items-center justify-between text-xs">
-                         <span className="text-gray-500 flex items-center gap-1"><Mail size={10}/> Email</span>
-                         {userRole === 'admin' || userTier === 'paid' ? (
-                            <span className="font-mono">{parcel.owner_email || 'N/A'}</span>
-                         ) : (
-                            <span onClick={onUpsell} className="font-mono blur-[2px] cursor-pointer hover:bg-gray-200 px-1 rounded transition-all select-none">user@example.com</span>
-                         )}
-                     </div>
                 </div>
             </div>
         </div>
