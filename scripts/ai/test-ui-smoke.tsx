@@ -55,6 +55,17 @@ const flParcel = { ...ncParcel, state: undefined, county: 'Clay', likely_vacant:
 const flCard = clean(renderToString(React.createElement(ParcelCard as any, { parcel: flParcel, onMarkLead: noop, onSelect: noop, isMarking: false })));
 check('FL card unchanged: "Clay County" without ", NC", still shows "No sale on record"', /Clay County/.test(flCard) && !/, NC/.test(flCard) && /No sale on record/.test(flCard));
 
+// ---- owner contact (skip tracing) button: invisible until the server says the flag is on (no effects run in a server render, so it must be absent here)
+check('owner contact button absent on a Florida card at first paint', !/Get owner contact/.test(flCard));
+check('owner contact button absent on an NC card at first paint', !/Get owner contact/.test(card));
+{
+  const OwnerContact = require('../../components/dashboard/OwnerContact').default;
+  const flBtn = renderToString(React.createElement(OwnerContact, { parcelKey: 'FL-20-41-04-26-019193-000-00' }));
+  const txBtn = renderToString(React.createElement(OwnerContact, { parcelKey: 'TX-029-1', state: 'TX' }));
+  const popupBtn = renderToString(React.createElement(OwnerContact, { parcelKey: 'FL-20-41-04-26-019193-000-00', variant: 'popup' }));
+  check('OwnerContact renders nothing before the flag status is known (card, Texas and popup variants)', flBtn === '' && txBtn === '' && popupBtn === '', JSON.stringify([flBtn, txBtn, popupBtn]));
+}
+
 // ---- results list
 const list = renderToString(React.createElement(ResultsList as any, { parcels: [ncParcel], totalCount: 1, isLoading: false, onExport: noop, onMarkLead: noop, onSelect: noop, markingIds: [], userTier: 'paid', onUpsell: noop }));
 check('results list renders an NC parcel with the Export button', /Export CSV/.test(list) && /DOE JANE/.test(list));

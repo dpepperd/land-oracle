@@ -20,6 +20,7 @@ import { getPropertyAppraiserUrl } from '@/lib/countyLinks';
 import { useTheme } from 'next-themes';
 import { floodLabel, FLOOD_TONE_CLASS } from '@/lib/floodLabel';
 import { useFlood, requestFlood } from '@/lib/floodClient';
+import OwnerContact from './OwnerContact';
 import * as turf from 'turf';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { STATE_VIEW, type SearchState } from '@/lib/searchState';
@@ -898,6 +899,8 @@ export default function MapView({
                            </span>
                       )}
                   </div>
+                  {/* Owner contact lookup (skip tracing): renders nothing unless the server flag SKIPTRACE_ENABLED is on. Florida parcels only. */}
+                  <OwnerContact parcelKey={popupInfo.properties.parcel_key} state={popupInfo.properties.state} variant="popup" />
               </div>
 
               {/* CRM Notes Section */}
