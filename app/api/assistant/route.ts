@@ -67,14 +67,15 @@ export async function POST(req: Request) {
 
   const client = new Anthropic({ apiKey });
   const encoder = new TextEncoder();
-  const effort = (['low', 'medium', 'high', 'xhigh', 'max'] as const).find((e) => e === process.env.ANTHROPIC_EFFORT) ?? 'medium';
+  const effort = (['low', 'medium', 'high', 'xhigh', 'max'] as const).find((e) => e === process.env.ANTHROPIC_EFFORT) ?? 'low'; // low = fast; set ANTHROPIC_EFFORT=medium for deeper (slower) answers
+  const maxTokens = Number(process.env.ANTHROPIC_MAX_TOKENS) > 0 ? Number(process.env.ANTHROPIC_MAX_TOKENS) : undefined;
 
   const stream = new ReadableStream({
     async start(controller) {
       const send = (e: AssistantEvent | { type: 'cost'; usd: number | null }) => { try { controller.enqueue(encoder.encode(JSON.stringify(e) + '\n')); } catch { /* client went away */ } };
       const totals = emptyTotals();
       try {
-        await runAssistant({ client, userId, messages: body.messages, model, effort, signal: req.signal, totals }, send);
+        await runAssistant({ client, userId, messages: body.messages, model, effort, maxTokens, signal: req.signal, totals }, send);
       } catch (e: any) {
         console.error('[assistant] failure', e?.status, e?.message);
         const msg = e instanceof Anthropic.RateLimitError ? 'The assistant is busy. Please try again in a moment.'
