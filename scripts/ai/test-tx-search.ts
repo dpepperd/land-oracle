@@ -41,6 +41,15 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   }
   let r = await S({ state: 'TX', counties: ['Bexar'], likelyVacant: true, limit: 200 });
   check('TX vacant filter works', r.status === 200 && r.json.list.length > 0, `status ${r.status}, ${r.json?.list?.length} rows`);
+  r = await S({ state: 'TX', vacantOnly: true, limit: 1000 });
+  check('TX vacant with no county and no area is refused (not random Andrews rows)', r.status === 400 && r.json?.error === 'scope_required', `status ${r.status} ${r.json?.error}`);
+  r = await S({ state: 'TX', acreageMin: 3, acreageMax: 9, limit: 1000 });
+  check('TX acreage alone with no county and no area is refused', r.status === 400 && r.json?.error === 'scope_required', `status ${r.status}`);
+  r = await S({ state: 'TX', limit: 1000 });
+  check('TX no filters at all still returns empty (not an error)', r.status === 200 && r.json?.count === 0, `status ${r.status}`);
+  { const ring = [[-98.35, 30.65], [-98.25, 30.65], [-98.25, 30.72], [-98.35, 30.72], [-98.35, 30.65]];
+    r = await S({ state: 'TX', vacantOnly: true, spatialShape: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] } }, minLat: 30.65, maxLat: 30.72, minLon: -98.35, maxLon: -98.25, limit: 1000 });
+    check('TX vacant inside a drawn Burnet box returns only Burnet', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.county === 'Burnet'), `status ${r.status}, ${r.json?.list?.length} rows`); }
   r = await S({ state: 'TX', counties: ['Harris'], noSaleYears: 5, limit: 50 });
   check('TX ignores no-sale filter (no sale dates)', r.status === 200 && r.json.list.length > 0, `status ${r.status}`);
   r = await S({ state: 'TX', counties: ['Harris'], limit: 5 });

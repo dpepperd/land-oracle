@@ -38,6 +38,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
   const values: any[] = [];
   const conditions: string[] = ['1=1'];
   let valIdx = 1;
+  let hasSpatial = false; // set when a drawn area or map box narrows the search
   const text = parcelId && parcelId.trim() ? { kind: 'id' as const, value: parcelId.trim() } : address && address.trim() ? { kind: 'address' as const, value: address.trim() } : null;
 
   // Counties (the state's FIPS codes). Unknown names are ignored; if the user picked counties but none are valid, there is nothing to search.
@@ -63,7 +64,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     if (marketValueMax !== undefined) { conditions.push(`p.jv <= $${valIdx}`); values.push(marketValueMax); valIdx++; }
 
     // Drawn area (polygon, or circle) or bounding box
-    let hasSpatial = false;
+    hasSpatial = false;
     if (spatialShape && typeof spatialShape === 'object' && Object.keys(spatialShape).length > 0) {
       const geom = (spatialShape as any).geometry || spatialShape;
       if (geom && geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]?.length >= 4) {
@@ -85,6 +86,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
       }
     }
     if (!hasSpatial && minLat && maxLat && minLon && maxLon) {
+      hasSpatial = true;
       conditions.push(`p.geom && ST_MakeEnvelope($${valIdx}, $${valIdx + 1}, $${valIdx + 2}, $${valIdx + 3}, 4326)`);
       values.push(minLon, minLat, maxLon, maxLat);
       valIdx += 4;
@@ -104,6 +106,9 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     valIdx++;
   } else if (conditions.length <= 1) {
     return NextResponse.json(EMPTY); // no county, no area, no filter: nothing sensible to return (same rule as Florida)
+  } else if (!hasSpatial) {
+    // Filters but no county and no area (e.g. only "vacant"): the table would hand back its first rows in no useful order (all Andrews). Ask instead.
+    return NextResponse.json({ error: 'scope_required', message: `Pick a county or draw a search area on the map first. ${cfg.label} is too big to search with filters alone.` }, { status: 400 });
   }
 
   const sql = `
