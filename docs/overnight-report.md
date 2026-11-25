@@ -1,6 +1,18 @@
 # Overnight report: 2026-11-25 into 2026-11-26
 
-All three tasks were done. Nothing was merged, nothing was deployed by hand, and production and the `app_prod` schema were not touched.
+All three tasks were done, and then a second round of four follow-ups (the last section of this report: **Round 2**). Nothing was merged, nothing was deployed by hand, and production and the `app_prod` schema were not touched.
+
+**All five branches, one line each** (every branch is cut from `main`; no two of them change the same file, so they merge in any order)
+
+| Branch | What it is | Latest commit |
+|---|---|---|
+| `fix/assistant-timeout` | Assistant time budget + tested chat-window stream reader + opt-in latency script | `61c7645` |
+| `feature/skip-trace-scaffold` | Owner contact lookup, flag OFF, card and map popup | `0a737d7` |
+| `feat/tx-links-4` | Texas links: Lubbock, Hays, Johnson | `4f5f46f` |
+| `fix/fl-review` | Florida code review fixes (7 problems fixed, 6 decisions listed) | `0c10664` |
+| `docs/demo-kit` | Demo script, can't-do-yet list, stranger test checklist, this report | see git log |
+
+**Combined check:** I merged all five into a throwaway local branch (never pushed, since deleted) and ran everything on the result: 18 suites, every one with real passes and 0 failures, and `next build` compiled. So they work together, not just one at a time.
 Production still runs `main` at `e7d791a`. Check at the end of the run: `https://landoracle.ai/api/health` returned all four checks ok, and the home page returned 200.
 
 ## The three branches
@@ -85,3 +97,46 @@ I wrote these from the code. I checked the button and page names against the rea
 2. Merge `fix/assistant-timeout` if they look right, then the other two when you are ready (they are independent).
 3. Do the stranger test from `docs/stranger-test-checklist.md`.
 4. Send me what you find.
+
+---
+
+# Round 2: the four follow-ups (same night)
+
+## A. Skip trace button in the map popup (`feature/skip-trace-scaffold`)
+Added to the Contact Info box in the map popup, styled for the popup's white background. Still renders nothing unless the flag is on. Added checks to the UI smoke test that the button is absent on first paint (Florida card, Texas card, popup variant). **Not seen in a real browser**: only server-rendered checks exist for it. Look at it once with the flag on and the mock provider (`SKIPTRACE_ENABLED=true`, `SKIPTRACE_PROVIDER=mock`, in a local run, never production).
+
+## B. Chat window timeout tests (`fix/assistant-timeout`)
+The stream-reading code lived inside the React chat component, where it cannot be tested. I moved it into a plain helper (`lib/ai/clientStream.ts`) and wrote 10 checks: events arrive in order, an event split across two chunks is reassembled, a stream that ends without the server's final message is flagged as cut off, a stream that goes quiet is aborted and flagged, slow-but-steady streams are not mistaken for stalled, damaged lines are skipped, and the user closing the chat is passed through. The chat window now uses the helper and behaves the same as before (same message, same 100-second quiet limit). **Not seen in a real browser.**
+
+## D. Texas links (`feat/tx-links-4`)
+| County | Link | Evidence |
+|---|---|---|
+| Lubbock | `lubbockcad.org/Property-Detail/PropertyQuickRefID/R<id>` | 10 of 10 random parcels: page, address and owner all matched |
+| Hays | `esearch.hayscad.com/Property-Detail/PropertyQuickRefID/R<id>` | checked in a browser (site refuses plain scripts): 6 of 7 owners matched, the 7th had just changed hands |
+| Johnson | `johnsoncad.com/property-search/?parcel=<county account no.>` (our `alt_key`, not the R-id) | 10 of 10: page loaded and owner matched |
+
+About 352,000 more parcels link. Real search rows build links for 100 of 100 in each county.
+**Bell, Smith and Parker are NOT done.** Bell and Smith run their search on `gsacorp.io`, whose robots.txt forbids all automated access, so I stopped (one request to Smith's search followed a redirect there and returned an error with no data). Parker's site drops connections for scripts and the browser. For all three, someone needs to open one property by hand on the county's site and paste the address-bar URL: then the link can be built from that without testing it. Details in `docs/texas-pilot.md`.
+
+## C. Florida code review (`fix/fl-review`)
+Full write-up with evidence: **`docs/florida-review.md`**. In short, fixed and tested (22 checks): a one-character parcel ID search that loaded the database (10 seconds on Duval); spreadsheet formula injection in CSV exports; duplicate lead rows that made a parcel appear twice; choosing counties could be raced past the plan limit (proved: 2 counties saved on a 1-county plan under the old code); raw error text sent to the browser; a drawn circle with no centre crashing; notes with no validation or length limit.
+**Six decisions left for you** (not changed): the map popup's fake "Contact Info" box (blurred placeholder phone for free users, "N/A" for paid, no data behind it: bad in front of a broker); export limits can be sidestepped by repeated searches (a search returns up to 5,000 rows); leads have no unique rule in the database; no size limit on drawn polygons; leads and notes accept any parcel key; admins see each other's notes (by design).
+
+## Things that went wrong or that you should know
+- **My test runner was giving false "0 failures".** It only counted lines starting with `FAIL`, so a test that crashed, or one that did not exist on a branch, looked like a pass. I caught it on the Texas branch (the skip trace test is not on that branch) and fixed the runner: now every suite must show real PASS lines, 0 FAIL and exit code 0, or it says NOT OK. `test-search-area.ts` is an old diagnostic with no PASS/FAIL lines, so its old "0 failures" never meant anything: it is now checked for status 200s and no 500s. **Every branch's final run, and the combined run, used the stricter runner.** Earlier in the night the first-round runs used the old counting, but those suites do print PASS lines, and the combined run re-ran everything strictly.
+- **I tried to read production data and was stopped.** While reviewing leads I wrote a script that also queried the `app_prod` tables. It was blocked, correctly, since the rule was to stay out of `app_prod`. I rewrote it against the development database only. Nothing from `app_prod` was read overnight.
+- **Preview deployments.** Every pushed branch gets a Vercel preview build automatically. They are previews, not production.
+- **Two scripts I wrote for my own use (a backslash mistake) broke a file mid-way** and I repaired it: the chat window file. The result compiles and is covered by the new stream tests, but it is a good reason to look at that screen once by eye.
+
+## What I could not check (be skeptical of these)
+- Real-browser look of the chat window, the owner contact button and the map popup.
+- The assistant's real speed against the live model (use `scripts/ai/assistant-latency.ts`).
+- Whether production has duplicate lead rows (not allowed to look).
+- Anything signed in on the live site.
+
+## Suggested order this morning
+1. `npx tsx scripts/ai/assistant-latency.ts` (a few cents) and read the times.
+2. Merge, in this order if you want the least thinking: `fix/fl-review`, `fix/assistant-timeout`, `feat/tx-links-4`, `feature/skip-trace-scaffold`, `docs/demo-kit`. Each one deploys to production when merged to main, so merge and check one at a time.
+3. Decide the six items in `docs/florida-review.md`. The popup's fake contact box is the one a broker would see.
+4. Send me the property URLs for Bell, Smith and Parker.
+5. Do the stranger test (`docs/stranger-test-checklist.md`).
