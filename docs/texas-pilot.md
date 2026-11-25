@@ -109,3 +109,17 @@ These three run the same "Public Portal" (TrueProdigy) software as Travis and th
 (`TX_PRODIGY_OWN` in lib/txCountyLinks.ts). Opened in a browser: McLennan 2 of 3 parcels showed the right owner (the third page never filled in, so it is unconfirmed),
 Ellis 2 of 2, Webb 2 of 2. Not linked yet: Bell (its search site's robots.txt disallows all automated access, so we do not test it; waiting on a hand-copied property URL),
 Smith, Lubbock, Johnson, Hays (links not yet worked out).
+
+### Links, step 13: Lubbock, Hays, Johnson (overnight, 2026-11-25)
+
+| County | Link | Key | Evidence |
+|---|---|---|---|
+| Lubbock (303) | `https://lubbockcad.org/Property-Detail/PropertyQuickRefID/<id>` | our `parcel_id` (`R129956`) | Same Tyler "Public Access" page as Williamson. 10 random parcels: page loaded, address and owner matched on all 10. (An earlier hand check showed a different owner on one parcel: it had just been sold.) |
+| Hays (209) | `https://esearch.hayscad.com/Property-Detail/PropertyQuickRefID/R<id>` | `R` + our numeric `parcel_id` | Same Tyler page. The site refuses plain scripts (403), so it was checked in a real browser: 7 parcels, 6 owners matched, the 7th had a new owner (recently sold). |
+| Johnson (251) | `https://johnsoncad.com/property-search/?parcel=<account>` | our `alt_key`, the county account number (`126.2800.06870`), NOT the `R000036296` id | 10 random parcels: page loaded and owner matched on all 10 (3 rural "CR 301"-type addresses were skipped by the address test only). All 100,664 Johnson parcels have a well-formed `alt_key`. |
+
+About 352,000 more parcels now link (Lubbock 135,112, Hays 117,005, Johnson 100,664).
+
+**Not linked, and why**
+- **Bell and Smith:** both run their public search on `*.gsacorp.io`, whose robots.txt says `Disallow: /` for everything. We do not run scripts against it. (One request to Smith's search followed a redirect there and returned an error with no data; nothing further was sent.) To link them, someone needs to open one property by hand on the county's site and paste the address-bar URL, then we build the link from that without testing it.
+- **Parker:** `esearch.parkercad.org` accepts the connection and closes it for scripts and for the browser, and `www.parkercad.org` answers 403. The map the owner sent (`gis.bisclient.com/parkercad`) is only a map. Needs a hand-copied property URL.
