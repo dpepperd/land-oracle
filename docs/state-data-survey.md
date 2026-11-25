@@ -8,6 +8,128 @@ Confidence key: H = read the official page or live service; M = official snippet
 
 ---
 
+## 0. Deep dive: seven states (2026-11-25)
+
+**Scope:** Tennessee, Arkansas, Wisconsin, Utah, Montana, Indiana and Kentucky, each checked for a free statewide parcel download that carries owner name AND owner mailing address, and for terms that allow commercial use and display in a paid SaaS. Ranked from easiest to hardest to load. This section follows up the 50-state table below (which it largely confirms) and is more detailed than it.
+
+**How this was made:** one research pass per state, reading agency documentation, schema PDFs and ArcGIS service field lists. **No dataset was downloaded, no county site was queried or scripted, no REST endpoint was asked for records, and nothing was signed up for.** Where a page would not load, that is stated; "not stated" means the page does not say, not that the answer is no. These are desk findings from the researchers' reads of the pages; none of it has been loaded or tested here, and it is not legal advice.
+
+### Ranking (easiest to load first)
+
+"Load effort" is the technical work. The last column says whether the state's data can be used as it stands for what Land Oracle needs: owner name, owner mailing address (for postcards), acreage, land use and value.
+
+| # | State | Free statewide file? | Owner name | Owner mailing | Acres / class / value | Load effort | Usable as-is for owner mailing? |
+|---|---|---|---|---|---|---|---|
+| 1 | **Wisconsin** | **Yes**, one 1.6 GB file geodatabase, 3.56M parcels, 72 counties | Yes (some redactions) | Yes (`PSTLADRESS`) | Yes / yes / yes | Easy to medium | **Yes, after written OK on license** |
+| 2 | **Arkansas** | Yes, 73 of 75 counties listed (download route unconfirmed) | Yes | **No** (situs only) | **No acreage field** / yes / yes | Medium | No: no mailing address |
+| 3 | **Montana** | Yes, monthly, per county (56 files) | Yes | Yes | Yes / yes / yes | Easy to medium | **No: state mailing-list law, needs legal sign-off** |
+| 4 | **Indiana** | Parcel shapes yes; owner data no | **No** (not in the layer) | **No** | No acreage field / class only / no value | Medium to hard | No: owners would need a separate state file, unverified |
+| 5 | **Tennessee** | **No**: per-county request forms, 86 counties, 9 largest excluded | Probably (unconfirmed) | Unconfirmed | Unconfirmed field names | Hard | Not until fields are confirmed; manual per county |
+| 6 | **Utah** | Parcels yes (services, no bulk file) | **No** | **No** | Yes / yes / market value | Medium for shapes; owners impossible from state data | No: owner data is excluded by design |
+| 7 | **Kentucky** | **No free statewide source found** | Sold, not free | Sparse | Sparse | Hardest | No |
+
+**Bottom line:** only **Wisconsin** gives us a free, statewide, single-file source with every field we need. **Montana** has every field too but the owner data is legally restricted for mailing use. Arkansas is the cheapest second source but has no mailing address and no acreage field. Indiana, Utah and Kentucky give shapes at best (Kentucky not even that), and Tennessee is free but manual.
+
+### 1. Wisconsin
+
+- **Who and where:** State Cartographer's Office with the Wisconsin Land Information Program, Statewide Parcel Map Initiative: https://www.sco.wisc.edu/parcels/data . Page says "provided free of charge"; no registration stated. Also an ArcGIS feature service (Wisconsin_Statewide_Parcels_DB on services3.arcgis.com).
+- **Format and size:** file geodatabase ZIP, **V12 = 3.56M records, 1.6 GB**. County downloads (.gdb or .shp) on a separate page. No CSV. Needs GDAL/ogr2ogr to read a file geodatabase.
+- **Owner and mailing:** `OWNERNME1`, `OWNERNME2` (owner names), `PSTLADRESS` ("Full Mailing Address (Owner)"). Counties and cities may opt out: **Kenosha 100% of owner names redacted**; partial: Dane 11.43%, Barron 0.59%, Vilas 0.51%, Columbia 0.46%, Manitowoc 0.31%, Sheboygan 0.22%, Brown 0.18%, Crawford 0.11%. Redacted names read "NOT AVAILABLE". Whether `PSTLADRESS` is also blanked for those: not stated. 2023 Act 235 (effective April 1, 2025) lets judicial officers shield their names, so more redaction is possible in later releases.
+- **Acreage, class, value:** `ASSDACRES` (assessed), `DEEDACRES`, `GISACRES`; `PROPCLASS`, `AUXCLASS`; `CNTASSDVALUE` (total assessed), `LNDVALUE`, `IMPVALUE`, `ESTFMKVALUE` (estimated fair market, nulled for several classes), tax fields. No sale price or date.
+- **Updates:** annual. V12.0.0 is latest (polygons collected January to May 2026, tax roll mostly 2025). V13 tentatively June 30, 2027.
+- **License:** **no license or commercial-use clause found.** The page only says no warranty is made and that boundaries are not legal boundaries. Commercial use, SaaS display and redistribution: not stated. **Ask the State Cartographer's Office in writing.**
+- **Coverage:** all 72 counties are in the schema. Two have gaps: Buffalo (parts of the city of Buffalo and the town of Milton) and Burnett (about five towns partial).
+- **Surprises:** about a year of tax-roll lag; many NULLs; gaps and overlaps at jurisdiction edges.
+- **Verdict:** easy to medium. The best candidate.
+
+### 2. Arkansas
+
+- **Who and where:** Arkansas GIS Office (AGISO), "Parcel Polygon - County Assessor Mapping Program" (PARCEL_POLYGON_CAMP), plus a centroid layer. Metadata: http://gis.arkansas.gov/Metadata/HTML/asdi.Planning_Cadastre.PARCEL_POLYGON_CAMP_export.html . **The old gis.arkansas.gov pages now redirect to a JavaScript hub (geodata.gis.arkansas.gov) that could not be read**, so the download page, format and file size are **unconfirmed**. Search results point to a product page, an old statewide FTP folder and an ArcGIS REST service. No fee is mentioned in the metadata.
+- **Format and size:** not stated (file geodatabase and shapefile appear in older posts).
+- **Owner and mailing:** `OwnerName` yes. **No owner mailing address**: the only address fields are the parcel's own situs address (`AdrNum`, `PstrNam`, `AdrCity`, `AdrZip5` and so on).
+- **Acreage, class, value:** **no acreage field** (`TaxArea` is "Area Used for Taxation/Assessment Purposes", unit not stated; otherwise compute from the polygon area). `ParcelType` is the property type code. Values: `AssessValue`, `ImpValue`, `LandValue`, `TotalValue`. Joined to county CAMA data (`CAMAKey`, `CAMADate`).
+- **Updates:** semi-annual, with county updates throughout the year. Newest post reportedly says 74 counties.
+- **License:** "may be downloaded and utilized in any manner", provided "as is" without warranty, not a legal boundary (Arkansas Law 15-21-504). No stated restriction on commercial use, redistribution or mailing lists. A separate terms page may exist and was not found.
+- **Coverage:** **not fully statewide.** The metadata lists 73 counties (Fulton and Searcy missing against the 75) and warns "just because a county is listed does NOT imply the data represents county wide coverage."
+- **Verdict:** medium. Cheap and permissive, but needs a mailing-address source for postcards and a browser visit to confirm the download link.
+
+### 3. Montana
+
+- **Who and where:** Montana State Library with the Department of Revenue (DOR maintains most counties; Ravalli, Silver Bow, Missoula, Flathead and Yellowstone maintain their own): https://msl.mt.gov/geoinfo/msdi/cadastral/ . Download link points to an FTP directory (https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels), not opened.
+- **Format and size:** "monthly for each Montana county in file geodatabase and shapefile". **Per county, not one statewide file** (56 files to merge). Size: not stated.
+- **Owner and mailing:** both, in the one parcel layer: `OwnerName`, `OwnerAddress1`, `OwnerAddress2`, `OwnerAddress3`, `OwnerCity`, `OwnerState`, `OwnerZipCode`, plus `DbaName`, `CareOfTaxpayer`. Owners can file a DOR nondisclosure request (those names may be blank).
+- **Acreage, class, value:** `GISAcres`, `TotalAcres`, plus split agricultural acres; `PropType`; `TotalLandValue`, `TotalBuildingValue`, `TotalValue`; `TaxYear`, township/range/section, legal description.
+- **Updates:** monthly per county. Latest date: not stated.
+- **License and the mailing-list law (the blocker):** the service's license text quotes **Montana Code Annotated 2-6-1017**: public agencies may not distribute or sell a distribution list without the permission of those on the list, and a list of persons prepared by a public agency may not be used as a distribution list without that permission "except by that agency". It adds that "State law does not prevent an individual from compiling a distribution list by examination of records that are otherwise open to public inspection." Other State Library metadata cites the older 2-6-109(1) and calls mailing-list use "a punishable offense"; the penalty is not stated on the pages read, and no permission mechanism other than each person's consent was found. **Commercial and SaaS use: not stated.** Loading owner names and addresses into a tool that sends postcards to them is very likely "distribution list" use. **Treat as a legal blocker until a lawyer clears it.**
+- **Coverage:** "most of Montana"; not stated as all 56 counties; missing counties not named.
+- **Suggested path:** load parcel shapes, acreage, type and value; keep owner fields out until the State Library or DOR confirms in writing that our use is allowed, or get owner contact data another way (for example a skip-trace vendor).
+- **Verdict:** technically easy to medium, legally hard for owner data.
+
+### 4. Indiana
+
+- **Who and where:** Indiana Geographic Information Office (IGIO), Data Harvest and IndianaMap: "Parcel Boundaries of Indiana 2025" and a Current layer. The Data Harvest "Data Access" page loaded as an empty shell, so the zipped-download links are unconfirmed. Free per the Data Gallery.
+- **Format and size:** ArcGIS feature service (2,000-record pages) plus zipped files; Data Gallery exports shapefile, CSV, GeoJSON, KML. 3,677,250 parcels collected in 2024. File size: not stated.
+- **Owner and mailing:** **not in the layer.** The full field list has parcel IDs, situs address, DLGF class code, county codes and tax districts, and **no owner field of any kind**. Owner data would come from the Department of Local Government Finance (DLGF) statewide real property files at gateway.ifionline.org/public/download.aspx ("Real Property", by tax-bill year, by county or all counties). Whether those public files contain owner name and mailing address, their format and their terms: **not stated, unverified.** Join key looks like `state_parcel_id` or `parcel_id`, untested.
+- **Acreage, class, value:** class `dlgf_prop_class_code`; **no acreage field** (compute from shape area); assessed value not in the layer.
+- **Updates:** annual (Data Harvest 2025 is latest).
+- **License:** **not stated** on any IGIO page or layer metadata (copyright text empty). Third-party sources say CC0 (unverified); some individual datasets carry their own agreements, and the general State of Indiana data portal terms are non-commercial. Ask IGIO (DataHarvest@iot.in.gov) and DLGF Gateway.
+- **Coverage:** not stated (28 of 92 counties submitted themselves in 2024; the Polis Center handled the other 64, a processing split rather than a coverage statement).
+- **Verdict:** parcel shapes easy to medium; owner and mailing hard (separate file, unverified). Commercial-purpose language also exists in Indiana law (IC 5-14-3-3(f)); its scope for owner lists is unverified.
+
+### 5. Tennessee
+
+- **Who and where:** Tennessee Comptroller, Geographic Services: https://comptroller.tn.gov/office-functions/pa/gisredistricting/redistricting-and-land-use-maps/parcel-data.html . Data is "extracted directly from our CAMA system and are public records." Contact GIS.Data@cot.tn.gov.
+- **How you get it:** **a request form per county**, after which download links open. The page says the office does "not offer bulk or historical downloads, recurring extracts, or automated downloads." No fee mentioned. No statewide file.
+- **Format and size:** one Esri shapefile per county; owner and assessment data in a separate `Assessment_Data_##.dbf` that joins on `GISLINK`. Size: not stated.
+- **Owner and mailing:** the joined table carries "owner, property, building, land use, and assessment information"; mailing address is not named. A field dictionary exists only as an Excel file inside each county's download, so field names are **unconfirmed**.
+- **Updates:** weekly (typically Mondays). Land-use product quarterly.
+- **License:** "any organization may use, save and maintain the shapefile data for any purpose, including commercial use." Approximate, for tax purposes only, not legal boundaries. Redistribution, paid-SaaS display and mailing-list limits: not stated.
+- **Coverage:** **not statewide.** The Comptroller does not distribute **9 counties**: Chester, Davidson (Nashville), Hamilton, Hickman, Knox, Montgomery, Rutherford, Shelby (Memphis) and Williamson. The biggest metros must come from their own assessors.
+- **Verdict:** hard. Free and commercial use is allowed, but it is 86 manual requests, repeated for every refresh, with the nine largest counties missing and the key fields unconfirmed. A small county request would settle the field list cheaply.
+
+### 6. Utah
+
+- **Who and where:** Utah Geospatial Resource Center (UGRC, formerly AGRC), SGID: https://gis.utah.gov/data/cadastre/parcels says "no direct file downloads". Access is per-county open-data pages and ArcGIS feature services (basic and "LIR" parcels), a statewide parcel service, vector tiles, an "LIR parcel archive on Google Drive" and Open SGID SQL.
+- **Format and size:** feature services (LIR max 2,000 records per request); size not stated.
+- **Owner and mailing:** **not in the statewide parcels.** Only a generalized `OWN_TYPE` (Federal, Private, State, Tribal). A 2016 post says personally identifiable information is avoided by design. A separate government-owned parcels layer has an owner name, but only for government land. County-held owner data is sold separately (Washington County: owner name and mailing sold by its IT services, $500 initial and $100 per update) or requested under GRAMA (Utah Code 63G-2).
+- **Acreage, class, value:** `PARCEL_ACRES`, `PROP_CLASS`, `TOTAL_MKT_VALUE`, `LAND_MKT_VALUE` (**market value; no assessed-value field**), plus building and tax fields.
+- **Updates:** the five biggest counties targeted monthly; rural quarterly to annual; LIR annually with the tax roll.
+- **License:** "There are no constraints or warranties", attribution encouraged. Commercial use and SaaS display not explicitly addressed. Treat as permissive and confirm if you want it in writing.
+- **Coverage:** all 29 counties listed, "some counties are more complete than others"; LIR available for "most counties"; some stale entries (Sanpete basic 2015, Box Elder LIR 2020).
+- **Verdict:** medium for shapes, acreage and value; **owner and mailing cannot come from the state**, so 29 county negotiations. Hard for an owner-contact product.
+
+### 7. Kentucky
+
+- **Who and where:** **no free statewide parcel download found.** Kentucky property is assessed by 120 county Property Valuation Administrators (PVAs) under the Department of Revenue. The DOR mapping page says "The department sells GIS data products" and that requests "should first be made with the local PVA office in person or by telephone." The researcher could not read the KYGeoportal or KYGIS catalogs, so "not found" is **absence of evidence, not proof**.
+- **Cost:** DOR page lists a **$50 request fee for GIS digital data** and **$0.30 per parcel without ownership records, $0.40 per parcel with ownership records**. At roughly 2.4 million parcels that is on the order of $1 million, so not a realistic route. Format not stated.
+- **Free county layers:** Jefferson County (Louisville), published by the PVA through LOJIC, is free and updated daily (REST, CSV, GeoJSON, KML, shapefile); its field list was not readable and whether it carries owner fields is unconfirmed. Fayette and Scott are reported as largely free; most counties need a subscription (qPublic or PVA sites). No count of free counties.
+- **Owner and mailing (aggregator figures, not official):** one commercial aggregator shows owner name about 94% populated and **owner mailing address only about 39%**; acreage about 60%, use code about 45%, total value about 61%.
+- **License and law:** KRS 133.047 makes PVA records subject to the open-records law (KRS 61.870 to 61.884) and lets the DOR set commercial-purpose fees. KRS 61.870(4) defines commercial purpose as use "for sale, resale, solicitation, rent, or lease of a service, or any use by which the user expects a profit." Attorney General decisions found through search snippets treated a sorted owner mailing-list request (02-ORD-89, Jefferson PVA) and publishing ownership data on a website (14-ORD-125) as commercial. A paid SaaS is almost certainly "commercial purpose": higher fees and possibly a stated purpose. A flat ban on commercial lists was **not** confirmed; the statute text was unreadable, so counsel should read KRS 61.874(4).
+- **Note on the earlier survey:** the table below says "108 counties supplied; not yet published" for Kentucky. This pass could not confirm that and found no statewide publication.
+- **Verdict:** hardest. Realistic routes are a commercial aggregator for statewide coverage plus free county layers like Jefferson, with legal review before any mailing use.
+
+### Differences from the 50-state table below
+The table below is mostly confirmed. Differences and additions: Arkansas coverage is 73 of 75 listed counties and there is no acreage field; Indiana's field list was read in full (no owner field, no acreage, no value); Tennessee explicitly offers no bulk or automated downloads, so it is manual per county; Wisconsin owner redaction percentages and the Buffalo and Burnett coverage gaps are now itemized; Kentucky's "108 counties" claim is unconfirmed; Montana's own license text cites 2-6-1017 while other metadata still cites 2-6-109.
+
+### What I could not verify
+- Arkansas's current download page (redirects to an unreadable JavaScript hub), and the missing 75th county.
+- Tennessee's owner and mailing field names (the dictionary is inside each county download).
+- Indiana's DLGF Gateway file contents and terms; the Data Access page was empty.
+- Kentucky's statewide status (catalogs unreadable) and the statute text.
+- Montana's penalty and the Cadastral FAQ text; the DOR nondisclosure effect on other sites.
+- Every state's license in practice: Wisconsin, Indiana, Utah, Arkansas and Montana state no commercial-use clause; Tennessee allows commercial use for the shapefile data but is silent on redistribution. **Get a written answer from each agency before loading.**
+
+### Sources (official pages read for this section)
+- Wisconsin: https://www.sco.wisc.edu/parcels/data ; V12 schema https://sco.wisc.edu/parcels/data/assets/V12/V12_Wisconsin_Statewide_Parcels_Schema_Documentation.pdf ; https://sco.wisc.edu/parcels/data/assets/Wisconsin_Statewide_Parcels_Change_Log.pdf ; https://www.sco.wisc.edu/?p=28980
+- Arkansas: http://gis.arkansas.gov/Metadata/HTML/asdi.Planning_Cadastre.PARCEL_POLYGON_CAMP_export.html
+- Montana: https://msl.mt.gov/geoinfo/msdi/cadastral/ ; https://gisservice.mt.gov/ArcGIS/rest/services/msdi_cadastral_map_v1/MapServer/1
+- Indiana: https://www.in.gov/gis/geoinsights/posts/data-harvest ; https://gateway.ifionline.org/public/download.aspx
+- Tennessee: https://comptroller.tn.gov/office-functions/pa/gisredistricting/redistricting-and-land-use-maps/parcel-data.html
+- Utah: https://gis.utah.gov/data/cadastre/parcels ; https://gis.utah.gov/data-schema-released-for-expanded-gis-parcel-sharing ; https://www.washco.utah.gov/?p=489
+- Kentucky: https://revenue.ky.gov/Property/Mapping-Services/Pages/default.aspx ; https://catalog.data.gov/dataset/jefferson-county-ky-parcels
+
+---
+
 ## 1. Short answer
 
 **Statewide free source with owner name + mailing address, confirmed from the live layer's fields:**
