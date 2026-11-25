@@ -4,6 +4,7 @@ import pool from '@/lib/db';
 import { TIER_QUOTAS } from '@/lib/counties';
 import { isClerkAdmin } from '@/lib/admin';
 import { getEntitlements } from '@/lib/entitlements';
+import { countyCode } from '@/lib/parcels/key';
 
 export async function GET(request: Request) {
   const { userId } = await auth();
@@ -131,15 +132,19 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-  const { county } = await req.json();
+  let county: unknown;
+  try { county = (await req.json())?.county; } catch { return new NextResponse("County required", { status: 400 }); }
   if (!county) return new NextResponse("County required", { status: 400 });
+  // Only real Florida counties: an invented name would still use up one of the plan's county slots.
+  if (typeof county !== 'string' || countyCode(county) === null) return new NextResponse("Unknown county", { status: 400 });
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     // 1. Get User
-    const userRes = await client.query('SELECT id, subscription_tier FROM users WHERE clerk_id = $1', [userId]);
+    // FOR UPDATE: simultaneous requests from one account take turns here, so the count-then-insert below cannot be raced past the plan's limit.
+    const userRes = await client.query('SELECT id, subscription_tier FROM users WHERE clerk_id = $1 FOR UPDATE', [userId]);
     const user = userRes.rows[0];
 
     // If user not in DB, we can't associate county access (because we need int ID)
@@ -178,7 +183,7 @@ export async function POST(req: Request) {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error adding county:', error);
-    return new NextResponse("Internal Error: " + (error as Error).message, { status: 500 });
+    return new NextResponse("Internal Error", { status: 500 }); // the detail stays in the server log above, not in the browser
   } finally {
     client.release();
   }

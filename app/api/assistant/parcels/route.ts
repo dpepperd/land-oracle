@@ -47,9 +47,8 @@ export async function POST(req: Request) {
          (p.own_state != 'FL' AND p.own_state IS NOT NULL) as out_of_state,
          ST_Y(ST_Centroid(p.geom)) as latitude, ST_X(ST_Centroid(p.geom)) as longitude,
          ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
-         (l.id IS NOT NULL) as is_lead
+         EXISTS (SELECT 1 FROM leads l WHERE l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)) as is_lead
        FROM parcels_current_all p
-       LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
        WHERE p.county = ANY($3) AND p.parcel_key = ANY($1)   -- county first: parcel_key is computed in the view, so the county index does the narrowing
        LIMIT 60`,
       [keys, userId, [...counties]],

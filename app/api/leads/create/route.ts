@@ -36,14 +36,19 @@ export async function POST(request: Request) {
       const internalUserId = userRes.rows[0].id;
 
       // Note: "leads" table schema usually has snake_case columns
+      // Marking the same parcel twice (double click, two tabs) must not create a second row: reuse the existing lead.
       const result = await client.query(
-        `INSERT INTO leads (user_id, parcel_key, status) 
-         VALUES ($1, $2, 'new') 
+        `INSERT INTO leads (user_id, parcel_key, status)
+         SELECT $1, $2, 'new'
+         WHERE NOT EXISTS (SELECT 1 FROM leads WHERE user_id = $1 AND parcel_key = $2)
          RETURNING id`,
         [internalUserId, parcelId]
       );
-      
-      return NextResponse.json({ success: true, id: result.rows[0].id });
+      let leadId = result.rows[0]?.id;
+      if (leadId === undefined) {
+        leadId = (await client.query('SELECT id FROM leads WHERE user_id = $1 AND parcel_key = $2 ORDER BY id LIMIT 1', [internalUserId, parcelId])).rows[0]?.id;
+      }
+      return NextResponse.json({ success: true, id: leadId, existing: !result.rows[0] });
     } finally {
       client.release();
     }

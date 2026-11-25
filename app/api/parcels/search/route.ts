@@ -10,6 +10,7 @@ import { countyCode, countyName } from '@/lib/parcels/key';
 import { ABSENTEE_SQL, addSellerSignalConditions } from '@/lib/sellerSignals';
 import { searchNc } from '@/lib/ncSearch';
 import { searchTx } from '@/lib/txSearch';
+import { cleanSearchText, likePattern, tooShort, TEXT_TOO_SHORT } from '@/lib/searchText';
 
 /**
  * ULTIMATE SPATIAL SEARCH FIX - January 2026
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
     console.log('[SPATIAL] Request received at:', new Date().toISOString());
     
     const body = searchSchema.parse(rawBody);
+    // Parcel ID / address text search: at least 3 characters (a 1-character search matched ~780,000 rows and took 10 s), wildcards taken literally.
+    const idText = cleanSearchText(body.parcelId); const addrText = cleanSearchText(body.address);
+    if (tooShort(idText) || (!idText && tooShort(addrText))) return NextResponse.json(TEXT_TOO_SHORT, { status: 400 });
     countSearch(userId); // record only (refund-policy evidence + admin panel); never blocks the search
 
     // North Carolina pilot (admin-only) has its own code path; everything below is Florida and is unchanged.
@@ -139,6 +143,9 @@ export async function POST(request: Request) {
         } else if (spatialShape.properties?.subType === 'Circle' && spatialShape.properties?.radius) {
           hasSpatialFilter = true;
           const center = spatialShape.geometry?.coordinates;
+          if (!Array.isArray(center) || center.length < 2 || !Number.isFinite(Number(center[0])) || !Number.isFinite(Number(center[1])) || !Number.isFinite(Number(spatialShape.properties.radius))) {
+            return NextResponse.json({ error: 'invalid_area', message: 'The drawn area is not valid. Please draw it again.' }, { status: 400 });
+          }
           const radiusMeters = spatialShape.properties.radius * 1609.34;
           
           conditions.push(`
@@ -210,7 +217,7 @@ export async function POST(request: Request) {
         const coNos = exactNames.map((n) => countyCode(n)).filter((n): n is number => !!n);
         const cols = nalText.kind === 'id' ? ['n.parcel_id', 'n.alt_key'] : ['n.phy_addr1', 'n.own_addr1'];
         conditions.push(`p.match_key = ANY(ARRAY(SELECT CASE WHEN n.co_no = 74 THEN upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) ELSE n.match_key END FROM dor.nal_2026 n WHERE n.co_no = ANY($${valIdx}) AND (${cols.map((c) => c + ' ILIKE $' + (valIdx + 1)).join(' OR ')})))`);
-        values.push(coNos, `%${nalText.value}%`);
+        values.push(coNos, likePattern(nalText.value));
         valIdx += 2;
       }
     } else {
@@ -231,11 +238,10 @@ export async function POST(request: Request) {
         ST_Y(ST_PointOnSurface(p.geom)) as flood_lat, ST_X(ST_PointOnSurface(p.geom)) as flood_lon,
         ST_AsGeoJSON(ST_Simplify(p.geom, 0.00001)) as geojson,
         ${ABSENTEE_SQL} as is_absentee,
-        (l.id IS NOT NULL) as is_lead,
+        EXISTS (SELECT 1 FROM leads l WHERE l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)) as is_lead,
         EXISTS (SELECT 1 FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin')))) as has_note,
         (SELECT content FROM user_parcel_notes n JOIN user_context u ON 1=1 WHERE n.parcel_key = p.parcel_key AND (n.user_id = u.id OR (u.role = 'admin' AND n.user_id IN (SELECT id FROM users WHERE role = 'admin'))) ORDER BY n.created_at DESC LIMIT 1) as note_content
       FROM parcels_current_all p
-      LEFT JOIN leads l ON l.parcel_key = p.parcel_key AND l.user_id = (SELECT id FROM user_context)
       WHERE ${conditions.join(' AND ')}${extra}
       LIMIT $${valIdx + 1}
     `;
@@ -289,6 +295,7 @@ export async function POST(request: Request) {
         console.error('[SPATIAL] Validation Error:', JSON.stringify(error.issues, null, 2));
         return NextResponse.json({ error: 'Invalid Input', details: error.issues }, { status: 400 });
     }
-    return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
+    // Never send internal error text (database messages, code details) to the browser: it stays in the server log above.
+    return NextResponse.json({ error: 'Internal Server Error', message: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }

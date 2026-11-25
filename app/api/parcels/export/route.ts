@@ -6,25 +6,10 @@ import { exportSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { LIVE_COUNTIES, filterAllowedCounties } from '@/lib/counties';
 import { countyCode, countyName } from '@/lib/parcels/key';
+import { toCSV } from '@/lib/csv';
+import { cleanSearchText, likePattern, tooShort, TEXT_TOO_SHORT } from '@/lib/searchText';
 
-// Helper to convert array of objects to CSV string
-function toCSV(data: any[]) {
-  if (data.length === 0) return '';
-  const headers = Object.keys(data[0]);
-  const headerRow = headers.join(',');
-  const rows = data.map(row => {
-    return headers.map(header => {
-      const val = row[header];
-      if (val === null || val === undefined) return '';
-      const str = String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    }).join(',');
-  });
-  return [headerRow, ...rows].join('\n');
-}
+// CSV writing (with spreadsheet formula protection) is shared with the AI export: lib/csv.ts
 
 export async function POST(request: Request) {
   try {
@@ -41,19 +26,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'state_export_not_available', message: 'CSV export for this state is not available yet.' }, { status: 400 });
     }
 
-    const { 
-      counties, 
+    // Same text-search rule as the screen's search: at least 3 characters (checked before any export row is counted).
+    const idText = cleanSearchText(body.parcelId); const addrText = cleanSearchText(body.address);
+    if (tooShort(idText) || (!idText && tooShort(addrText))) return NextResponse.json(TEXT_TOO_SHORT, { status: 400 });
+
+    const {
+      counties,
       landUse,
-      acreageMin, 
+      acreageMin,
       acreageMax,
       marketValueMin,
       marketValueMax,
       minLat, maxLat, minLon, maxLon,
       spatialShape,
-      maxDistance, 
+      maxDistance,
       ownerType,
       absentee, nonHomestead, noSaleYears,
-      parcelId, 
+      parcelId,
       address
     } = body;
 
@@ -145,6 +134,9 @@ export async function POST(request: Request) {
         } else if (spatialShape.properties?.subType === 'Circle' && spatialShape.properties?.radius) {
           hasSpatialFilter = true;
           const center = spatialShape.geometry?.coordinates;
+          if (!Array.isArray(center) || center.length < 2 || !Number.isFinite(Number(center[0])) || !Number.isFinite(Number(center[1])) || !Number.isFinite(Number(spatialShape.properties.radius))) {
+            return NextResponse.json({ error: 'invalid_area', message: 'The drawn area is not valid. Please draw it again.' }, { status: 400 });
+          }
           const radiusMeters = spatialShape.properties.radius * 1609.34;
           conditions.push(`
             ST_DWithin(
@@ -209,7 +201,7 @@ export async function POST(request: Request) {
         const coNos = exactNames.map((n) => countyCode(n)).filter((n): n is number => !!n);
         const cols = nalText.kind === 'id' ? ['n.parcel_id', 'n.alt_key'] : ['n.phy_addr1', 'n.own_addr1'];
         conditions.push(`p.match_key = ANY(ARRAY(SELECT CASE WHEN n.co_no = 74 THEN upper(regexp_replace(n.alt_key, '[^A-Za-z0-9]', '', 'g')) ELSE n.match_key END FROM dor.nal_2026 n WHERE n.co_no = ANY($${valIdx}) AND (${cols.map((c) => c + ' ILIKE $' + (valIdx + 1)).join(' OR ')})))`);
-        values.push(coNos, `%${nalText.value}%`);
+        values.push(coNos, likePattern(nalText.value));
         valIdx += 2;
       }
     } else {
