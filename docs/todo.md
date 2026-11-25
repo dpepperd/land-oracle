@@ -12,11 +12,11 @@
 - [x] Pricing page: signed-out users are sent to `/sign-up`; send them to sign-in (or show both).
 - [x] `/access-denied` has no link to `/pricing`: new signups hit a dead end.
 - [ ] Tatjana's DB row is `role=admin` (also bypasses the beta gate): confirm intended.
-- [ ] `npm run lint` (bare `eslint`) crashes on a config quirk (`react-hooks` plugin not found when linting non-app files); `eslint app lib components proxy.ts` is clean (0 errors).
-- [ ] Route smoke prints `lead=undefined note=undefined` for the search is_lead/has_note flags; check those fields are really returned.
-- [ ] `/api/parcels/stats` took ~22 s in the smoke run; investigate (public endpoint).
+- [x] `npm run lint` now lints `app lib components proxy.ts` (0 errors); the bare-`eslint` crash is gone.
+- [x] `lead=undefined note=undefined` in route smoke was the smoke test failing to find its parcel, not a missing field: `is_lead` and `has_note` are returned (checked in scripts/ai/test-fl-nonadmin.ts).
+- [x] `/api/parcels/stats`: cold query now reads public.county_parcel_counts (scripts/data-layers/county-counts.cjs; re-run after a Florida data load); warm answers are CDN-cached (~0.2 s).
 
-- [ ] `leads` and `user_parcel_notes` have FKs to `users` WITHOUT `ON DELETE CASCADE`, and `user_county_access` has no FK: the Clerk `user.deleted` webhook will 500 for a user with leads/notes and leave orphan county rows. Add cascades (in `public` and `app_prod`).
+- [x] User deletion: lib/deleteUser.ts removes notes, leads, county access, AI usage and the user in one transaction (scripts/ai/test-delete-user.ts).
 
 ## Before merging feat/pricing-v2 to main
 - [ ] `main` (`cba7594`) is already contained in the branch (16 ahead, 0 behind): nothing to merge in.
@@ -28,3 +28,9 @@
 - [ ] Site chatbot is keyword-only; optional ANTHROPIC_API_KEY upgrades it (Haiku 5.5).
 - [ ] AI assistant: use /api/assistant (not /api/chat); caps + cost test (Clay County, 5 questions).
 - [ ] Skip tracing (quotes from Tracerfy + BatchData, then build), then mail (Lob). Texting: do not build by default.
+
+## Florida production readiness (2026-11-25)
+- [x] Production role could not read schema `dor` (logged "permission denied for schema dor" on /api/parcels/search, 9 times Nov 17-20): affected Florida search by parcel id/address, parcel detail and export. Fixed with scripts/launch/grant-dor-read.cjs (USAGE on dor, SELECT on dor.nal_2026 only). Re-run it if the production role is ever re-created.
+- [x] `/api/health` (public, ok/fail per key table; 503 when broken). Point an uptime monitor at it, e.g. https://landoracle.ai/api/health, with email alerts.
+- [x] Daily search count per account (user_usage_searches, shown in the admin panel) to back the refund policy's "substantially used" clause. Records only, never blocks.
+- [ ] /api/assistant timed out once (120 s) on Nov 20: look at it before promoting the AI assistant.
