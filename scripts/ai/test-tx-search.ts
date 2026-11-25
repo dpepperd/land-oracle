@@ -73,6 +73,11 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await S({ state: 'TX', counties: ['Montgomery'], limit: 100 });
   const ml = (r.json?.list || []).filter((x: any) => /^https:\/\/montgomery\.prodigycad\.com\/property-detail\/\d+$/.test(txCountyLink(x.co_no, x)?.url || ''));
   check('TX Montgomery results link with the decimal tail stripped', r.status === 200 && r.json.list.length > 0 && ml.length === r.json.list.length, `${ml.length}/${r.json?.list?.length} rows link`);
+  for (const [cty, re] of [['Lubbock', /^https:\/\/lubbockcad\.org\/Property-Detail\/PropertyQuickRefID\/R\d+$/], ['Hays', /^https:\/\/esearch\.hayscad\.com\/Property-Detail\/PropertyQuickRefID\/R\d+$/], ['Johnson', /^https:\/\/johnsoncad\.com\/property-search\/\?parcel=\d+\.\d+\.\d+$/]] as const) {
+    r = await S({ state: 'TX', counties: [cty], limit: 100 });
+    const n = (r.json?.list || []).filter((x: any) => re.test(txCountyLink(x.co_no, x)?.url || ''));
+    check(`TX ${cty} results all build a county link (real search rows)`, r.status === 200 && r.json.list.length > 0 && n.length === r.json.list.length, `${n.length}/${r.json?.list?.length} rows link`);
+  }
   // Florida unaffected
   r = await S({ counties: ['Clay'], landUse: ['001'], limit: 50 });
   check('FL (no state) still Florida only', r.status === 200 && keysOf(r).length > 0 && keysOf(r).every((x: string) => x.startsWith('FL-')), `${keysOf(r).length} rows`);

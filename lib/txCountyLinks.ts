@@ -127,6 +127,9 @@ const TARRANT = 439;
 const EL_PASO = 141;
 const FORT_BEND = 157;
 const WILLIAMSON = 491;
+const LUBBOCK = 303;
+const HAYS = 209;
+const JOHNSON = 251;
 /** TrueProdigy portals that run on the county's own domain instead of <sub>.prodigycad.com. Each opened on real parcels showing the right owner. */
 export const TX_PRODIGY_OWN: Record<number, { host: string; name: string }> = {
   309: { host: 'mclennancad.org', name: 'McLennan' },
@@ -150,6 +153,12 @@ export function txCountyLink(coNo: number | null | undefined, p: TxLinkInput): T
   if (coNo === EL_PASO) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://epcad.org/Search?Keywords=${id}`, label: 'El Paso CAD property search (this property shows as the result)' } : null;
   // Williamson (WCAD): our parcel_id is already the quick-ref id ("R506607"), which its property-detail page is keyed on.
   if (coNo === WILLIAMSON) return /^R\d{5,7}$/.test(id) ? { kind: 'direct', url: `https://search.wcad.org/Property-Detail/PropertyQuickRefID/${id}`, label: 'Williamson CAD property search' } : null;
+  // Lubbock (LCAD): the same Tyler "Public Access" property detail page as Williamson, keyed on our R-prefixed id. Checked on 10 random parcels (page, address and owner all matched).
+  if (coNo === LUBBOCK) return /^R\d{1,8}$/.test(id) ? { kind: 'direct', url: `https://lubbockcad.org/Property-Detail/PropertyQuickRefID/${id}`, label: 'Lubbock CAD property detail' } : null;
+  // Hays (HCAD): the same Tyler page on esearch.hayscad.com, keyed on "R" + our numeric id. Checked in a browser (the site refuses plain scripts): 6 of 7 owners matched, the other had just changed hands.
+  if (coNo === HAYS) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://esearch.hayscad.com/Property-Detail/PropertyQuickRefID/R${id}`, label: 'Hays CAD property detail' } : null;
+  // Johnson (JCAD): the county's own detail page, keyed on the county account number, which is our alt_key ("126.2800.06870"). Checked on 10 random parcels: page loaded and owner matched on all 10.
+  if (coNo === JOHNSON) { const a = (p.alt_key ?? '').trim(); return /^\d+\.\d+\.\d+$/.test(a) ? { kind: 'direct', url: `https://johnsoncad.com/property-search/?parcel=${encodeURIComponent(a)}`, label: 'Johnson CAD property detail' } : null; }
   // TrueProdigy portals on the county's own domain (same /property-detail/<Prop_ID> page).
   const own = coNo != null ? TX_PRODIGY_OWN[coNo] : undefined;
   if (own) return /^\d{1,9}$/.test(id) ? { kind: 'direct', url: `https://${own.host}/property-detail/${id}`, label: `${own.name} CAD property search` } : null;
