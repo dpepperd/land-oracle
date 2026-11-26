@@ -13,6 +13,7 @@ import ResultsList from "@/components/dashboard/ResultsList";
 import MapView from "@/components/dashboard/MapView";
 import UpsellModal from "@/components/dashboard/UpsellModal";
 import CRMPanel from "@/components/dashboard/CRMPanel";
+import SubscriptionBanner from "@/components/dashboard/SubscriptionBanner";
 
 export default function Dashboard() {
   const { isLoaded, userId } = useAuth();
@@ -289,7 +290,8 @@ export default function Dashboard() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Header />
-      
+      <SubscriptionBanner />
+
       {/* Desktop Error Notification */}
       {searchError && (
         <div className="bg-red-600 text-white px-6 py-3 shadow-lg flex items-center justify-between">
