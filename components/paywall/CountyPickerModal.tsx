@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, MapPin, X } from 'lucide-react';
 import { checkEntitlementsAction, setCountiesAction } from '@/app/actions/territories';
 import { FLORIDA_COUNTIES, canonCounty } from '@/lib/counties';
+import { shouldOpenCountyPicker } from '@/lib/county-picker';
 
 export default function CountyPickerModal() {
   const { isLoaded, userId } = useAuth();
@@ -27,7 +28,7 @@ export default function CountyPickerModal() {
       if (!ent || ent.counties === 'all') return;
       const cur = ent.counties.map((c) => FLORIDA_COUNTIES.find((f) => canonCounty(f) === canonCounty(c)) ?? c);
       setAllowance(ent.allowance); setRepick(ent.needsCountyRepick); setSelected(cur); setHadSelection(cur.length > 0);
-      if (ent.needsCountyRepick || cur.length < ent.allowance) setOpen(true);
+      if (shouldOpenCountyPicker({ tier: ent.tier, trialActive: ent.trialActive, needsCountyRepick: ent.needsCountyRepick, allowance: ent.allowance, selectedCount: cur.length })) setOpen(true);
     }).catch((e) => console.error('Entitlement check failed', e));
   }, [isLoaded, userId]);
 
