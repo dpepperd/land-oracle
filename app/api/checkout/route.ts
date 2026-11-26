@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       allow_promotion_codes: true,
       ...(row.stripe_customer_id ? { customer: row.stripe_customer_id } : { customer_email: email }),
       client_reference_id: userId,
-      success_url: `${origin}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       metadata: { userId, plan, interval, addonCounties: String(addon) },
       subscription_data: { metadata: { userId, plan, interval, addonCounties: String(addon) } },
