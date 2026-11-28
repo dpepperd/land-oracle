@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { loadSettings, savePrices, saveReturnAddress } from './actions';
+import { loadSettings, savePrices, saveReturnAddress, saveSkipTraceOptions } from './actions';
 
 const LABELS: Record<string, string> = {
   postcard_4x6: 'Postcard 4×6', postcard_6x9: 'Postcard 6×9', postcard_6x11: 'Postcard 6×11',
-  skip_trace: 'Skip trace', property_data: 'Property data', permit: 'Permit', monitor_alert: 'Monitor alert',
+  skip_trace: 'Skip trace: owner contact', skip_trace_dnc: 'Skip trace: Do Not Call check (add-on)', property_data: 'Property data', permit: 'Permit', monitor_alert: 'Monitor alert',
 };
-const PLACEHOLDERS = new Set(['skip_trace', 'property_data', 'permit', 'monitor_alert']); // nothing uses these yet
+const PLACEHOLDERS = new Set(['property_data', 'permit', 'monitor_alert']); // nothing uses these yet
+const AWAITING_VENDOR = new Set(['skip_trace', 'skip_trace_dnc']); // built, but switched off until a vendor and its cost are known
 const EMPTY_ADDR = { name: '', address_line1: '', address_line2: '', city: '', state: '', zip: '' };
 
 export default function AdminSettingsPage() {
@@ -17,11 +18,13 @@ export default function AdminSettingsPage() {
   const [addr, setAddr] = useState(EMPTY_ADDR);
   const [msg, setMsg] = useState<string | null>(null);
   const [broken, setBroken] = useState(false);
+  const [dncMode, setDncMode] = useState('off');
 
   useEffect(() => {
     loadSettings().then((s) => {
       if (s.prices) setRows(Object.fromEntries(Object.entries(s.prices).map(([k, v]) => [k, { dollars: (v.cents / 100).toFixed(2), enabled: v.enabled }])));
       else setBroken(true);
+      setDncMode(s.dncMode);
       if (s.returnAddress) setAddr({ ...EMPTY_ADDR, ...s.returnAddress });
       setLoading(false);
     });
@@ -42,7 +45,7 @@ export default function AdminSettingsPage() {
         {broken && <p className="text-amber-400 text-sm">Prices are not set up in the database yet (run migrations 017 and 018). Nothing can be charged until they are.</p>}
         {Object.keys(LABELS).map((k) => (
           <div key={k} className="flex items-center justify-between gap-4 text-sm">
-            <span>{LABELS[k]}{PLACEHOLDERS.has(k) && <span className="text-slate-500 text-xs ml-2">placeholder, no feature uses it yet</span>}</span>
+            <span>{LABELS[k]}{PLACEHOLDERS.has(k) && <span className="text-slate-500 text-xs ml-2">placeholder, no feature uses it yet</span>}{AWAITING_VENDOR.has(k) && <span className="text-slate-500 text-xs ml-2">keep off until the vendor and its cost are known</span>}</span>
             <span className="flex items-center gap-3">
               <input className={input + ' !w-24 text-right'} inputMode="decimal" value={rows[k]?.dollars ?? ''} onChange={(e) => setRows({ ...rows, [k]: { ...rows[k], dollars: e.target.value } })} />
               <label className="flex items-center gap-1 text-xs text-slate-300"><input type="checkbox" checked={!!rows[k]?.enabled} onChange={(e) => setRows({ ...rows, [k]: { ...rows[k], enabled: e.target.checked } })} /> on</label>
@@ -51,6 +54,17 @@ export default function AdminSettingsPage() {
         ))}
         <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded" onClick={async () => note(await savePrices(rows), 'Prices saved.')}>Save prices</button>
         <p className="text-xs text-slate-400">Changes apply to future charges only. A price that is switched off cannot be charged. Past charges keep the price they were made at.</p>
+      </section>
+
+      <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+        <h2 className="font-semibold">Skip trace: Do Not Call check</h2>
+        <select className={input} value={dncMode} onChange={(e) => setDncMode(e.target.value)}>
+          <option value="off">Off: not sold</option>
+          <option value="optional">Optional: the buyer ticks it and pays the add-on price</option>
+          <option value="required">Required: every lookup includes it (contact price + add-on price)</option>
+        </select>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded" onClick={async () => note(await saveSkipTraceOptions(dncMode), 'Do Not Call setting saved.')}>Save</button>
+        <p className="text-xs text-slate-400">The check is only sold when the add-on price above is on and the active vendor can do it. In Required mode, contact data is never sold without it, and lookups stop if the add-on is switched off.</p>
       </section>
 
       <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">

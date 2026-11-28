@@ -7,8 +7,10 @@ export type PostcardSize = (typeof POSTCARD_SIZES)[number];
 export const postcardItem = (size: PostcardSize) => `postcard_${size}` as const;
 
 /** Every item that can be priced. Postcards are live; the rest are placeholders switched off until a feature uses them. */
-export const PRICE_ITEMS = ['postcard_4x6', 'postcard_6x9', 'postcard_6x11', 'skip_trace', 'property_data', 'permit', 'monitor_alert'] as const;
+export const PRICE_ITEMS = ['postcard_4x6', 'postcard_6x9', 'postcard_6x11', 'skip_trace', 'skip_trace_dnc', 'property_data', 'permit', 'monitor_alert'] as const;
 export type PriceItem = (typeof PRICE_ITEMS)[number];
+/** Items added after the first release. A saved prices row without them still works: they count as switched off (cannot be charged) until an admin sets them. */
+const NEWER_ITEMS: readonly PriceItem[] = ['skip_trace_dnc'];
 export interface PriceEntry { cents: number; enabled: boolean }
 export type Prices = Record<PriceItem, PriceEntry>;
 type Db = Pool | PoolClient;
@@ -22,6 +24,7 @@ export function validatePrices(v: unknown): Prices {
   const out: any = {};
   for (const k of PRICE_ITEMS) {
     const e = (v as any)[k];
+    if (e === undefined && NEWER_ITEMS.includes(k)) { out[k] = { cents: 0, enabled: false }; continue; }
     if (!e || typeof e !== 'object' || !Number.isInteger(e.cents) || e.cents < 0 || e.cents > 100_000 || typeof e.enabled !== 'boolean') {
       throw new SettingsError(`The price for ${k} is missing or invalid.`);
     }
@@ -58,4 +61,34 @@ export async function setReturnAddress(db: Db, a: ReturnAddress, adminUserId: nu
     `INSERT INTO app_settings (key, value, updated_by) VALUES ('postcard_return_address', $1::jsonb, $2)
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
     [JSON.stringify(a), adminUserId]);
+}
+
+// ---- Skip trace options (admin-editable). The Do Not Call (DNC) check is an add-on item (skip_trace_dnc). Its mode says how it is sold:
+//   off       not sold (the default: nothing is offered until an admin chooses)
+//   optional  the buyer ticks "include Do Not Call check" and pays the extra price
+//   required  every lookup includes it and costs contact + DNC together (contact data is never sold without the check)
+export const DNC_MODES = ['off', 'optional', 'required'] as const;
+export type DncMode = (typeof DNC_MODES)[number];
+export interface SkipTraceOptions { dnc: DncMode }
+
+export function validateSkipTraceOptions(v: unknown): SkipTraceOptions {
+  const mode = (v as any)?.dnc;
+  if (!DNC_MODES.includes(mode)) throw new SettingsError('Skip trace options are invalid.');
+  return { dnc: mode };
+}
+
+/** Missing row = DNC off. A damaged row throws SettingsError, and the skip trace service then refuses lookups (fails closed, so it can never sell contact data without the check by accident). */
+export async function getSkipTraceOptions(db: Db): Promise<SkipTraceOptions> {
+  const r = await db.query("SELECT value FROM app_settings WHERE key = 'skiptrace_options'");
+  if (!r.rows[0]) return { dnc: 'off' };
+  return validateSkipTraceOptions(r.rows[0].value);
+}
+
+export async function setSkipTraceOptions(db: Db, o: unknown, adminUserId: number | null): Promise<SkipTraceOptions> {
+  const v = validateSkipTraceOptions(o);
+  await db.query(
+    `INSERT INTO app_settings (key, value, updated_by) VALUES ('skiptrace_options', $1::jsonb, $2)
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+    [JSON.stringify(v), adminUserId]);
+  return v;
 }

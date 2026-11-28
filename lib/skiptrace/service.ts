@@ -1,19 +1,30 @@
-// Skip tracing service: flag, owner key, credits, shared cache, ledger. Vendor-neutral (the vendor is a SkipTraceProvider).
+// Skip tracing service: flag, owner key, wallet charging, shared cache, ledger. Vendor-neutral (the vendor is a SkipTraceProvider).
+//
+// Paid from the wallet (lib/wallet). Contact data is the item `skip_trace`; the Do Not Call (DNC) check is the add-on item `skip_trace_dnc`.
+// Prices and on/off switches are admin settings (/admin/settings), and the DNC mode (off / optional / required) too. Nothing is priced in code.
 //
 // Money rules (each one is tested in scripts/ai/test-skiptrace.ts):
 //   - The vendor is called at most once per owner: results (hits AND misses) are cached for CACHE_DAYS and shared across accounts.
-//   - An account is charged 1 credit only for a HIT, and only the first time that account sees that owner. Repeats, misses and vendor failures are free.
-//   - No credit, no lookup: with 0 credits the vendor is never called.
-//   - Two simultaneous requests for the same owner cannot both call the vendor or both charge (advisory lock per owner, row lock on credits).
+//     The DNC status on saved phones is only trusted for DNC_FRESH_DAYS (it goes stale fast); a stale one is re-checked at the vendor.
+//   - Before the vendor is called, the most this lookup can cost is HELD in the wallet (one hold per item). A hit settles the hold into a
+//     charge, a miss or a vendor failure releases it. No funds, no lookup (the vendor is never called).
+//   - An account pays for contact data only for a HIT, only the first time it sees that owner; the DNC check only when phones came back and
+//     every phone has a yes/no answer, and again only after DNC_FRESH_DAYS. Repeats, misses and vendor failures cost nothing.
+//   - Two simultaneous requests for the same owner cannot both call the vendor or both charge (advisory lock per owner, wallet row locks).
+//   - DNC flags are only shown to an account that bought the check: a saved result never gives them away for free.
 //   - Admins get no free pass: every lookup costs real money.
-import { createHash } from 'crypto';
-import type { PoolClient } from 'pg';
+import { createHash, randomUUID } from 'crypto';
 import pool from '@/lib/db';
 import { getParcel, AccessError, NotFoundError, InputError } from '@/lib/parcels';
 import { getProvider } from './providers';
-import { ProviderError, SkipTraceError, type ContactResult, type LookupOutcome, type OwnerQuery, type SkipTraceProvider } from './types';
+import { ProviderError, SkipTraceError, type ContactPhone, type ContactResult, type LookupOutcome, type OwnerQuery, type SkipTraceProvider } from './types';
+import { getPrices, getSkipTraceOptions, SettingsError, type DncMode } from '@/lib/wallet/settings';
+import { releaseHold, reserveForService, settleHold } from '@/lib/wallet/charge';
+import { getAvailable, inTx, keepHold } from '@/lib/wallet/ledger';
 
 export const CACHE_DAYS = 180;
+/** How long a Do Not Call status counts as current. (Callers generally must re-check about every 31 days: confirm with the lawyer.) */
+export const DNC_FRESH_DAYS = 30;
 export const PROVIDER_TIMEOUT_MS = 15_000;
 
 /** OFF unless SKIPTRACE_ENABLED=true. Checked on every request, so it can be switched off instantly. */
@@ -31,86 +42,153 @@ const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> => new Promise((
   p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
 });
 
-export async function creditsFor(userDbId: number): Promise<number> {
-  const r = await pool.query('SELECT balance FROM skip_trace_credits WHERE user_id = $1', [userDbId]);
-  return r.rows[0]?.balance ?? 0;
+const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+const NOT_AVAILABLE = 'Owner contact lookup is not available.';
+
+/** What the account can buy right now: prices from settings, DNC mode, whether this vendor can do DNC. Throws SkipTraceError when nothing can be sold. */
+async function offerFor(provider: SkipTraceProvider) {
+  let prices, options;
+  try { prices = await getPrices(pool); options = await getSkipTraceOptions(pool); }
+  catch (e) { if (e instanceof SettingsError) throw new SkipTraceError('not_available', NOT_AVAILABLE, 503); throw e; }
+  const c = prices.skip_trace, d = prices.skip_trace_dnc;
+  if (!c.enabled || c.cents <= 0) throw new SkipTraceError('not_available', NOT_AVAILABLE, 404);
+  const dncSellable = d.enabled && d.cents > 0 && provider.capabilities.dnc;
+  const mode: DncMode = options.dnc;
+  if (mode === 'required' && !dncSellable) throw new SkipTraceError('not_available', NOT_AVAILABLE, 404); // never sell contact data without the check when it is required
+  return { contactCents: c.cents, dncCents: d.cents, dncSellable, mode };
 }
 
-/** Adds credits to an account (used by scripts and, later, the purchase flow). Returns the new balance. */
-export async function grantCredits(userDbId: number, amount: number): Promise<number> {
-  if (!Number.isInteger(amount) || amount <= 0) throw new Error('amount must be a positive whole number');
-  const r = await pool.query(
-    `INSERT INTO skip_trace_credits (user_id, balance) VALUES ($1, $2)
-     ON CONFLICT (user_id) DO UPDATE SET balance = skip_trace_credits.balance + EXCLUDED.balance, updated_at = now()
-     RETURNING balance`, [userDbId, amount]);
-  return r.rows[0].balance;
+/** For the screen: can this account buy owner contact, what does it cost, and how much can it spend. */
+export async function skipTraceOffer(userDbId: number): Promise<
+  | { available: false }
+  | { available: true; balanceCents: number; contactCents: number; dnc: { mode: 'optional' | 'required'; cents: number } | null; totalCents: number }
+> {
+  try {
+    const o = await offerFor(getProvider());
+    const dnc = o.dncSellable && o.mode !== 'off' ? { mode: o.mode as 'optional' | 'required', cents: o.dncCents } : null;
+    return { available: true, balanceCents: await getAvailable(pool, userDbId), contactCents: o.contactCents, dnc, totalCents: o.contactCents + (dnc?.mode === 'required' ? dnc.cents : 0) };
+  } catch (e) {
+    if (e instanceof SkipTraceError) return { available: false };
+    return { available: false }; // no vendor configured, or a broken setting: not offered
+  }
 }
-
-async function rollbackQuiet(c: PoolClient) { try { await c.query('ROLLBACK'); } catch { /* connection already gone */ } }
 
 /**
- * Looks up one owner for one account. `provider` is injectable for tests.
- * Never logs phone numbers or emails.
+ * Looks up one owner for one account. `provider` is injectable for tests. `dnc` asks for the Do Not Call check (only when the mode is "optional";
+ * "required" always includes it, "off" never does). Never logs phone numbers or emails.
  */
-export async function lookupContact(userDbId: number, q: OwnerQuery, opts: { parcelKey?: string | null; provider?: SkipTraceProvider } = {}): Promise<LookupOutcome> {
-  if (!skipTraceEnabled()) throw new SkipTraceError('not_available', 'Owner contact lookup is not available.', 404);
+export async function lookupContact(userDbId: number, q: OwnerQuery, opts: { parcelKey?: string | null; provider?: SkipTraceProvider; dnc?: boolean } = {}): Promise<LookupOutcome> {
+  if (!skipTraceEnabled()) throw new SkipTraceError('not_available', NOT_AVAILABLE, 404);
+  const provider = opts.provider ?? getProvider();
+  const offer = await offerFor(provider);
+  const wantDnc = offer.mode === 'required' ? true : offer.mode === 'optional' ? !!opts.dnc : false;
+  if (wantDnc && !offer.dncSellable) throw new SkipTraceError('not_available', 'The Do Not Call check is not available right now.', 404);
+
   const key = ownerKey(q);
+  const label = `owner ${key.slice(0, 8)}`;
+  const attempt = randomUUID(); // one set of holds per request; a retry is a new request
+  const holds: { contact?: number; dnc?: number } = {};
+  const closed = new Set<number>();
   const client = await pool.connect();
+  let locked = false;
   try {
-    await client.query('BEGIN');
-    // One lookup per owner at a time (stops a double click paying twice), and one per account at a time on the credit row.
-    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [key]);
+    // One lookup per owner at a time (stops a double click paying twice or calling the vendor twice).
+    await client.query('SELECT pg_advisory_lock(hashtext($1))', [key]); locked = true;
 
     const cachedRow = (await client.query(
-      `SELECT provider, matched, phones, emails FROM skip_trace_cache WHERE owner_key = $1 AND fetched_at > now() - ($2 || ' days')::interval`, [key, String(CACHE_DAYS)])).rows[0];
-    const alreadyPaid = (await client.query('SELECT 1 FROM skip_trace_lookups WHERE user_id = $1 AND owner_key = $2 AND charged > 0 LIMIT 1', [userDbId, key])).rowCount! > 0;
+      `SELECT provider, matched, phones, emails, dnc_checked_at,
+              (dnc_checked_at IS NOT NULL AND dnc_checked_at > now() - ($2 || ' days')::interval) AS dnc_fresh
+         FROM skip_trace_cache WHERE owner_key = $1 AND fetched_at > now() - ($3 || ' days')::interval`, [key, String(DNC_FRESH_DAYS), String(CACHE_DAYS)])).rows[0];
+    const paid = (await client.query(
+      `SELECT COALESCE(bool_or(paid_contact_cents > 0), false) AS contact,
+              COALESCE(bool_or(paid_dnc_cents > 0 AND created_at > now() - ($3 || ' days')::interval), false) AS dnc
+         FROM skip_trace_lookups WHERE user_id = $1 AND owner_key = $2`, [userDbId, key, String(DNC_FRESH_DAYS)])).rows[0];
 
-    await client.query('INSERT INTO skip_trace_credits (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING', [userDbId]);
-    const balance: number = (await client.query('SELECT balance FROM skip_trace_credits WHERE user_id = $1 FOR UPDATE', [userDbId])).rows[0].balance;
+    const savedHasPhones = !!cachedRow && cachedRow.matched && cachedRow.phones.length > 0;
+    const needVendor = !cachedRow || (wantDnc && savedHasPhones && !cachedRow.dnc_fresh);
+    // The most this request can cost (a hit is not known until the vendor answers).
+    const maxContact = !paid.contact && (!cachedRow || cachedRow.matched);
+    const maxDnc = wantDnc && !paid.dnc && (!cachedRow || savedHasPhones);
 
+    // ---- hold the money first: no funds, no vendor call
+    const fail = (r: { reason: string }) => r.reason === 'insufficient'
+      ? new SkipTraceError('insufficient_funds', `Not enough wallet balance for this lookup (${usd((maxContact ? offer.contactCents : 0) + (maxDnc ? offer.dncCents : 0))}). Add funds to your wallet first.`, 402)
+      : new SkipTraceError('not_available', NOT_AVAILABLE, 404);
+    if (maxContact) {
+      const h = await reserveForService(pool, { userId: userDbId, item: 'skip_trace', idempotencyKey: `skiptrace:${attempt}:contact`, ref: label, description: 'Owner contact lookup' });
+      if (!h.ok) throw fail(h);
+      holds.contact = h.holdId;
+    }
+    if (maxDnc) {
+      const h = await reserveForService(pool, { userId: userDbId, item: 'skip_trace_dnc', idempotencyKey: `skiptrace:${attempt}:dnc`, ref: label, description: 'Do Not Call check' });
+      if (!h.ok) throw fail(h);
+      holds.dnc = h.holdId;
+    }
+
+    // ---- the vendor (or the saved result)
     let result: ContactResult;
-    let cached = false;
-    if (cachedRow) {
-      result = { matched: cachedRow.matched, phones: cachedRow.phones, emails: cachedRow.emails, provider: cachedRow.provider };
-      cached = true;
-      // A saved hit this account has not paid for yet still costs one credit. No credit: nothing is shown.
-      if (result.matched && !alreadyPaid && balance < 1) throw new SkipTraceError('no_credits', 'You are out of owner contact credits.', 402);
-    } else {
-      if (balance < 1) throw new SkipTraceError('no_credits', 'You are out of owner contact credits.', 402);
-      const provider = opts.provider ?? getProvider();
-      try { result = await withTimeout(provider.lookup(q), PROVIDER_TIMEOUT_MS); }
+    let dncCheckedAt: Date | null = cachedRow?.dnc_checked_at ? new Date(cachedRow.dnc_checked_at) : null;
+    if (needVendor) {
+      try { result = await withTimeout(provider.lookup(q, { dnc: wantDnc }), PROVIDER_TIMEOUT_MS); }
       catch (e) {
         console.error('[skiptrace] provider failed:', provider.id, (e as Error).message);
         throw new SkipTraceError('provider_failed', 'The lookup service is not responding right now. You were not charged. Please try again later.', 502);
       }
+      dncCheckedAt = wantDnc && result.matched ? new Date() : null;
       await client.query(
-        `INSERT INTO skip_trace_cache (owner_key, provider, matched, phones, emails, fetched_at) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb, now())
-         ON CONFLICT (owner_key) DO UPDATE SET provider = EXCLUDED.provider, matched = EXCLUDED.matched, phones = EXCLUDED.phones, emails = EXCLUDED.emails, fetched_at = now()`,
-        [key, result.provider, result.matched, JSON.stringify(result.phones), JSON.stringify(result.emails)]);
+        `INSERT INTO skip_trace_cache (owner_key, provider, matched, phones, emails, fetched_at, dnc_checked_at) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb, now(), $6)
+         ON CONFLICT (owner_key) DO UPDATE SET provider = EXCLUDED.provider, matched = EXCLUDED.matched, phones = EXCLUDED.phones, emails = EXCLUDED.emails, fetched_at = now(), dnc_checked_at = EXCLUDED.dnc_checked_at`,
+        [key, result.provider, result.matched, JSON.stringify(result.phones), JSON.stringify(result.emails), dncCheckedAt]);
+    } else {
+      result = { matched: cachedRow.matched, phones: cachedRow.phones, emails: cachedRow.emails, provider: cachedRow.provider };
     }
 
-    const charged = result.matched && !alreadyPaid ? 1 : 0;
-    let creditsLeft = balance;
-    if (charged) {
-      creditsLeft = (await client.query('UPDATE skip_trace_credits SET balance = balance - 1, used = used + 1, updated_at = now() WHERE user_id = $1 RETURNING balance', [userDbId])).rows[0].balance;
-    }
+    // ---- settle what was earned, release the rest
+    // The DNC check counts only if every phone has a yes/no answer: "unknown" is not "safe", and we do not charge for an unanswered check.
+    const dncAnswered = wantDnc && result.matched && result.phones.length > 0 && result.phones.every((p: ContactPhone) => typeof p.doNotCall === 'boolean');
+    const contactDue = result.matched && !paid.contact && holds.contact !== undefined;
+    const dncDue = dncAnswered && !paid.dnc && holds.dnc !== undefined;
+    const close = async (item: 'contact' | 'dnc', due: boolean): Promise<number> => {
+      const id = holds[item]; if (id === undefined) return 0;
+      if (!due) { await releaseHold(pool, id, result.matched ? 'nothing_to_charge' : 'no_match'); closed.add(id); return 0; }
+      let s = await settleHold(pool, id, { ref: label }).catch(() => null);
+      if (!s || !s.ok) s = await settleHold(pool, id, { ref: label }).catch(() => null); // one retry
+      closed.add(id);
+      if (!s || !s.ok) { // delivered but not charged: keep the money held for a person (it never expires on its own)
+        console.error('[skiptrace] settle failed, hold kept for review:', id);
+        await inTx(pool, (c) => keepHold(c, id, 'lookup delivered, settle failed: needs attention')).catch(() => {});
+        return 0;
+      }
+      return s.chargedCents;
+    };
+    const chargedContactCents = await close('contact', contactDue);
+    const chargedDncCents = await close('dnc', dncDue);
+
     await client.query(
-      'INSERT INTO skip_trace_lookups (user_id, owner_key, parcel_key, provider, matched, cached, charged) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-      [userDbId, key, opts.parcelKey ?? null, result.provider, result.matched, cached, charged]);
-    await client.query('COMMIT');
-    console.log(`[skiptrace] owner=${key.slice(0, 8)} matched=${result.matched} cached=${cached} charged=${charged} left=${creditsLeft}`);
-    return { ...result, cached, charged, creditsLeft };
+      `INSERT INTO skip_trace_lookups (user_id, owner_key, parcel_key, provider, matched, cached, charged, paid_contact_cents, paid_dnc_cents) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [userDbId, key, opts.parcelKey ?? null, result.provider, result.matched, !needVendor, chargedContactCents > 0 ? 1 : 0, chargedContactCents, chargedDncCents]);
+
+    const dncIncluded = dncAnswered && (paid.dnc || chargedDncCents > 0);
+    const phones: ContactPhone[] = dncIncluded ? result.phones : result.phones.map(({ number, type }) => ({ number, type })); // DNC flags are not given away with a saved result
+    const balanceCents = await getAvailable(pool, userDbId);
+    console.log(`[skiptrace] ${label} matched=${result.matched} cached=${!needVendor} dnc=${dncIncluded} charged=${chargedContactCents + chargedDncCents} left=${balanceCents}`);
+    return {
+      ...result, phones, cached: !needVendor,
+      chargedCents: chargedContactCents + chargedDncCents, chargedContactCents, chargedDncCents, balanceCents,
+      dncIncluded, dncCheckedAt: dncIncluded && dncCheckedAt ? dncCheckedAt.toISOString() : null,
+    };
   } catch (e) {
-    await rollbackQuiet(client);
+    for (const id of [holds.contact, holds.dnc]) if (id !== undefined && !closed.has(id)) await releaseHold(pool, id, 'error').catch(() => {});
     throw e;
   } finally {
+    if (locked) await client.query('SELECT pg_advisory_unlock(hashtext($1))', [key]).catch(() => {});
     client.release();
   }
 }
 
 /** The route's entry point: checks the account may see this parcel (county plan enforced by getParcel), then looks up its owner. */
-export async function lookupForParcel(clerkId: string, parcelKey: string, provider?: SkipTraceProvider): Promise<LookupOutcome> {
-  if (!skipTraceEnabled()) throw new SkipTraceError('not_available', 'Owner contact lookup is not available.', 404);
+export async function lookupForParcel(clerkId: string, parcelKey: string, opts: { dnc?: boolean; provider?: SkipTraceProvider } = {}): Promise<LookupOutcome> {
+  if (!skipTraceEnabled()) throw new SkipTraceError('not_available', NOT_AVAILABLE, 404);
   const u = (await pool.query('SELECT id FROM users WHERE clerk_id = $1', [clerkId])).rows[0];
   if (!u) throw new SkipTraceError('forbidden', 'Account not found.', 403);
   let parcel;
@@ -122,5 +200,5 @@ export async function lookupForParcel(clerkId: string, parcelKey: string, provid
     throw e;
   }
   if (!parcel.owner_name || !parcel.mail_address) throw new SkipTraceError('no_owner', 'This parcel has no owner name or mailing address on the roll, so there is nothing to look up.', 422);
-  return lookupContact(u.id, { name: parcel.owner_name, mailingAddress: parcel.mail_address, propertyAddress: parcel.situs_address }, { parcelKey, provider });
+  return lookupContact(u.id, { name: parcel.owner_name, mailingAddress: parcel.mail_address, propertyAddress: parcel.situs_address }, { parcelKey, provider: opts.provider, dnc: opts.dnc });
 }

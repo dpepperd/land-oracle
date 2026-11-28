@@ -4,7 +4,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth-guard';
 import pool from '@/lib/db';
-import { getPrices, getReturnAddress, PRICE_ITEMS, setPrices, setReturnAddress, SettingsError, type Prices, type ReturnAddress } from '@/lib/wallet/settings';
+import { getPrices, getReturnAddress, getSkipTraceOptions, PRICE_ITEMS, setPrices, setReturnAddress, setSkipTraceOptions, SettingsError, type DncMode, type Prices, type ReturnAddress } from '@/lib/wallet/settings';
 import { parseUsdToCents } from '@/lib/wallet/money';
 
 async function adminDbId(): Promise<number | null> {
@@ -18,7 +18,21 @@ export async function loadSettings() {
   await requireAdmin();
   let prices: Prices | null = null;
   try { prices = await getPrices(pool); } catch { prices = null; }
-  return { prices, returnAddress: await getReturnAddress(pool) };
+  let dncMode: DncMode = 'off';
+  try { dncMode = (await getSkipTraceOptions(pool)).dnc; } catch { dncMode = 'off'; }
+  return { prices, returnAddress: await getReturnAddress(pool), dncMode };
+}
+
+/** How the Do Not Call check is sold with skip trace: off, optional (buyer ticks it) or required (every lookup includes it). */
+export async function saveSkipTraceOptions(mode: string) {
+  await requireAdmin();
+  try {
+    await setSkipTraceOptions(pool, { dnc: mode }, await adminDbId());
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof SettingsError ? 'Choose off, optional or required.' : 'Could not save.' };
+  }
 }
 
 /** Each price item maps to { dollars: text like "1.15", enabled }. Anything that is not a valid dollar amount is refused and nothing is saved. */
