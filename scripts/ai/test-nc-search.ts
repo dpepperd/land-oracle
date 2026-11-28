@@ -75,6 +75,20 @@ const check = (name: string, ok: boolean, detail: string) => results.push(`${ok 
   r = await S({ state: 'NC', counties: ['Dare'], ownerType: 'out_of_state', vacantOnly: true, acreageMin: 10, limit: 300 });
   const rows = r.json.list;
   check('NC Dare out-of-state + likely-vacant + >=10 acres', r.status === 200 && rows.length > 0 && rows.every((x: any) => x.owner_state && x.owner_state !== 'NC' && x.likely_vacant === true && Number(x.acreage) >= 10), `${rows.length} rows`);
+  // Building-outline vacancy estimate (counties with no land-use codes). Martin and Hoke report no building values; Ashe does.
+  const vac = async (county: string, extra: any = {}) => { const x = await S({ state: 'NC', counties: [county], vacantOnly: true, limit: 500, ...extra }); return x; };
+  r = await vac('Martin');
+  check('NC Martin vacant uses the estimate (basis "footprint only"), not the old near-everything flag', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.likely_vacant === true && x.vacant_basis === 'footprint only'), `${r.json.list.length} rows`);
+  r = await vac('Hoke');
+  check('NC Hoke (old flag had none) now returns vacant candidates', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.vacant_basis === 'footprint only'), `${r.json.list.length} rows`);
+  r = await vac('Ashe');
+  check('NC Ashe vacant uses basis "footprint+value" and no returned parcel has a building value', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.vacant_basis === 'footprint+value' && !Number(x.improvement_value)), `${r.json.list.length} rows`);
+  r = await vac('Dare');
+  check('NC Dare (has land-use codes) is unchanged: no estimate basis', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.likely_vacant === true && x.vacant_basis == null), `${r.json.list.length} rows`);
+  r = await vac('Ashe', { useCats: ['vacant'] });
+  check('NC Ashe land-use category "vacant" follows the estimate', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.vacant_basis === 'footprint+value'), `${r.json.list.length} rows`);
+  r = await S({ state: 'NC', counties: ['Dare'], useCats: ['vacant'], limit: 200 });
+  check('NC Dare land-use category "vacant" still works', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => x.land_use_cat === 'vacant'), `${r.json.list.length} rows`);
   r = await S({ state: 'NC', counties: ['Wake'], marketValueMin: 500000, marketValueMax: 700000, limit: 300 });
   check('NC Wake value $500K-$700K', r.status === 200 && r.json.list.length > 0 && r.json.list.every((x: any) => Number(x.market_value) >= 500000 && Number(x.market_value) <= 700000), `${r.json.list.length} rows`);
   r = await S({ state: 'NC', counties: ['Wake'], marketValueMin: 2000000, limit: 100 });

@@ -23,6 +23,8 @@ export interface PilotConfig {
   hasSaleDate: boolean;
   /** Does the view carry a lu_cat (land-use category) column? */
   hasUseCat?: boolean;
+  /** Does the view carry vacant_est / vacant_est_basis (building-outline vacancy estimate for counties with no land-use codes)? */
+  hasVacantEst?: boolean;
 }
 
 const EMPTY = { geojson: { type: 'FeatureCollection', features: [] }, list: [], count: 0 };
@@ -36,6 +38,8 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
   const { counties, acreageMin, acreageMax, marketValueMin, marketValueMax, minLat, maxLat, minLon, maxLon, spatialShape, ownerType,
     absentee, noSaleYears, vacantOnly, parcelId, address, limit = 500, useCats } = body as SearchBody & { vacantOnly?: boolean; useCats?: string[] };
 
+  // "Vacant": the building-outline estimate where one exists (NC counties with no land-use codes), else the loader's flag.
+  const vacantExpr = cfg.hasVacantEst ? 'COALESCE(p.vacant_est, p.likely_vacant)' : 'p.likely_vacant';
   const values: any[] = [];
   const conditions: string[] = ['1=1'];
   let valIdx = 1;
@@ -57,8 +61,15 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     values.push(likePattern(text.value)); // wildcards typed by the user are taken literally (the 3-character minimum is checked in the route)
     valIdx++;
   } else {
-    if (vacantOnly) conditions.push('p.likely_vacant');
-    if (cfg.hasUseCat && useCats?.length) { conditions.push(`p.lu_cat = ANY($${valIdx}::text[])`); values.push(useCats); valIdx++; }
+    if (vacantOnly) conditions.push(vacantExpr);
+    if (cfg.hasUseCat && useCats?.length) {
+      if (cfg.hasVacantEst && useCats.includes('vacant')) {
+        // Where vacant_est is set (counties with no land-use codes) it decides "vacant"; elsewhere the land-use category does.
+        const others = useCats.filter((c) => c !== 'vacant');
+        conditions.push(`(p.lu_cat = ANY($${valIdx}::text[]) OR p.vacant_est IS TRUE OR (p.vacant_est IS NULL AND p.lu_cat = 'vacant'))`);
+        values.push(others); valIdx++;
+      } else { conditions.push(`p.lu_cat = ANY($${valIdx}::text[])`); values.push(useCats); valIdx++; }
+    }
     if (acreageMin !== undefined) { conditions.push(`p.acreage >= $${valIdx}`); values.push(acreageMin); valIdx++; }
     if (acreageMax !== undefined) { conditions.push(`p.acreage <= $${valIdx}`); values.push(acreageMax); valIdx++; }
     if (marketValueMin !== undefined) { conditions.push(`p.jv >= $${valIdx}`); values.push(marketValueMin); valIdx++; }
@@ -120,7 +131,7 @@ export async function searchPilot(cfg: PilotConfig, body: SearchBody, userId: st
     SELECT
       p.parcel_key as id, p.parcel_key, p.state, p.co_no, p.county, p.parcel_id, p.parcelno, p.alt_key,
       p.own_name as owner_name, p.own_addr1 as owner_address, p.own_city as owner_city, p.own_state as owner_state, p.own_zipcd as owner_zip,
-      p.acreage, p.acreage_source, p.dor_uc as land_use, p.use_desc, ${cfg.hasUseCat ? 'p.lu_cat' : 'NULL::text'} as land_use_cat, p.likely_vacant, COALESCE(p.phy_addr1, p.own_addr1) as property_address,
+      p.acreage, p.acreage_source, p.dor_uc as land_use, p.use_desc, ${cfg.hasUseCat ? 'p.lu_cat' : 'NULL::text'} as land_use_cat, ${vacantExpr} as likely_vacant, ${cfg.hasVacantEst ? 'p.vacant_est_basis' : 'NULL::text'} as vacant_basis, COALESCE(p.phy_addr1, p.own_addr1) as property_address,
       p.jv as market_value, p.land_value, p.improvement_value,
       p.sale_prc1, p.sale1_date, p.sale_prc2, p.sale2_date, p.sale_prc3, p.sale3_date, p.living_area_sqft, p.year_built,
       (p.own_state != '${cfg.state}' AND p.own_state IS NOT NULL) as out_of_state,

@@ -25,6 +25,8 @@ interface Parcel {
   has_outline?: boolean;
   state?: string;
   likely_vacant?: boolean;
+  /** Set where "likely vacant" is an estimate from building outlines (NC counties with no land-use codes). */
+  vacant_basis?: string | null;
 }
 
 interface ParcelCardProps {
@@ -92,7 +94,7 @@ export default function ParcelCard({ parcel, onMarkLead, onSelect, isMarking }: 
         <div className="mt-2 flex flex-wrap gap-1">
           {parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Out of state</span>}
           {parcel.is_absentee && !parcel.out_of_state && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-medium">Absentee</span>}
-          {parcel.likely_vacant && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium">Likely vacant</span>}
+          {parcel.likely_vacant && <span title={parcel.vacant_basis === 'footprint only' ? 'Estimate: no building outline found on this parcel. Lower confidence: this county reports no building values.' : parcel.vacant_basis ? 'Estimate: no building outline found and no building value on record.' : undefined} className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium">Likely vacant</span>}
           {(parcel.state !== 'NC' && parcel.state !== 'TX') && parcel.sale1_date === null && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">No sale on record</span>}
         </div>
       )}
