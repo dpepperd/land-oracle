@@ -18,8 +18,16 @@ Branch `feature/credit-wallet-postcards`. Not merged. Nothing here has been appl
 | Permit | $0.20 | **off** (placeholder) |
 | Monitor alert | $0.75 | **off** (placeholder) |
 
-- **Postcards (Lob, test key only, First Class for every size):** order is balance check, Lob US address verification, Lob creates the card, **then** the wallet is charged. A bad address stops everything: nothing sent, nothing charged, the reason is shown.
+- **Postcards (Lob, test key only, First Class for every size):** order is spendable-balance check, Lob US address verification, the price is **held** (reserved), Lob creates the card, **then** the hold becomes the charge. A bad address stops everything: nothing sent, nothing held or charged, the reason is shown. If Lob refuses the card the hold is released.
 - **Screens:** `/postcards` (size, design, details, upload, preview, send), `/wallet` (balance, add funds, history), `/admin/settings` (prices, return address).
+
+## Holds: reserve, settle, release (`020_wallet_holds.sql`)
+Any service that spends OUR money before it knows the outcome (a skip trace vendor call, a Lob card) uses three steps in `lib/wallet/charge.ts`:
+- `reserveForService()` sets the price (times quantity) aside. The balance is unchanged and nothing is written to the ledger, but spendable money (`balance - held`) drops, so no other spend, direct charge or reservation can take it.
+- `settleHold()` on success turns the hold into one `charge` ledger row, at the reserved amount or less (`actualCents`).
+- `releaseHold()` on a miss or failure makes the money spendable again. No ledger row: it never left the balance.
+Every step is idempotent (one hold per postcard or lookup however often it is retried), the database refuses `held_cents > balance_cents`, and a hold nobody closes (a crash) expires after 10 minutes and is freed the next time that account reserves. `keepHold()` marks a hold that needs a person (it never expires). The wallet screen and `/api/wallet` show spendable money as the balance, plus `heldCents`.
+This is the shared mechanism for skip trace, postcards and later items (property data, permits, monitor alerts). Tests: `scripts/ai/test-wallet.ts` (reserve, settle, release, partial settle, races, expiry, one balance shared by a lookup and a postcard).
 
 ## Postcard sizes, designs, templates
 - Sizes **4×6 (default), 6×9, 6×11**. Each is priced separately in settings.
@@ -41,7 +49,7 @@ Admins always. Everyone else only when `WALLET_ENABLED=true` (checked on every r
 - A balance can never go below zero: checked under a row lock, and the table has `CHECK (balance_cents >= 0)`.
 - A Stripe event, or a postcard, moves money once (idempotency keys). A top-up is credited only if the session is paid, in USD, the amount matches what was asked, and it is within $20 to $1,000.
 - A live Stripe key is refused for top-ups unless `WALLET_ALLOW_LIVE=true`. A live Lob key is refused unless `LOB_ALLOW_LIVE=true`.
-- One postcard send at a time per account. If the charge still fails after Lob accepted a card, we ask Lob to cancel it and record `sent_unpaid_cancel_requested`.
+- One postcard send at a time per account. The price is held before Lob is called, so nothing else can spend that money while the card is made. If the charge cannot be completed after Lob accepted a card, the card stays sent (it is not cancelled) and the held money stays held, marked for a person to settle (`wallet_holds.close_reason`). Older rows may show `sent_unpaid_cancel_requested` from before holds existed.
 - The user is charged the price shown in the preview for that size.
 
 ## Margins (owner's numbers, First Class)
@@ -54,7 +62,7 @@ Admins always. Everyone else only when `WALLET_ENABLED=true` (checked on every r
 Standard (marketing) class is a little cheaper on the big sizes but slower and meant for bulk, and 4×6 is First Class only, so everything goes First Class.
 
 ## To turn it on (nobody has done any of this)
-1. Apply `017_wallet.sql` then `018_postcard_sizes.sql` to the `app_prod` schema and grant the production role the tables and sequences.
+1. Apply `017_wallet.sql`, `018_postcard_sizes.sql` then `020_wallet_holds.sql` to the `app_prod` schema and grant the production role the tables and sequences.
 2. In **/admin/settings**, set the postcard **return address** (postcards stay blocked until it is set). Check the prices.
 3. Set `LOB_API_KEY` (a test key). The existing Stripe webhook already handles wallet top-ups: no new endpoint.
 4. Check that the Stripe account's **business name** is Fortune Oracle Media LLC. The legal name on receipts and card statements comes from the Stripe account settings, which code cannot change.

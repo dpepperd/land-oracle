@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { walletUser } from '@/lib/wallet/access';
 import { AssetError, loadImages } from '@/lib/wallet/assets';
-import { getBalance } from '@/lib/wallet/ledger';
+import { getAvailable } from '@/lib/wallet/ledger';
 import { buildPreview, postcardSchema } from '@/lib/wallet/postcards';
 import { getPrices, postcardItem, type PostcardSize } from '@/lib/wallet/settings';
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const rendered = buildPreview(parsed.data, images);
     let price = null as { cents: number; enabled: boolean } | null;
     try { price = (await getPrices(pool))[postcardItem(parsed.data.size as PostcardSize)]; } catch { price = null; }
-    const balanceCents = await getBalance(pool, u.id);
+    const balanceCents = await getAvailable(pool, u.id);
     return json(200, { ...rendered, priceCents: price?.cents ?? null, available: !!price?.enabled, balanceCents, canAfford: !!price?.enabled && balanceCents >= price.cents });
   } catch (e: any) {
     if (e instanceof AssetError) return json(400, { error: 'bad_image', message: e.message });

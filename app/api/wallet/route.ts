@@ -2,7 +2,7 @@
 import { auth } from '@clerk/nextjs/server';
 import pool from '@/lib/db';
 import { walletUser } from '@/lib/wallet/access';
-import { getBalance, recentLedger } from '@/lib/wallet/ledger';
+import { getAvailable, getHeld, recentLedger } from '@/lib/wallet/ledger';
 import { getPrices } from '@/lib/wallet/settings';
 import { BILLING_ENTITY, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS } from '@/lib/wallet/money';
 import { TOPUP_PACKS_CENTS } from '@/lib/wallet/topup';
@@ -21,7 +21,8 @@ export async function GET() {
   try { prices = await getPrices(pool); } catch { prices = null; }
   return json(200, {
     enabled: true,
-    balanceCents: await getBalance(pool, u.id),
+    balanceCents: await getAvailable(pool, u.id), // spendable money (money held for a service in progress is not shown as spendable)
+    heldCents: await getHeld(pool, u.id),
     ledger: await recentLedger(pool, u.id),
     prices, // cents, from admin settings
     packsCents: TOPUP_PACKS_CENTS, minTopupCents: MIN_TOPUP_CENTS, maxTopupCents: MAX_TOPUP_CENTS,

@@ -24,6 +24,9 @@ const origLoad = (Module as any)._load;
   await pool.query(fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'migrations', '017_wallet.sql'), 'utf8'));
   const m018 = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'migrations', '018_postcard_sizes.sql'), 'utf8');
   await pool.query(m018);
+  const m020 = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'migrations', '020_wallet_holds.sql'), 'utf8');
+  await pool.query(m020);
+  await pool.query(m020); // harmless to run twice
   const L = await import('../../lib/wallet/ledger');
   const S = await import('../../lib/wallet/settings');
   const M = await import('../../lib/wallet/money');
@@ -280,12 +283,25 @@ const origLoad = (Module as any)._load;
     const sent = both.filter((r) => r.ok).length; const created = fa.log.filter((x) => x === 'create').length + fb.log.filter((x) => x === 'create').length;
     check('two simultaneous sends on $1.20: one card goes out, one charge, balance never negative', sent === 1 && created === 1 && (await balance(u3.id)) === 5, `sent=${sent} created=${created} bal=${await balance(u3.id)}`);
 
-    // charge fails after Lob accepted: card is cancelled, nothing charged
-    uid.current = u3.id; await pool.query('update wallet_accounts set balance_cents = 200 where user_id=$1', [u3.id]);
-    f = makeFake({ onCreate: async () => { await pool.query('update wallet_accounts set balance_cents = 0 where user_id=$1', [u3.id]); } });
+    // while a card is being made its money is HELD: nothing else can spend it, and the card still settles
+    uid.current = u3.id; await pool.query('update wallet_accounts set balance_cents = 200, held_cents = 0 where user_id=$1', [u3.id]);
+    const Cg0 = await import('../../lib/wallet/charge');
+    let rival: any = null; let heldDuringCreate = -1;
+    f = makeFake({ onCreate: async () => {
+      heldDuringCreate = await L.getHeld(pool, u3.id);
+      rival = await L.inTx(pool, (c) => L.debit(c, { userId: u3.id, cents: 150, kind: 'charge', item: 'x', idempotencyKey: `${tag}:rival` })); // would leave less than the held $1.15
+    } });
     res = await P.sendPostcard({ pool, lob: f.lob }, u3.id, input());
     const rrow = await pcRow(res.postcardId);
-    check('balance drained after Lob accepted: the card is cancelled and nothing is charged', !res.ok && f.log.some((x) => x.startsWith('cancel')) && rrow.status === 'sent_unpaid_cancel_requested' && (await balance(u3.id)) === 0, rrow.status);
+    check('postcard: the price is held while Lob makes the card (held $1.15), and a rival spend of the money is refused', res.ok && heldDuringCreate === 115 && rival && !rival.ok && rival.reason === 'insufficient', JSON.stringify({ heldDuringCreate, rival }));
+    check('postcard: after settling, held is back to 0, the card is sent and exactly $1.15 was charged', rrow.status === 'sent' && (await L.getHeld(pool, u3.id)) === 0 && (await balance(u3.id)) === 85, `${rrow.status} ${await balance(u3.id)}`);
+    // a Lob failure releases the hold
+    await pool.query('update wallet_accounts set balance_cents = 200, held_cents = 0 where user_id=$1', [u3.id]);
+    const chargesU3 = (await ledgerRows(u3.id)).filter((r) => r.item === 'postcard_4x6' && r.kind === 'charge').length;
+    f = makeFake({ createFails: 'rejected' });
+    res = await P.sendPostcard({ pool, lob: f.lob }, u3.id, input());
+    check('postcard: Lob refuses the card -> the hold is released, nothing charged, money spendable again', !res.ok && (await L.getHeld(pool, u3.id)) === 0 && (await L.getAvailable(pool, u3.id)) === 200 && (await ledgerRows(u3.id)).filter((r) => r.item === 'postcard_4x6' && r.kind === 'charge').length === chargesU3, JSON.stringify(res));
+    void Cg0;
 
     // setup missing
     uid.current = u1.id; await pool.query("update app_settings set value = '{\"name\":\"\",\"address_line1\":\"\",\"address_line2\":\"\",\"city\":\"\",\"state\":\"\",\"zip\":\"\"}'::jsonb where key='postcard_return_address'");
@@ -387,6 +403,100 @@ const origLoad = (Module as any)._load;
     await pool.query("delete from app_settings where key='wallet_prices'");
     cr = await Cg.chargeForService(pool, { userId: u1.id, item: 'property_data', idempotencyKey: `${tag}:pnone` });
     check('generic charge: with no prices row, nothing is charged', !cr.ok && cr.reason === 'settings', JSON.stringify(cr));
+    await S.setPrices(pool, seeded, null);
+
+    // ================= holds: reserve, settle, release (shared by skip trace, postcards and any later service) =================
+    const reset3 = (cents: number) => pool.query('delete from wallet_holds where user_id=$1', [u3.id]).then(() => pool.query('update wallet_accounts set balance_cents=$2, held_cents=0 where user_id=$1', [u3.id, cents]));
+    const avail3 = () => L.getAvailable(pool, u3.id);
+    const hrow = async (id: number) => (await pool.query('select * from wallet_holds where id=$1', [id])).rows[0];
+    const ledger3 = async () => (await pool.query('select * from wallet_ledger where user_id=$1', [u3.id])).rowCount!;
+    await S.setPrices(pool, { ...seeded, skip_trace: { cents: 15, enabled: true } }, null);
+    await reset3(1000);
+    const ledger0 = await ledger3();
+    const h1: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:h1`, ref: 'lookup-1' });
+    check('reserve: sets the price ($0.15) aside; the balance is unchanged, spendable drops, no ledger row yet', h1.ok && h1.cents === 15 && (await balance(u3.id)) === 1000 && (await avail3()) === 985 && (await L.getHeld(pool, u3.id)) === 15 && (await ledger3()) === ledger0, JSON.stringify(h1));
+    const h1b: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:h1` });
+    check('reserve: the same key again returns the same hold and does not hold twice', h1b.ok && h1b.duplicate && h1b.holdId === h1.holdId && (await L.getHeld(pool, u3.id)) === 15, JSON.stringify(h1b));
+    const hs1: any = await Cg.settleHold(pool, h1.holdId, { ref: 'lookup-1-hit' });
+    const lrows = (await pool.query('select * from wallet_ledger where user_id=$1 and idempotency_key=$2', [u3.id, `hold:${h1.holdId}:settle`])).rows;
+    check('settle: becomes one charge of -15 for skip_trace, balance 985, held back to 0', hs1.ok && hs1.chargedCents === 15 && (await balance(u3.id)) === 985 && (await L.getHeld(pool, u3.id)) === 0 && lrows.length === 1 && lrows[0].item === 'skip_trace' && Number(lrows[0].amount_cents) === -15 && lrows[0].kind === 'charge' && (await hrow(h1.holdId)).status === 'settled', JSON.stringify(hs1));
+    const s1b: any = await Cg.settleHold(pool, h1.holdId);
+    check('settle: settling twice charges once', s1b.ok && s1b.duplicate && (await balance(u3.id)) === 985 && (await ledger3()) === ledger0 + 1, JSON.stringify(s1b));
+    const hr1: any = await Cg.releaseHold(pool, h1.holdId);
+    check('release after settle is refused (the money was already charged)', !hr1.ok && hr1.reason === 'already_settled' && (await balance(u3.id)) === 985, JSON.stringify(hr1));
+
+    const h2: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:h2` });
+    const rel2: any = await Cg.releaseHold(pool, h2.holdId, 'no_match');
+    check('release: a miss gives the money back, balance unchanged, NO ledger row, hold closed', rel2.ok && rel2.releasedCents === 15 && (await L.getHeld(pool, u3.id)) === 0 && (await avail3()) === 985 && (await ledger3()) === ledger0 + 1 && (await hrow(h2.holdId)).status === 'released' && (await hrow(h2.holdId)).close_reason === 'no_match', JSON.stringify(rel2));
+    const rel2b: any = await Cg.releaseHold(pool, h2.holdId);
+    check('release: releasing twice is harmless', rel2b.ok && rel2b.duplicate && (await L.getHeld(pool, u3.id)) === 0, JSON.stringify(rel2b));
+    const hst2: any = await Cg.settleHold(pool, h2.holdId);
+    check('settle after release is refused (nothing is charged for a miss)', !hst2.ok && hst2.reason === 'released' && (await balance(u3.id)) === 985, JSON.stringify(hst2));
+    check('a replayed reserve after release does not hold again', ((await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:h2` })) as any).status === 'released' && (await L.getHeld(pool, u3.id)) === 0, '');
+
+    const h3: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 4, idempotencyKey: `${tag}:h3` });
+    const s3: any = await Cg.settleHold(pool, h3.holdId, { actualCents: 30 });
+    check('quantity reserves price x quantity (4 x $0.15 = $0.60); settling for less charges only that ($0.30) and frees the rest', h3.ok && h3.cents === 60 && s3.ok && s3.chargedCents === 30 && (await balance(u3.id)) === 955 && (await L.getHeld(pool, u3.id)) === 0, JSON.stringify({ h3, s3 }));
+    const h3b: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:h3x` });
+    check('settling for more than was reserved (or 0) is refused and changes nothing', !((await Cg.settleHold(pool, h3b.holdId, { actualCents: 16 })) as any).ok && !((await Cg.settleHold(pool, h3b.holdId, { actualCents: 0 })) as any).ok && (await L.getHeld(pool, u3.id)) === 15 && (await balance(u3.id)) === 955, '');
+    await Cg.releaseHold(pool, h3b.holdId);
+
+    // the DB refuses to hold more than the balance, and a hold cannot be overspent
+    const dbHold = await pool.query('update wallet_accounts set held_cents = balance_cents + 1 where user_id=$1', [u3.id]).then(() => false, () => true);
+    check('the database itself refuses held money above the balance', dbHold && (await L.getHeld(pool, u3.id)) === 0, '');
+    await reset3(1000);
+    const big: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 66, idempotencyKey: `${tag}:big` }); // 66 x 15 = 990
+    check('reserve: refused when the spendable balance is too small (balance $10.00, asked $150.00)', (((await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 1000, idempotencyKey: `${tag}:toobig` })) as any).reason === 'insufficient') && big.ok, '');
+    const direct: any = await Cg.chargeForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 2, idempotencyKey: `${tag}:direct` });
+    check('a direct charge cannot spend held money (only $0.10 is free, $0.30 refused)', !direct.ok && direct.reason === 'insufficient' && direct.balanceCents === 10, JSON.stringify(direct));
+    await Cg.releaseHold(pool, big.holdId);
+
+    // races: $10.00 and 5 simultaneous $3.00 reservations
+    await reset3(1000);
+    await S.setPrices(pool, { ...seeded, skip_trace: { cents: 300, enabled: true } }, null);
+    const raceH: any[] = await Promise.all([1, 2, 3, 4, 5].map((n) => Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:raceH${n}` })));
+    const won = raceH.filter((x) => x.ok);
+    check('5 simultaneous $3 reservations on $10: exactly 3 succeed, $1 spendable, held $9', won.length === 3 && (await avail3()) === 100 && (await L.getHeld(pool, u3.id)) === 900, `won ${won.length}`);
+    await Promise.all(won.map((x) => Cg.releaseHold(pool, x.holdId)));
+    check('releasing them all frees the whole $10 again', (await avail3()) === 1000 && (await L.getHeld(pool, u3.id)) === 0, '');
+    await S.setPrices(pool, { ...seeded, skip_trace: { cents: 15, enabled: true } }, null);
+
+    // expiry: a crashed service's hold frees itself
+    await reset3(1000);
+    const stale: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 60, idempotencyKey: `${tag}:stale` }); // $9.00 held
+    check('setup: $9.00 is held, only $1.00 spendable', stale.ok && (await avail3()) === 100, '');
+    await pool.query("update wallet_holds set expires_at = now() - interval '1 minute' where id=$1", [stale.holdId]);
+    const afterExpiry: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 20, idempotencyKey: `${tag}:afterexp` }); // $3.00
+    check('an expired hold is freed the next time the account reserves: a $3 reservation now succeeds', afterExpiry.ok && (await hrow(stale.holdId)).status === 'released' && (await hrow(stale.holdId)).close_reason === 'expired' && (await L.getHeld(pool, u3.id)) === 300, JSON.stringify(afterExpiry));
+    await Cg.releaseHold(pool, afterExpiry.holdId);
+    const keep: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:keep` });
+    await L.inTx(pool, (c) => L.keepHold(c, keep.holdId, 'needs attention'));
+    const other: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:other` });
+    await Cg.releaseHold(pool, other.holdId);
+    check('a hold marked "needs attention" never expires on its own', (await hrow(keep.holdId)).status === 'held' && (await hrow(keep.holdId)).expires_at === null, '');
+    await Cg.releaseHold(pool, keep.holdId);
+
+    // items that cannot be charged cannot be reserved either
+    await S.setPrices(pool, seeded, null);
+    check('reserve: a switched-off item (skip trace) cannot be reserved', ((await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', idempotencyKey: `${tag}:off` })) as any).reason === 'disabled', '');
+    await S.setPrices(pool, { ...seeded, permit: { cents: 0, enabled: true } }, null);
+    check('reserve: an item enabled at $0 is refused (nothing is free by accident)', ((await Cg.reserveForService(pool, { userId: u3.id, item: 'permit', idempotencyKey: `${tag}:zero` })) as any).reason === 'not_priced', '');
+    await S.setPrices(pool, { ...seeded, skip_trace: { cents: 15, enabled: true } }, null);
+
+    // ONE wallet for both services: a lookup in progress and a postcard share one balance
+    await reset3(200); // $2.00; a 4x6 card costs $1.15, a lookup $0.15
+    const lookupHold: any = await Cg.reserveForService(pool, { userId: u3.id, item: 'skip_trace', quantity: 5, idempotencyKey: `${tag}:mix1` }); // $0.75 held -> $1.25 spendable
+    uid.current = u3.id; f = makeFake();
+    res = await P.sendPostcard({ pool, lob: f.lob }, u3.id, input());
+    check('one balance for both services: a postcard ($1.15) fits next to a $0.75 lookup in progress ($2.00)', res.ok && (await balance(u3.id)) === 85 && (await L.getHeld(pool, u3.id)) === 75 && (await avail3()) === 10, JSON.stringify(res));
+    uid.current = u3.id; f = makeFake();
+    res = await P.sendPostcard({ pool, lob: f.lob }, u3.id, input());
+    check('...and a second postcard is refused before Lob is called (only $0.10 spendable), the lookup hold untouched', !res.ok && res.code === 'insufficient_funds' && f.log.length === 0 && (await L.getHeld(pool, u3.id)) === 75, res.message);
+    await Cg.releaseHold(pool, lookupHold.holdId, 'no_match');
+    await pool.query('update wallet_accounts set balance_cents = 200 where user_id=$1', [u3.id]); // top up so the card fits once the lookup is released
+    uid.current = u3.id; f = makeFake();
+    res = await P.sendPostcard({ pool, lob: f.lob }, u3.id, input());
+    check('after the lookup misses (hold released) its money is spendable again and the postcard goes out', res.ok === true && (await L.getHeld(pool, u3.id)) === 0 && (await balance(u3.id)) === 85, JSON.stringify(res));
     await S.setPrices(pool, seeded, null);
 
     // ================= uploads: logo and photo =================

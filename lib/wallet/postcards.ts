@@ -1,14 +1,15 @@
 // Sending a postcard. The order matters and is tested in scripts/ai/test-wallet.ts:
-//   1. price (per size, from admin settings) and balance check (too little money: stop, nothing sent, nothing charged)
+//   1. price (per size, from admin settings) and spendable-balance check (too little money: stop, nothing sent, nothing charged)
 //   2. Lob's US address verification (undeliverable: stop, nothing sent, nothing charged, the user is told why)
-//   3. Lob creates the postcard (First Class)
-//   4. ONLY NOW the wallet is charged (the card was accepted), at the price the user was shown
-// An advisory lock per account makes one account's postcard sends run one after the other, so the balance checked in step 1 is still there at step 4.
-// If the charge somehow still fails after Lob accepted the card, we ask Lob to cancel it and record that.
+//   3. the price is RESERVED in the wallet (set aside, not yet charged): no other spend can take that money while the card is being made
+//   4. Lob creates the postcard (First Class); if Lob refuses it, the hold is released and nothing is charged
+//   5. ONLY NOW the hold becomes the charge (the card was accepted), at the price the user was shown
+// An advisory lock per account makes one account's postcard sends run one after the other.
+// If the charge cannot be completed after Lob accepted the card, the card stays sent and the held money stays held for a person to settle.
 import type { Pool } from 'pg';
 import { z } from 'zod';
-import { getBalance } from './ledger';
-import { chargeForService } from './charge';
+import { getAvailable, inTx, keepHold } from './ledger';
+import { releaseHold, reserveForService, settleHold } from './charge';
 import { getPrices, getReturnAddress, postcardItem, SettingsError } from './settings';
 import { LobError, type LobClient, type UsAddress } from './lob';
 import { applyMerge, messageMax, normalizePhone, renderPostcard, SIZES, type DesignId, type PostcardSize, type PostcardSpec, type Rendered } from './templates';
@@ -97,7 +98,7 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     throw e;
   }
   if (!from) return { ok: false, code: 'not_set_up', message: 'Postcards are not set up yet (no return address).' };
-  const balance = await getBalance(pool, userId);
+  const balance = await getAvailable(pool, userId);
   if (balance < price) return { ok: false, code: 'insufficient_funds', message: 'Not enough wallet balance for this postcard. Add funds first.', balanceCents: balance, priceCents: price };
 
   const to = input.to;
@@ -128,7 +129,16 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     return { ok: false, code: 'address_rejected', message: verified.reason + ' Nothing was sent and you were not charged.', postcardId: id };
   }
 
-  // 3. Lob creates the card (the postcard id is the idempotency key: a retry cannot mail a second card)
+  // 3. set the price aside (not charged yet). A bad address above already stopped for free.
+  const hold = await reserveForService(pool, { userId, item, quotedCents: price, ref: `postcard-${id}`, idempotencyKey: `postcard:${id}`, description: `${input.size} postcard to ${to.city}, ${to.state}` });
+  if (!hold.ok) {
+    const notSetUp = hold.reason !== 'insufficient';
+    const msg = notSetUp ? 'Postcards are not set up yet.' : 'Your balance changed and is now too low for this postcard. Nothing was sent or charged.';
+    await setStatus('failed', msg);
+    return { ok: false, code: notSetUp ? 'not_set_up' : 'insufficient_funds', message: msg, postcardId: id, balanceCents: hold.availableCents, priceCents: price };
+  }
+
+  // 4. Lob creates the card (the postcard id is the idempotency key: a retry cannot mail a second card)
   let lobId: string;
   try {
     lobId = (await lob.createPostcard({
@@ -138,23 +148,21 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     })).id;
   } catch (e: any) {
     const msg = e instanceof LobError && e.code === 'rejected' ? `The mailing service refused the card: ${e.message}` : 'The postcard could not be sent right now. You were not charged. Please try again.';
+    await releaseHold(pool, hold.holdId, 'lob_failed').catch(() => {});
     await setStatus('failed', msg);
     return { ok: false, code: 'mail_failed', message: msg + (e instanceof LobError && e.code === 'rejected' ? ' You were not charged.' : ''), postcardId: id };
   }
 
-  // 4. Lob accepted the card: charge the wallet now, at the price that was checked above
-  try {
-    const res = await chargeForService(pool, { userId, item, quotedCents: price, ref: lobId, idempotencyKey: `postcard:${id}`, description: `${input.size} postcard to ${to.city}, ${to.state}` });
-    if (!res.ok) {
-      await lob.cancelPostcard(lobId).catch(() => {});
-      await setStatus('sent_unpaid_cancel_requested', 'The balance was too low at the moment of charging; cancellation was requested.', { lobId });
-      return { ok: false, code: 'insufficient_funds', message: 'Your balance changed and is now too low. The card was cancelled.', postcardId: id, balanceCents: res.balanceCents, priceCents: price };
-    }
-    await setStatus('sent', null, { lobId, cost: price, ledgerId: res.ledgerId });
-    return { ok: true, postcardId: id, lobId, chargedCents: price, balanceAfterCents: res.balanceAfterCents };
-  } catch {
-    await lob.cancelPostcard(lobId).catch(() => {});
-    await setStatus('sent_unpaid_cancel_requested', 'Charging failed after the card was accepted; cancellation was requested.', { lobId }).catch(() => {});
-    return { ok: false, code: 'mail_failed', message: 'Something went wrong while charging your wallet. The card was cancelled and you were not charged.', postcardId: id };
+  // 5. Lob accepted the card: the held money becomes the charge, at the price that was held
+  let settled = await settleHold(pool, hold.holdId, { ref: lobId }).catch(() => null);
+  if (!settled || !settled.ok) settled = await settleHold(pool, hold.holdId, { ref: lobId }).catch(() => null); // one retry
+  if (!settled || !settled.ok) {
+    // The card is already on its way, so it is not cancelled. The money stays held (never auto-expires) for a person to settle.
+    console.error('[postcards] card sent but the charge did not complete: postcard', id, 'hold', hold.holdId);
+    await inTx(pool, (c) => keepHold(c, hold.holdId, 'card sent, settle failed: needs attention')).catch(() => {});
+    await setStatus('sent', 'Charge pending: needs attention.', { lobId, cost: price });
+    return { ok: true, postcardId: id, lobId, chargedCents: price, balanceAfterCents: await getAvailable(pool, userId).catch(() => 0) };
   }
+  await setStatus('sent', null, { lobId, cost: price, ledgerId: settled.ledgerId });
+  return { ok: true, postcardId: id, lobId, chargedCents: price, balanceAfterCents: settled.balanceAfterCents };
 }
