@@ -44,7 +44,7 @@ export class ProviderError extends Error {
 
 /** Errors the route turns into a plain JSON answer. `status` is the HTTP status. */
 export class SkipTraceError extends Error {
-  constructor(public code: 'not_available' | 'insufficient_funds' | 'provider_failed' | 'no_owner' | 'forbidden' | 'not_found' | 'bad_request', message: string, public status: number) {
+  constructor(public code: 'not_available' | 'insufficient_funds' | 'wallet_frozen' | 'provider_failed' | 'no_owner' | 'forbidden' | 'not_found' | 'bad_request', message: string, public status: number) {
     super(message);
     this.name = 'SkipTraceError';
   }

@@ -5,11 +5,13 @@ import { stripe } from '@/lib/stripe';
 import pool from '@/lib/db';
 import { markPaymentFailed, syncSubscription } from '@/lib/billing';
 import { creditTopupFromSession, isWalletTopup } from '@/lib/wallet/topup';
+import { applyChargeRefund, applyDisputeClosed, applyDisputeCreated } from '@/lib/wallet/disputes';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Events: checkout.session.completed (subscriptions and wallet top-ups), customer.subscription.created|updated|deleted, invoice.payment_failed.
+// Events: checkout.session.completed (subscriptions and wallet top-ups), customer.subscription.created|updated|deleted, invoice.payment_failed,
+// charge.refunded and charge.dispute.created|closed (wallet top-ups only: other charges are ignored by those handlers).
 // Entitlements are always derived from the Subscription object (lib/billing.ts). Idempotent via stripe_events.
 export async function POST(req: Request) {
   const body = await req.text();
@@ -50,6 +52,15 @@ export async function POST(req: Request) {
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted':
           result = await syncSubscription(client, event.data.object as Stripe.Subscription);
+          break;
+        case 'charge.refunded':
+          result = await applyChargeRefund(client, event.data.object as Stripe.Charge);
+          break;
+        case 'charge.dispute.created':
+          result = await applyDisputeCreated(client, event.data.object as Stripe.Dispute);
+          break;
+        case 'charge.dispute.closed':
+          result = await applyDisputeClosed(client, event.data.object as Stripe.Dispute);
           break;
         case 'invoice.payment_failed': {
           const inv = event.data.object as Stripe.Invoice;

@@ -29,8 +29,18 @@ Any service that spends OUR money before it knows the outcome (a skip trace vend
 Every step is idempotent (one hold per postcard or lookup however often it is retried), the database refuses `held_cents > balance_cents`, and a hold nobody closes (a crash) expires after 10 minutes and is freed the next time that account reserves. `keepHold()` marks a hold that needs a person (it never expires). The wallet screen and `/api/wallet` show spendable money as the balance, plus `heldCents`.
 This is the shared mechanism for skip trace, postcards and later items (property data, permits, monitor alerts). Tests: `scripts/ai/test-wallet.ts` (reserve, settle, release, partial settle, races, expiry, one balance shared by a lookup and a postcard).
 
+## Refunds and disputes on top-ups (`022_wallet_refunds_disputes.sql`, `lib/wallet/disputes.ts`)
+A top-up is a Stripe payment that was credited to the wallet. If Stripe gives that money back to the customer (refund) or takes it back from us (dispute / chargeback), the wallet must give it up too, or the customer keeps the money AND the services. Three Stripe events drive it (the Stripe webhook handles them next to the existing ones): `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. A credited top-up is remembered by its Stripe payment (`wallet_topups`), so only wallet payments are touched; subscription charges are ignored here.
+- **Refund** (done in the Stripe dashboard): the wallet is reduced by the amount refunded. The handler works from the running total refunded, so a partial refund, a second partial refund, a replayed event or an old event arriving late are all safe.
+- **Dispute opened:** the disputed amount is taken back from the wallet right away and the wallet is **paused** (frozen). A payment *inquiry* (Stripe's early warning, no money moves) only raises an incident and does not pause anything.
+- **Dispute won:** the money is returned (only what was taken) and the wallet un-pauses by itself, unless another dispute is still open. **Lost:** the money stays gone, the wallet stays paused, and an incident asks you to review it (Stripe keeps the amount plus its dispute fee).
+- **Only spendable money can be taken back**: not money set aside for a service in progress. Whatever could not be taken back is a **shortfall**: it is recorded as an incident for you, never as a negative balance. The customer's history shows neutral lines ("Refund of $x on a wallet top-up", "Payment dispute opened: $x taken back while it is reviewed").
+- **A paused wallet cannot start spending:** holds, direct charges, the top-up route, postcards and skip trace all refuse (customers see "Your wallet is paused while we review a payment on your account. Please contact support."; no reason is shown). Services already in progress can still settle or release, and money can still be added (by webhook or an admin).
+- **Admin tools** on `/admin/wallets`: refunds and disputes that need you (open chargebacks, lost disputes, shortfalls) with a "dealt with" note; paused wallets with an Un-pause button (note required); and "Add or remove money by hand" on an account (reason required and shown to the customer, at most $1,000 at a time, cannot remove money set aside for a service, works on a paused wallet, one click changes once). Each leaves an audit row.
+- **Tests:** `scripts/ai/test-wallet-disputes.ts` (63 checks): signed fake events through the real webhook route, every case above, every spending door while paused, and the admin tools.
+
 ## Admin: customer wallets (`/admin/wallets`)
-Admin-only and read-only (`lib/wallet/admin.ts`, `app/admin/wallets/`; linked from the admin header next to Users and Wallet settings). Nothing on it moves money.
+Admin-only (`lib/wallet/admin.ts`, `app/admin/wallets/`; linked from the admin header next to Users and Wallet settings). The views move no money; the only writes are un-pause, "dealt with" and adding or removing money by hand (see the refunds and disputes section above).
 - **Totals:** customer money held (what we owe), money set aside for services in progress, top-ups and spending in the last 30 days, refunds and adjustments, and spending by service (skip trace contact, the Do Not Call check, each postcard size).
 - **Needs a person to look:** holds that never expire on their own, because a service was delivered but its charge did not complete. Click one to open the account. Expired holds that are still open are counted separately (they free themselves the next time that account spends).
 - **Wallet list:** every account that has had a wallet, newest activity first, with balance, held, total topped up and total spent; search by email (matched literally, 2 characters or more), 50 per page.
@@ -70,16 +80,15 @@ Admins always. Everyone else only when `WALLET_ENABLED=true` (checked on every r
 Standard (marketing) class is a little cheaper on the big sizes but slower and meant for bulk, and 4×6 is First Class only, so everything goes First Class.
 
 ## To turn it on (nobody has done any of this)
-1. Apply `017_wallet.sql`, `018_postcard_sizes.sql` then `020_wallet_holds.sql` to the `app_prod` schema and grant the production role the tables and sequences.
+1. Apply `017_wallet.sql`, `018_postcard_sizes.sql`, `020_wallet_holds.sql` then `022_wallet_refunds_disputes.sql` (and `021_skiptrace_wallet.sql` for skip trace) to the `app_prod` schema and grant the production role the tables and sequences.
 2. In **/admin/settings**, set the postcard **return address** (postcards stay blocked until it is set). Check the prices.
-3. Set `LOB_API_KEY` (a test key). The existing Stripe webhook already handles wallet top-ups: no new endpoint.
+3. Set `LOB_API_KEY` (a test key). The existing Stripe webhook already handles wallet top-ups: no new endpoint, but **add three events to it in the Stripe dashboard** (Developers, Webhooks, the endpoint, Add events): `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Without them a refund or chargeback would leave the customer with the money AND the credit. Do this in test mode first, then live mode.
 4. Check that the Stripe account's **business name** is Fortune Oracle Media LLC. The legal name on receipts and card statements comes from the Stripe account settings, which code cannot change.
 5. Before real money: decide on live keys (`WALLET_ALLOW_LIVE`, `LOB_ALLOW_LIVE`), refunds and chargebacks (not built, see below).
 
 ## Not built
 - Skip trace charging the wallet (vendor not approved; skip trace still uses its own credits behind its flag).
 - The property data, permit and monitor alert features: only their (switched-off) prices exist.
-- Refunds, disputes and chargebacks: a refund in Stripe does not yet reduce the wallet balance.
 - Prefilled postcards from a parcel card (the `/postcards` page accepts `?owner=&address=&acres=` but nothing links there yet).
 - Real artwork (all art is placeholder), Lob delivery tracking, postcard history list in the UI.
-- Tax, emailed receipts, manual adjustments (credit or debit with a reason) from the admin screen, and a link to `/wallet` in the main navigation for customers.
+- Tax, emailed receipts, a link to `/wallet` in the main navigation for customers, low-balance warnings, and refund or dispute handling for SUBSCRIPTION charges (the wallet handlers ignore them).

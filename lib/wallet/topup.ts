@@ -3,6 +3,7 @@
 import type { PoolClient } from 'pg';
 import type Stripe from 'stripe';
 import { credit } from './ledger';
+import { recordTopup } from './disputes';
 import { BILLING_ENTITY, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS } from './money';
 
 export const TOPUP_PACKS_CENTS = [2000, 5000, 10000, 25000];
@@ -47,5 +48,9 @@ export async function creditTopupFromSession(c: PoolClient, s: Stripe.Checkout.S
   const u = clerkId ? (await c.query('SELECT id FROM users WHERE clerk_id = $1', [clerkId])).rows[0] : null;
   if (!u) return { credited: false, reason: 'unknown account' };
   const res = await credit(c, { userId: u.id, cents: cents as number, kind: 'topup', ref: s.id, idempotencyKey: `stripe:${s.id}`, description: 'Wallet top-up' });
-  return res.ok ? { credited: !res.duplicate, cents: cents as number, ...(res.duplicate ? { reason: 'already credited' } : {}) } : { credited: false, reason: 'ledger refused' };
+  if (!res.ok) return { credited: false, reason: 'ledger refused' };
+  // Remember which Stripe payment this was, so a later refund or dispute finds the money it is about (also fills in the row when an old event is replayed).
+  const pi = typeof s.payment_intent === 'string' ? s.payment_intent : s.payment_intent?.id ?? null;
+  await recordTopup(c, { userId: u.id, paymentIntent: pi, sessionId: s.id, amountCents: cents as number, livemode });
+  return { credited: !res.duplicate, cents: cents as number, ...(res.duplicate ? { reason: 'already credited' } : {}) };
 }

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { stripe } from '@/lib/stripe';
 import pool from '@/lib/db';
 import { stripeAllowedForWallet, walletUser } from '@/lib/wallet/access';
+import { getFrozen, WALLET_PAUSED_MESSAGE } from '@/lib/wallet/ledger';
 import { topupAmountError, topupSessionParams } from '@/lib/wallet/topup';
 
 export const runtime = 'nodejs';
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
   if (!u || !u.open) return json(404, { error: 'not_available', message: 'The wallet is not available yet.' });
   let body;
   try { body = bodySchema.parse(await req.json()); } catch { return json(400, { error: 'bad_request', message: 'Enter an amount.' }); }
+  if ((await getFrozen(pool, u.id)).frozen) return json(403, { error: 'wallet_frozen', message: WALLET_PAUSED_MESSAGE }); // do not take money into a paused wallet
   const bad = topupAmountError(body.amountCents);
   if (bad) return json(400, { error: 'bad_amount', message: bad });
   if (!stripeAllowedForWallet()) return json(503, { error: 'test_mode_only', message: 'Wallet top-ups are in test mode only for now.' });

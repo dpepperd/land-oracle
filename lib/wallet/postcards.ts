@@ -8,7 +8,7 @@
 // If the charge cannot be completed after Lob accepted the card, the card stays sent and the held money stays held for a person to settle.
 import type { Pool } from 'pg';
 import { z } from 'zod';
-import { getAvailable, inTx, keepHold } from './ledger';
+import { getAvailable, getFrozen, inTx, keepHold, WALLET_PAUSED_MESSAGE } from './ledger';
 import { releaseHold, reserveForService, settleHold } from './charge';
 import { getPrices, getReturnAddress, postcardItem, SettingsError } from './settings';
 import { LobError, type LobClient, type UsAddress } from './lob';
@@ -64,7 +64,7 @@ export const buildPreview = (input: PostcardInput, images: Images = {}): Rendere
 
 export type SendResult =
   | { ok: true; postcardId: number; lobId: string; chargedCents: number; balanceAfterCents: number }
-  | { ok: false; code: 'insufficient_funds' | 'address_rejected' | 'not_set_up' | 'mail_failed' | 'busy'; message: string; postcardId?: number; balanceCents?: number; priceCents?: number };
+  | { ok: false; code: 'insufficient_funds' | 'address_rejected' | 'not_set_up' | 'mail_failed' | 'busy' | 'wallet_frozen'; message: string; postcardId?: number; balanceCents?: number; priceCents?: number };
 
 export async function sendPostcard(deps: { pool: Pool; lob: LobClient }, userId: number, input: PostcardInput, images: Images = {}): Promise<SendResult> {
   const { pool, lob } = deps;
@@ -98,6 +98,7 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
     throw e;
   }
   if (!from) return { ok: false, code: 'not_set_up', message: 'Postcards are not set up yet (no return address).' };
+  if ((await getFrozen(pool, userId)).frozen) return { ok: false, code: 'wallet_frozen', message: WALLET_PAUSED_MESSAGE }; // before any address check or Lob call
   const balance = await getAvailable(pool, userId);
   if (balance < price) return { ok: false, code: 'insufficient_funds', message: 'Not enough wallet balance for this postcard. Add funds first.', balanceCents: balance, priceCents: price };
 
@@ -132,10 +133,11 @@ async function run(pool: Pool, lob: LobClient, userId: number, input: PostcardIn
   // 3. set the price aside (not charged yet). A bad address above already stopped for free.
   const hold = await reserveForService(pool, { userId, item, quotedCents: price, ref: `postcard-${id}`, idempotencyKey: `postcard:${id}`, description: `${input.size} postcard to ${to.city}, ${to.state}` });
   if (!hold.ok) {
-    const notSetUp = hold.reason !== 'insufficient';
-    const msg = notSetUp ? 'Postcards are not set up yet.' : 'Your balance changed and is now too low for this postcard. Nothing was sent or charged.';
+    const frozen = hold.reason === 'frozen';
+    const notSetUp = !frozen && hold.reason !== 'insufficient';
+    const msg = frozen ? WALLET_PAUSED_MESSAGE : notSetUp ? 'Postcards are not set up yet.' : 'Your balance changed and is now too low for this postcard. Nothing was sent or charged.';
     await setStatus('failed', msg);
-    return { ok: false, code: notSetUp ? 'not_set_up' : 'insufficient_funds', message: msg, postcardId: id, balanceCents: hold.availableCents, priceCents: price };
+    return { ok: false, code: frozen ? 'wallet_frozen' : notSetUp ? 'not_set_up' : 'insufficient_funds', message: msg, postcardId: id, balanceCents: hold.availableCents, priceCents: price };
   }
 
   // 4. Lob creates the card (the postcard id is the idempotency key: a retry cannot mail a second card)

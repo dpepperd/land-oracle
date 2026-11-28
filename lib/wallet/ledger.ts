@@ -10,7 +10,8 @@ export type Kind = 'topup' | 'charge' | 'refund' | 'adjustment';
 export interface MoveInput { userId: number; cents: number; kind: Kind; item?: string; ref?: string; idempotencyKey: string; description?: string }
 export type MoveResult =
   | { ok: true; balanceAfterCents: number; ledgerId: number; duplicate: boolean }
-  | { ok: false; reason: 'insufficient'; balanceCents: number };
+  | { ok: false; reason: 'insufficient'; balanceCents: number }
+  | { ok: false; reason: 'frozen'; balanceCents: number };
 
 export async function inTx<T>(pool: Pool, fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const c = await pool.connect();
@@ -44,17 +45,18 @@ export async function getHeld(db: Pool | PoolClient, userId: number): Promise<nu
   return Number(r.rows[0]?.held_cents ?? 0);
 }
 
-async function lockAccount(c: PoolClient, userId: number): Promise<{ balance: number; held: number }> {
+async function lockAccount(c: PoolClient, userId: number): Promise<{ balance: number; held: number; frozen: boolean }> {
   await c.query('INSERT INTO wallet_accounts (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [userId]);
-  const r = await c.query('SELECT balance_cents, held_cents FROM wallet_accounts WHERE user_id = $1 FOR UPDATE', [userId]);
-  return { balance: Number(r.rows[0].balance_cents), held: Number(r.rows[0].held_cents) };
+  const r = await c.query('SELECT balance_cents, held_cents, frozen_at FROM wallet_accounts WHERE user_id = $1 FOR UPDATE', [userId]);
+  return { balance: Number(r.rows[0].balance_cents), held: Number(r.rows[0].held_cents), frozen: r.rows[0].frozen_at !== null };
 }
 
-async function move(c: PoolClient, m: MoveInput, signedCents: number): Promise<MoveResult> {
+async function move(c: PoolClient, m: MoveInput, signedCents: number, opts: { ignoreFrozen?: boolean } = {}): Promise<MoveResult> {
   if (!Number.isInteger(m.cents) || m.cents <= 0) throw new Error('Amount must be a positive whole number of cents.');
-  const { balance, held } = await lockAccount(c, m.userId); // row lock: two spends by one account run one after the other
+  const { balance, held, frozen } = await lockAccount(c, m.userId); // row lock: two spends by one account run one after the other
   const seen = await c.query('SELECT id, balance_after_cents FROM wallet_ledger WHERE idempotency_key = $1', [m.idempotencyKey]);
   if (seen.rows[0]) return { ok: true, balanceAfterCents: Number(seen.rows[0].balance_after_cents), ledgerId: Number(seen.rows[0].id), duplicate: true };
+  if (frozen && signedCents < 0 && !opts.ignoreFrozen) return { ok: false, reason: 'frozen', balanceCents: balance - held }; // a frozen wallet cannot start new spending
   const after = balance + signedCents;
   if (after < held) return { ok: false, reason: 'insufficient', balanceCents: balance - held }; // never spend money that a hold has set aside
   await c.query('UPDATE wallet_accounts SET balance_cents = $2, updated_at = now() WHERE user_id = $1', [m.userId, after]);
@@ -67,8 +69,10 @@ async function move(c: PoolClient, m: MoveInput, signedCents: number): Promise<M
 
 /** Money in (a top-up, a refund, an adjustment). */
 export const credit = (c: PoolClient, m: MoveInput) => move(c, m, m.cents);
-/** Money out. Refuses, and records nothing, if the spendable balance is too small. */
+/** Money out. Refuses, and records nothing, if the spendable balance is too small or the wallet is frozen. */
 export const debit = (c: PoolClient, m: MoveInput) => move(c, m, -m.cents);
+/** Money out by an admin: like debit() but allowed on a frozen wallet (still never below zero or into money set aside for a service). */
+export const debitByAdmin = (c: PoolClient, m: MoveInput) => move(c, m, -m.cents, { ignoreFrozen: true });
 
 export async function recentLedger(db: Pool | PoolClient, userId: number, limit = 50) {
   const r = await db.query(
@@ -90,7 +94,8 @@ export const HOLD_TTL_SECONDS = 600;
 export interface ReserveInput { userId: number; cents: number; item: string; idempotencyKey: string; ref?: string; description?: string; ttlSeconds?: number | null }
 export type ReserveResult =
   | { ok: true; holdId: number; duplicate: boolean; status: 'held' | 'settled' | 'released' }
-  | { ok: false; reason: 'insufficient'; availableCents: number };
+  | { ok: false; reason: 'insufficient'; availableCents: number }
+  | { ok: false; reason: 'frozen'; availableCents: number };
 export type SettleResult =
   | { ok: true; chargedCents: number; balanceAfterCents: number; ledgerId: number; duplicate: boolean }
   | { ok: false; reason: 'not_found' | 'released' | 'invalid_amount' };
@@ -111,7 +116,8 @@ export async function reserve(c: PoolClient, m: ReserveInput): Promise<ReserveRe
   const seen = (await c.query('SELECT id, status FROM wallet_holds WHERE idempotency_key = $1', [m.idempotencyKey])).rows[0];
   if (seen) return { ok: true, holdId: Number(seen.id), duplicate: true, status: seen.status };
   await freeExpired(c, m.userId);
-  const { balance, held } = await lockAccount(c, m.userId); // re-read after freeing expired holds
+  const { balance, held, frozen } = await lockAccount(c, m.userId); // re-read after freeing expired holds
+  if (frozen) return { ok: false, reason: 'frozen', availableCents: balance - held }; // a frozen wallet cannot start new spending
   if (m.cents > balance - held) return { ok: false, reason: 'insufficient', availableCents: balance - held };
   const ttl = m.ttlSeconds === undefined ? HOLD_TTL_SECONDS : m.ttlSeconds;
   const ins = await c.query(
@@ -166,4 +172,48 @@ export async function release(c: PoolClient, holdId: number, reason = 'released'
 /** A hold that must be looked at by a person (for example a card was sent but the charge would not complete): it never expires on its own. */
 export async function keepHold(c: PoolClient, holdId: number, note: string): Promise<void> {
   await c.query(`UPDATE wallet_holds SET expires_at = NULL, close_reason = $2 WHERE id = $1 AND status = 'held'`, [holdId, note]);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// Taking money back (refunds and disputes) and freezing. Used by lib/wallet/disputes.ts inside the Stripe webhook's transaction.
+// ---------------------------------------------------------------------------------------------------------------------------------
+export interface ClawbackInput { userId: number; cents: number; kind: 'refund' | 'adjustment'; ref?: string; idempotencyKey: string; description?: string }
+export interface ClawbackResult { takenCents: number; shortfallCents: number; ledgerId: number | null; duplicate: boolean }
+
+/**
+ * Takes back up to `cents` of SPENDABLE money (the balance minus money set aside for a service in progress); whatever cannot be taken is the shortfall.
+ * Works on a frozen wallet. Idempotent per key: a replay returns what the first run took.
+ */
+export async function clawback(c: PoolClient, m: ClawbackInput): Promise<ClawbackResult> {
+  if (!Number.isInteger(m.cents) || m.cents <= 0) throw new Error('Amount must be a positive whole number of cents.');
+  const { balance, held } = await lockAccount(c, m.userId);
+  const seen = (await c.query('SELECT id, amount_cents FROM wallet_ledger WHERE idempotency_key = $1', [m.idempotencyKey])).rows[0];
+  if (seen) { const taken = -Number(seen.amount_cents); return { takenCents: taken, shortfallCents: m.cents - taken, ledgerId: Number(seen.id), duplicate: true }; }
+  const take = Math.max(0, Math.min(m.cents, balance - held));
+  if (take === 0) return { takenCents: 0, shortfallCents: m.cents, ledgerId: null, duplicate: false };
+  const after = balance - take;
+  await c.query('UPDATE wallet_accounts SET balance_cents = $2, updated_at = now() WHERE user_id = $1', [m.userId, after]);
+  const ins = await c.query(
+    `INSERT INTO wallet_ledger (user_id, kind, item, amount_cents, balance_after_cents, ref, idempotency_key, description)
+     VALUES ($1,$2,NULL,$3,$4,$5,$6,$7) RETURNING id`, [m.userId, m.kind, -take, after, m.ref ?? null, m.idempotencyKey, m.description ?? null]);
+  return { takenCents: take, shortfallCents: m.cents - take, ledgerId: Number(ins.rows[0].id), duplicate: false };
+}
+
+/** Pauses new spending on a wallet (the latest reason is kept; the time of the first freeze is kept). */
+export async function freezeAccount(c: PoolClient, userId: number, reason: string): Promise<void> {
+  await lockAccount(c, userId);
+  await c.query('UPDATE wallet_accounts SET frozen_at = COALESCE(frozen_at, now()), frozen_reason = $2, updated_at = now() WHERE user_id = $1', [userId, reason]);
+}
+
+export async function unfreezeAccount(c: PoolClient, userId: number): Promise<void> {
+  await lockAccount(c, userId);
+  await c.query('UPDATE wallet_accounts SET frozen_at = NULL, frozen_reason = NULL, updated_at = now() WHERE user_id = $1', [userId]);
+}
+
+/** What a customer is told when their wallet is frozen (no reason is given: it may be a payment dispute). */
+export const WALLET_PAUSED_MESSAGE = 'Your wallet is paused while we review a payment on your account. Please contact support.';
+
+export async function getFrozen(db: Pool | PoolClient, userId: number): Promise<{ frozen: boolean; reason: string | null }> {
+  const r = (await db.query('SELECT frozen_at, frozen_reason FROM wallet_accounts WHERE user_id = $1', [userId])).rows[0];
+  return { frozen: !!r?.frozen_at, reason: r?.frozen_reason ?? null };
 }

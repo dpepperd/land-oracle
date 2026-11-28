@@ -14,7 +14,7 @@ import { getPrices, SettingsError, type PriceItem } from './settings';
 
 export type ChargeResult =
   | { ok: true; chargedCents: number; balanceAfterCents: number; ledgerId: number; duplicate: boolean }
-  | { ok: false; reason: 'disabled' | 'not_priced' | 'insufficient' | 'settings'; balanceCents?: number };
+  | { ok: false; reason: 'disabled' | 'not_priced' | 'insufficient' | 'frozen' | 'settings'; balanceCents?: number };
 
 export async function priceOf(pool: Pool, item: PriceItem): Promise<{ cents: number; enabled: boolean }> {
   return (await getPrices(pool))[item];
@@ -45,12 +45,12 @@ export async function chargeForService(
   const t = await totalFor(pool, o.item, o.quantity, o.quotedCents);
   if (!t.ok) return { ok: false, reason: t.reason };
   const res = await inTx(pool, (c) => debit(c, { userId: o.userId, cents: t.total, kind: 'charge', item: o.item, ref: o.ref, idempotencyKey: o.idempotencyKey, description: o.description }));
-  return res.ok ? { ok: true, chargedCents: t.total, balanceAfterCents: res.balanceAfterCents, ledgerId: res.ledgerId, duplicate: res.duplicate } : { ok: false, reason: 'insufficient', balanceCents: res.balanceCents };
+  return res.ok ? { ok: true, chargedCents: t.total, balanceAfterCents: res.balanceAfterCents, ledgerId: res.ledgerId, duplicate: res.duplicate } : { ok: false, reason: res.reason, balanceCents: res.balanceCents };
 }
 
 export type ReserveForServiceResult =
   | { ok: true; holdId: number; cents: number; duplicate: boolean; status: 'held' | 'settled' | 'released' }
-  | { ok: false; reason: Failure | 'insufficient'; availableCents?: number };
+  | { ok: false; reason: Failure | 'insufficient' | 'frozen'; availableCents?: number };
 
 /** Sets the price (x quantity) aside before the service runs. Close it with settleHold() or releaseHold(). */
 export async function reserveForService(
@@ -60,7 +60,7 @@ export async function reserveForService(
   const t = await totalFor(pool, o.item, o.quantity, o.quotedCents);
   if (!t.ok) return { ok: false, reason: t.reason };
   const res = await inTx(pool, (c) => reserve(c, { userId: o.userId, cents: t.total, item: o.item, ref: o.ref, idempotencyKey: o.idempotencyKey, description: o.description, ttlSeconds: o.ttlSeconds }));
-  return res.ok ? { ok: true, holdId: res.holdId, cents: t.total, duplicate: res.duplicate, status: res.status } : { ok: false, reason: 'insufficient', availableCents: res.availableCents };
+  return res.ok ? { ok: true, holdId: res.holdId, cents: t.total, duplicate: res.duplicate, status: res.status } : { ok: false, reason: res.reason, availableCents: res.availableCents };
 }
 
 /** The service succeeded: the held money becomes a charge (at the reserved amount, or less if actualCents is given). */

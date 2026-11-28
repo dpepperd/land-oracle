@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
-const STATUS = { insufficient_funds: 402, address_rejected: 422, not_set_up: 503, mail_failed: 502, busy: 409 } as const;
+const STATUS = { insufficient_funds: 402, address_rejected: 422, not_set_up: 503, mail_failed: 502, busy: 409, wallet_frozen: 403 } as const;
 
 export async function POST(req: Request) {
   const { userId } = await auth();

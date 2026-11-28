@@ -20,7 +20,7 @@ import { getProvider } from './providers';
 import { ProviderError, SkipTraceError, type ContactPhone, type ContactResult, type LookupOutcome, type OwnerQuery, type SkipTraceProvider } from './types';
 import { getPrices, getSkipTraceOptions, SettingsError, type DncMode } from '@/lib/wallet/settings';
 import { releaseHold, reserveForService, settleHold } from '@/lib/wallet/charge';
-import { getAvailable, inTx, keepHold } from '@/lib/wallet/ledger';
+import { getAvailable, inTx, keepHold, WALLET_PAUSED_MESSAGE } from '@/lib/wallet/ledger';
 
 export const CACHE_DAYS = 180;
 /** How long a Do Not Call status counts as current. (Callers generally must re-check about every 31 days: confirm with the lawyer.) */
@@ -111,7 +111,9 @@ export async function lookupContact(userDbId: number, q: OwnerQuery, opts: { par
     const maxDnc = wantDnc && !paid.dnc && (!cachedRow || savedHasPhones);
 
     // ---- hold the money first: no funds, no vendor call
-    const fail = (r: { reason: string }) => r.reason === 'insufficient'
+    const fail = (r: { reason: string }) => r.reason === 'frozen'
+      ? new SkipTraceError('wallet_frozen', WALLET_PAUSED_MESSAGE, 403)
+      : r.reason === 'insufficient'
       ? new SkipTraceError('insufficient_funds', `Not enough wallet balance for this lookup (${usd((maxContact ? offer.contactCents : 0) + (maxDnc ? offer.dncCents : 0))}). Add funds to your wallet first.`, 402)
       : new SkipTraceError('not_available', NOT_AVAILABLE, 404);
     if (maxContact) {

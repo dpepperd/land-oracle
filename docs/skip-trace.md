@@ -25,7 +25,7 @@ The DNC mode (off / optional / required) is a second admin setting (`app_setting
 | API: `GET /api/skiptrace` (enabled? prices, balance, DNC option), `POST /api/skiptrace {parcel_key, dnc?}` | `app/api/skiptrace/route.ts` |
 | The button | `components/dashboard/OwnerContact.tsx`, used in `ParcelCard.tsx` |
 | Prices and the DNC mode | `/admin/settings`, `lib/wallet/settings.ts` |
-| Tables | `db/migrations/016_skip_trace.sql`, `021_skiptrace_wallet.sql` (and the wallet's 017, 018, 020) |
+| Tables | `db/migrations/016_skip_trace.sql`, `021_skiptrace_wallet.sql` (and the wallet's 017, 018, 020, 022) |
 | Tests (57 checks) | `scripts/ai/test-skiptrace.ts` |
 `skip_trace_credits` (from 016) is no longer used; `scripts/launch/skiptrace-grant.cjs` therefore no longer applies (give an account money through the wallet instead).
 
@@ -38,13 +38,13 @@ The DNC mode (off / optional / required) is a second admin setting (`app_setting
 6. **DNC flags are never given away with a saved result:** an account that did not buy the check gets phones with no flags.
 7. **Required mode never sells contact data without the check:** if the add-on is switched off, the vendor cannot do it, or the setting is damaged, lookups stop.
 8. **Double clicks cannot double charge or double call the vendor** (a lock per owner, and the wallet row locks). Two lookups racing on money for one: one goes through, one is refused.
-9. Admins get no free pass. The account must be allowed to see the parcel (county plan enforced by the same code the AI assistant uses): a parcel outside the plan returns 403 and costs nothing.
+9. A paused wallet (an open payment dispute) cannot start a lookup: the vendor is not called and the customer sees the paused message. Admins get no free pass. The account must be allowed to see the parcel (county plan enforced by the same code the AI assistant uses): a parcel outside the plan returns 403 and costs nothing.
 10. Phone numbers and emails are never written to logs. Only a short owner-key prefix and counts are.
 11. If delivering a result succeeded but settling the charge fails twice, the result is still returned and the hold is kept for a person to look at (it never expires on its own).
 
 ## Turning it on (not yet: needs a vendor and decisions)
 1. Choose a vendor and get a written quote for each item (`docs/vendor-call-checklist.md`). Implement `SkipTraceProvider` for it (declare `capabilities`) in a new file and add one line to `REGISTRY` in `providers.ts`.
-2. Run `016_skip_trace.sql`, `017_wallet.sql`, `018_postcard_sizes.sql`, `020_wallet_holds.sql`, `021_skiptrace_wallet.sql` in the **production schema** (`app_prod`) and grant the production role the tables and sequences. None of them has been run there.
+2. Run `016_skip_trace.sql`, `017_wallet.sql`, `018_postcard_sizes.sql`, `020_wallet_holds.sql`, `021_skiptrace_wallet.sql`, `022_wallet_refunds_disputes.sql` in the **production schema** (`app_prod`) and grant the production role the tables and sequences. None of them has been run there.
 3. In `/admin/settings` set the price of `skip_trace` (and `skip_trace_dnc`), switch them on, and choose the DNC mode. Decide with the lawyer whether DNC is optional or required.
 4. Set `SKIPTRACE_PROVIDER`, `SKIPTRACE_ENABLED=true` and (for customers) `WALLET_ENABLED=true` in Vercel production, redeploy, and test with your own account first. Top-ups are test-mode only until live wallet mode is switched on deliberately (see `docs/wallet.md`).
 5. Run 20 to 50 real lookups against contacts you already know before anyone is charged.
@@ -56,5 +56,4 @@ To switch it off again at any time: set `SKIPTRACE_ENABLED` to anything but `tru
 - The button in the map popup (only the results list card has it).
 - Bulk lookup, export of contacts, calling or texting.
 - A real vendor, and property data or permits as items (they need a vendor that offers them).
-- Refund and dispute handling for wallet top-ups (see `docs/wallet.md`).
 - A link to `/wallet` anywhere in the main navigation (the page exists; only the postcards page links to it).

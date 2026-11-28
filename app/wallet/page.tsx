@@ -21,7 +21,7 @@ export default function WalletPage() {
     const r = await fetch('/api/wallet/topup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ amountCents }) });
     const j = await r.json().catch(() => ({}));
     setBusy(false);
-    if (j.url) window.location.href = j.url; else setMsg({ ok: false, text: j.message || 'Could not start the top-up.' });
+    if (j.url) window.location.assign(j.url); else setMsg({ ok: false, text: j.message || 'Could not start the top-up.' });
   };
 
   if (!data) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>;
@@ -34,6 +34,8 @@ export default function WalletPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
         <div className="text-sm text-slate-400">Wallet balance</div>
         <div className="text-3xl font-bold">{usd(data.balanceCents)}</div>
+        {data.heldCents > 0 && <p className="text-xs text-slate-400 mt-1">{usd(data.heldCents)} more is set aside for a service in progress and is not counted above.</p>}
+        {data.frozen && <p className="text-sm text-amber-300 mt-2">Your wallet is paused while we review a payment on your account. You cannot add funds or start new spending until it is cleared. Please contact support.</p>}
         <p className="text-xs text-slate-400 mt-1">Prepaid. Billed by {data.billingEntity}. Test mode only for now: no real money moves.</p>
         <Link href="/postcards" className="inline-block mt-3 text-sm text-blue-400 hover:underline">Send a postcard</Link>
       </div>
