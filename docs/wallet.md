@@ -29,6 +29,14 @@ Any service that spends OUR money before it knows the outcome (a skip trace vend
 Every step is idempotent (one hold per postcard or lookup however often it is retried), the database refuses `held_cents > balance_cents`, and a hold nobody closes (a crash) expires after 10 minutes and is freed the next time that account reserves. `keepHold()` marks a hold that needs a person (it never expires). The wallet screen and `/api/wallet` show spendable money as the balance, plus `heldCents`.
 This is the shared mechanism for skip trace, postcards and later items (property data, permits, monitor alerts). Tests: `scripts/ai/test-wallet.ts` (reserve, settle, release, partial settle, races, expiry, one balance shared by a lookup and a postcard).
 
+## Admin: customer wallets (`/admin/wallets`)
+Admin-only and read-only (`lib/wallet/admin.ts`, `app/admin/wallets/`; linked from the admin header next to Users and Wallet settings). Nothing on it moves money.
+- **Totals:** customer money held (what we owe), money set aside for services in progress, top-ups and spending in the last 30 days, refunds and adjustments, and spending by service (skip trace contact, the Do Not Call check, each postcard size).
+- **Needs a person to look:** holds that never expire on their own, because a service was delivered but its charge did not complete. Click one to open the account. Expired holds that are still open are counted separately (they free themselves the next time that account spends).
+- **Wallet list:** every account that has had a wallet, newest activity first, with balance, held, total topped up and total spent; search by email (matched literally, 2 characters or more), 50 per page.
+- **One account:** balance, held, spendable, totals, spending by service, the latest 100 ledger rows (with references) and the latest 30 holds with their status and notes.
+Tests: `scripts/ai/test-wallet-admin.ts` (25 checks, totals compared as before and after differences).
+
 ## Postcard sizes, designs, templates
 - Sizes **4×6 (default), 6×9, 6×11**. Each is priced separately in settings.
 - Three starter designs, **Classic, Bold, Friendly**, each laid out for all three sizes: **9 HTML templates** in `lib/wallet/templates.ts`. Art is placeholder (CSS and inline SVG; no external files or fonts).
@@ -74,4 +82,4 @@ Standard (marketing) class is a little cheaper on the big sizes but slower and m
 - Refunds, disputes and chargebacks: a refund in Stripe does not yet reduce the wallet balance.
 - Prefilled postcards from a parcel card (the `/postcards` page accepts `?owner=&address=&acres=` but nothing links there yet).
 - Real artwork (all art is placeholder), Lob delivery tracking, postcard history list in the UI.
-- Tax, emailed receipts, and an admin view of other users' wallets.
+- Tax, emailed receipts, manual adjustments (credit or debit with a reason) from the admin screen, and a link to `/wallet` in the main navigation for customers.
